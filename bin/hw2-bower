@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 'use strict';
 
-process.bin = process.title = 'bower';
+process.bin = process.title = 'hw2-bower';
 
 var Q = require('q');
 var mout = require('mout');
