@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 'use strict';
 
 process.bin = process.title = 'hw2-bower';
