@@ -1,3 +1,3 @@
 #!/usr/bin/env node
 
-require("hw2-bower.js");
+require("./hw2-bower.js");
