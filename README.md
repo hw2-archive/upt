@@ -4,7 +4,7 @@ Official README and LICENSE on (https://github.com/bower/bower)
 
 See [bower-pullrequest](https://github.com/hw2-core/bower/tree/bower-pullrequest) branch for changes that concern only bower
 
-# Universal package manager
+## Universal package manager
 
 The commands are same of original bower but the binary is called "hw2-bower" to avoid collision
 
