@@ -1,14 +1,16 @@
-# Hw2-Bower
+# Hw2-Bower - Universal package manager
 
 Official README and LICENSE on (https://github.com/bower/bower)  
 
 See [bower-pullrequest](https://github.com/hw2-core/bower/tree/bower-pullrequest) branch for changes that concern only bower
 
-## Universal package manager
+hw2-bower is also on npm https://www.npmjs.org/package/hw2core-bower
+
+> npm install hw2core-bower
 
 The commands are same of original bower but the binary is called "hw2-bower" to avoid collision
 
-Actually hw2-bower supports:
+### Actually hw2-bower supports:
 
 1) the installation of packages that use forward slashes in names. So you can use:
 
