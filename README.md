@@ -18,6 +18,13 @@ The commands are same of original bower but the binary is called "hw2-bower" to 
 
 2) you can keep .git folder when not in --production mode. This allow you to work with your repository.
 
+3) you can use the special character "%" for dependencies name to use original package name as directory
+    instead of specifying it. However the dependency name must be defined and be unique for json consistency.  Ex:
+
+> dependencies: {
+>   "%js-library" : "git://github.com/hw2-core/js-library.git"     -->  it will be installed in Hw2/Js/library ( retrieved from package bower.json )
+> }
+
 
 features implemented in hw2core-bower needed for hw2core itself , and some of them could not be merged with official repository just for rejected requests by the official team ( https://github.com/bower/bower/pull/1390 )
 
