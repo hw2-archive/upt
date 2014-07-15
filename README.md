@@ -1,5 +1,14 @@
 # Hw2-Bower - Universal package manager
 
+
+Hw2-Bower is a **crossplatform** ( thank to nodejs ) and general purpose package manager that 
+
+aims to be an **universal installer for each kind of software**.
+
+Hw2-Bower is a fork of [Bower](https://github.com/bower/bower) project.
+
+Since actually i'm the only tester of this project, please **be careful with your sensible data**. 
+
 Official README and LICENSE on (https://github.com/bower/bower)  
 
 See [bower-pullrequest](https://github.com/hw2-core/bower/tree/bower-pullrequest) branch for changes that concern only bower
@@ -12,21 +21,41 @@ The commands are same of original bower but the binary is called "hw2-bower" to 
 
 ### Actually hw2-bower supports:
 
-1) the installation of packages that use forward slashes in names. So you can use:
+* the installation of packages that use forward slashes in names. So you can use:
 
 "hw2-bower install vendor/lib/mylib"  -> this package will be installed in same path specified by the name
 
-2) you can keep .git folder when not in --production mode. This allow you to work with your repository.
+* you can keep .git folder when not in --production mode. This allow you to work with your repository.
 
-3) you can use the special character "%" for dependencies name to use original package name as directory
+* Comments in bower.json using this syntax:
+
+```json
+ {
+   "//" : "it's a comment"
+ }
+```
+
+* you can use the special character "%" for dependencies name to use original package name as directory
     instead of specifying it. However the dependency name must be defined and be unique for json consistency.  Ex:
 
-> dependencies: {
->   "%js-library" : "git://github.com/hw2-core/js-library.git"     -->  it will be installed in Hw2/Js/library ( retrieved from package bower.json )
-> }
+```json
+ dependencies: {
+   "//" : "it will be installed in Hw2/Js/library ( retrieved from package bower.json )"
+   "%js-library" : "git://github.com/hw2-core/js-library.git"
+ }
+```
 
+## FOR DEVS:
 
-features implemented in hw2core-bower needed for hw2core itself , and some of them could not be merged with official repository just for rejected requests by the official team ( https://github.com/bower/bower/pull/1390 )
+Actually i'm hearing for testers and developers.
+
+Hw2-Bower has a less restrictive policy than its fork , 
+
+so you are free of implement new features for universal purpose nature of the project ( that can be easily pulled to original fork if needed )
+
+features implemented in hw2core-bower needed also for hw2core itself , and some of them could not be merged with official repository just for rejected requests by the official team ( https://github.com/bower/bower/pull/1390 )
+
+since they consider only the web part.
 
 ### Core team
 
