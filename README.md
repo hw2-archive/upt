@@ -1,7 +1,7 @@
 # Hw2-Bower - Universal package manager
 
 
-Hw2-Bower is a **crossplatform** ( thank to nodejs ) and general purpose package manager that 
+Hw2-Bower is a **crossplatform** ( thanks to nodejs ) and general purpose package manager that 
 
 aims to be an **universal installer for each kind of software**.
 
