@@ -37,7 +37,7 @@ The commands are same of original Bower but the binary is called "hw2-bower" to 
     instead of specifying it. However the dependency name must be defined and be unique for json consistency.  Ex:
 
 ```json
- "dependencies": {
+ "dependencies" : {
    "//" : "it will be installed in Hw2/Js/library ( retrieved from package bower.json )"
    "%js-library" : "git://github.com/hw2-core/js-library.git"
  }
