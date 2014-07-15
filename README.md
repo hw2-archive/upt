@@ -43,6 +43,22 @@ The commands are same of original Bower but the binary is called "hw2-bower" to 
  }
 ```
 
+* you can preserve folders and files after "update" command using the keyword "keep" in your bower.json file
+  it is particularly useful when you've sensible data such as uploads , configurations etc. that updating process should
+  not destroy. You can use the same syntax of "ignore" key. Ex:
+
+```json
+ "keep" : [
+   "images",
+   "conf/*.conf",
+   "data/uploads/",
+   "data/db/schema.sql"
+ ]
+```
+
+If you change one of this keep value in future , remember to use a postinstall script to rename the old directory otherwise it
+will be definitively removed.
+
 ## FOR DEVS:
 
 Actually i'm hearing for testers and developers.
