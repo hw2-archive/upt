@@ -54,6 +54,17 @@ so you are free to implement new features for universal purpose nature of the pr
 Some features implemented in hw2core-bower could not be merged with official repository just for rejected requests by the official team ( https://github.com/bower/bower/pull/1390 )
 since they are considering only the web part.
 
+other bower modules forked and modified for hw2-bower:
+bower-endpoint-parser -> https://github.com/hw2-core/endpoint-parser
+
+Comparing forks: 
+
+hw2-bower < - > bower : 
+https://github.com/hw2-core/bower/compare/bower:master...hw2-core:bower-pullrequest
+
+hw2-endpoint-parser < - > bower-endpoint-parser : 
+https://github.com/hw2-core/endpoint-parser/compare/bower:master...hw2-core:bower-pullrequest
+
 ### Core team
 
 * [@yehonal](https://github.com/yehonal)
