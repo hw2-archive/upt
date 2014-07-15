@@ -49,11 +49,10 @@ Actually i'm hearing for testers and developers.
 
 Hw2-Bower has a less restrictive policy than its fork , 
 
-so you are free of implement new features for universal purpose nature of the project ( that can be easily pulled to original fork if needed )
+so you are free to implement new features for universal purpose nature of the project ( that can be easily pulled to original fork if needed )
 
-features implemented in hw2core-bower needed also for hw2core itself , and some of them could not be merged with official repository just for rejected requests by the official team ( https://github.com/bower/bower/pull/1390 )
-
-since they consider only the web part.
+Some features implemented in hw2core-bower could not be merged with official repository just for rejected requests by the official team ( https://github.com/bower/bower/pull/1390 )
+since they are considering only the web part.
 
 ### Core team
 
