@@ -5,27 +5,25 @@ Hw2-Bower is a **crossplatform** ( thank to nodejs ) and general purpose package
 
 aims to be an **universal installer for each kind of software**.
 
-Hw2-Bower is a fork of [Bower](https://github.com/bower/bower) project.
-
 Since actually i'm the only tester of this project, please **be careful with your sensible data**. 
 
-Official README and LICENSE on (https://github.com/bower/bower)  
+Hw2-Bower is a fork of [Bower](https://github.com/bower/bower) project. Official README and LICENSE on (https://github.com/bower/bower)  
 
-See [bower-pullrequest](https://github.com/hw2-core/bower/tree/bower-pullrequest) branch for changes that concern only bower
+See [bower-pullrequest](https://github.com/hw2-core/bower/tree/bower-pullrequest) branch for changes that concern only original project
 
-hw2-bower is also on npm https://www.npmjs.org/package/hw2core-bower
+we are also on npm https://www.npmjs.org/package/hw2core-bower
 
 > npm install hw2core-bower
 
-The commands are same of original bower but the binary is called "hw2-bower" to avoid collision
+The commands are same of original Bower but the binary is called "hw2-bower" to avoid collision
 
 ### Actually hw2-bower supports:
 
 * the installation of packages that use forward slashes in names. So you can use:
 
-"hw2-bower install vendor/lib/mylib"  -> this package will be installed in same path specified by the name
+> hw2-bower install vendor/lib/mylib"  -> this package will be installed in same path specified by the name
 
-* you can keep .git folder when not in --production mode. This allow you to work with your repository.
+* you can keep .git folder when not in **--production mode.** This allow you to work with your repository.
 
 * Comments in bower.json using this syntax:
 
@@ -39,7 +37,7 @@ The commands are same of original bower but the binary is called "hw2-bower" to 
     instead of specifying it. However the dependency name must be defined and be unique for json consistency.  Ex:
 
 ```json
- dependencies: {
+ "dependencies": {
    "//" : "it will be installed in Hw2/Js/library ( retrieved from package bower.json )"
    "%js-library" : "git://github.com/hw2-core/js-library.git"
  }
