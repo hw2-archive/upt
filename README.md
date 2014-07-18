@@ -56,6 +56,29 @@ The commands are same of original Bower but the binary is called "hw2-bower" to 
  ]
 ```
 
+* you can create an hook script ( a node module ) for all dependencies/installed package , that will be execute at each installer event
+    without the need of a .bowerrc hook scrips . however bowerrc will continue to execute its hooks but they cannot be determined by dependencies of course
+    You have to create a folder called **_hw2** inside your project where you need to have an **installer_hook.js** script that must have this structure:
+
+```javascript
+// action: the step reached by the process ( only postinstall and preuninstall are implemented for now 
+// cwdPath: the current working directory where you're running the process
+// pkgPath: absolute path where the package is installed
+module.exports=function(action,cwdPath,pkgPath) {
+
+    switch(action) {
+        case "postinstall":
+            // YOUR CODE HERE
+        break;
+        case "preuninstall":
+            // YOUR CODE HERE
+        break;
+    }
+
+    return 0;
+};
+```
+
 If you change one of this keep value in future , remember to use a postinstall script to rename the old directory otherwise it
 will be definitively removed.
 
