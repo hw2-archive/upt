@@ -23,7 +23,11 @@ The commands are same of original Bower but the binary is called "hw2-bower" to 
 
 > hw2-bower install vendor/lib/mylib"  -> this package will be installed in same path specified by the name
 
+______
+
 * you can keep .git folder when not in **--production mode.** This allow you to work with your repository.
+
+______
 
 * Comments in bower.json using this syntax:
 
@@ -32,6 +36,8 @@ The commands are same of original Bower but the binary is called "hw2-bower" to 
    "//" : "it's a comment"
  }
 ```
+
+______
 
 * you can use the special character "%" for dependencies name to use original package name as directory
     instead of specifying it. However the dependency name must be defined and be unique for json consistency.  Ex:
@@ -42,6 +48,8 @@ The commands are same of original Bower but the binary is called "hw2-bower" to 
    "%js-library" : "git://github.com/hw2-core/js-library.git"
  }
 ```
+
+______
 
 * you can preserve folders and files after "update" command using the keyword "keep" in your bower.json file
   it is particularly useful when you've sensible data such as uploads , configurations etc. that updating process should
@@ -55,6 +63,9 @@ The commands are same of original Bower but the binary is called "hw2-bower" to 
    "data/db/schema.sql"
  ]
 ```
+If you change one of this keep value in future , remember to use a postinstall script to rename the old directory otherwise it
+will be definitively removed.
+______
 
 * you can create an hook script ( a node module ) for all dependencies/installed package , that will be execute at each installer event
     without the need of a .bowerrc hook scrips . however bowerrc will continue to execute its hooks but they cannot be determined by dependencies of course
@@ -79,6 +90,8 @@ module.exports=function(action,cwdPath,pkgPath) {
 };
 ```
 
+______
+
 * You can use bower.custom.json file to add your custom specifications to dependencies. For example you're using a dependency that
     install different folders/files that you don't need? just create your bower.custom.json in directory of dependency with the ignore
     entries. Example:
@@ -91,13 +104,17 @@ module.exports=function(action,cwdPath,pkgPath) {
     }
 ```
     
-Note: 1. bower.custom.json will replace keys that you define
-      2. if dependency is not installed yet, you need to create an empty folder where the dep. will be installed with bower.custom.json
-      3. each time you change something in bower.custom.json , you need to clean the cache with **hw2-bower cache clean** command
+Note: 
+
+1. bower.custom.json will replace keys that you define
+
+2. if dependency is not installed yet, you need to create an empty folder where the dep. will be installed with bower.custom.json
+
+3. each time you change something in bower.custom.json , you need to clean the cache with **hw2-bower cache clean** command
             and then reinstall/update the dependency with --force flag ( we can avoid it in future )
 
-If you change one of this keep value in future , remember to use a postinstall script to rename the old directory otherwise it
-will be definitively removed.
+______
+
 
 ## FOR DEVS:
 
