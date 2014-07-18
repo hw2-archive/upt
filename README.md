@@ -79,6 +79,23 @@ module.exports=function(action,cwdPath,pkgPath) {
 };
 ```
 
+* You can use bower.custom.json file to add your custom specifications to dependencies. For example you're using a dependency that
+    install different folders/files that you don't need? just create your bower.custom.json in directory of dependency with the ignore
+    entries. Example:
+
+```json
+    {
+        "ignore" : [
+            "norequiredfolder"
+        ]
+    }
+```
+    
+Note: 1. bower.custom.json will replace keys that you define
+      2. if dependency is not installed yet, you need to create an empty folder where the dep. will be installed with bower.custom.json
+      3. each time you change something in bower.custom.json , you need to clean the cache with **hw2-bower cache clean** command
+            and then reinstall/update the dependency with --force flag ( we can avoid it in future )
+
 If you change one of this keep value in future , remember to use a postinstall script to rename the old directory otherwise it
 will be definitively removed.
 
