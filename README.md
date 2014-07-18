@@ -15,7 +15,15 @@ we are also on npm https://www.npmjs.org/package/hw2core-bower
 
 > npm install hw2core-bower
 
-The commands are same of original Bower but the binary is called "hw2-bower" to avoid collision
+Would you try hw2-bower now? just run this command:
+
+> hw2-bower install hw2-core/js-kernel
+
+Note:
+
+1. All packages created with features of original Bower are compatible with our system ( but not vice versa )
+
+2. The commands are the same of original Bower but the binary is called "hw2-bower" to avoid collisions
 
 ### Actually hw2-bower supports:
 
@@ -73,7 +81,7 @@ ______
 
 ```javascript
 // action: the step reached by the process ( only postinstall and preuninstall are implemented for now 
-// cwdPath: the current working directory where you're running the process
+// config: configurations that contains the current working directory where you're running the process, and other .bowerrc specifications
 // pkgPath: absolute path where the package is installed
 module.exports=function(action,cwdPath,pkgPath) {
 
