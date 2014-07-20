@@ -70,18 +70,23 @@ ______
     You have to create a folder called **_hw2** inside your project where you need to have an **installer_hook.js** script that must have this structure:
 
 ```javascript
-// action: the step reached by the process ( only postinstall and preuninstall are implemented for now 
+// action: the step reached by the process
 // config: configurations that contains the current working directory where you're running the process, and other .bowerrc specifications
 // pkgPath: absolute path where the package is installed
 module.exports=function(action,cwdPath,pkgPath) {
 
     switch(action) {
+        case "preinstall":
+            // YOUR CODE HERE
+        break;
         case "postinstall":
             // YOUR CODE HERE
         break;
         case "preuninstall":
             // YOUR CODE HERE
         break;
+        
+        //[...]
     }
 
     return 0;
