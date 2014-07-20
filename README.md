@@ -37,16 +37,6 @@ ______
 
 ______
 
-* Comments in bower.json using this syntax:
-
-```json
- {
-   "//" : "it's a comment"
- }
-```
-
-______
-
 * you can use the special character "%" for dependencies name to use original package name as directory
     instead of specifying it. However the dependency name must be defined and be unique for json consistency.  Ex:
 
@@ -120,6 +110,17 @@ Note:
 
 3. each time you change something in bower.custom.json , you need to clean the cache with **hw2-bower cache clean** command
             and then reinstall/update the dependency with --force flag ( we can avoid it in future )
+
+______
+
+
+* Comments in bower.json using this syntax:
+
+```json
+ {
+   "//" : "it's a comment"
+ }
+```
 
 ______
 
