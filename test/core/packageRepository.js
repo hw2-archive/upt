@@ -4,7 +4,7 @@ var path = require('path');
 var mout = require('mout');
 var fs = require('graceful-fs');
 var rimraf = require('rimraf');
-var RegistryClient = require('bower-registry-client');
+var RegistryClient = require('upt-registry-client');
 var Logger = require('bower-logger');
 var proxyquire = require('proxyquire');
 var defaultConfig = require('../../lib/config');
@@ -251,7 +251,7 @@ describe('PackageRepository', function () {
 
             copy.copyDir(testPackage, tempPackage, { ignore: ['.git'] })
             .then(function () {
-                fs.writeFileSync(path.join(tempPackage, '.bower.json'), JSON.stringify(json));
+                fs.writeFileSync(path.join(tempPackage, '.upt.json'), JSON.stringify(json));
 
                 return packageRepository.fetch({ name: '', source: 'foo', target: '~0.1.0' })
                 .spread(function (canonicalDir, pkgMeta) {
@@ -295,7 +295,7 @@ describe('PackageRepository', function () {
 
             copy.copyDir(testPackage, tempPackage, { ignore: ['.git'] })
             .then(function () {
-                fs.writeFileSync(path.join(tempPackage, '.bower.json'), JSON.stringify(json));
+                fs.writeFileSync(path.join(tempPackage, '.upt.json'), JSON.stringify(json));
 
                 return packageRepository.fetch({ name: '', source: 'foo', target: '~0.2.0' })
                 .spread(function (canonicalDir, pkgMeta) {
@@ -339,7 +339,7 @@ describe('PackageRepository', function () {
 
             copy.copyDir(testPackage, tempPackage, { ignore: ['.git'] })
             .then(function () {
-                fs.writeFileSync(path.join(tempPackage, '.bower.json'), JSON.stringify(json));
+                fs.writeFileSync(path.join(tempPackage, '.upt.json'), JSON.stringify(json));
 
                 return packageRepository.fetch({ name: '', source: 'foo', target: '~0.2.0' })
                 .spread(function (canonicalDir, pkgMeta) {
@@ -381,7 +381,7 @@ describe('PackageRepository', function () {
 
             copy.copyDir(testPackage, tempPackage, { ignore: ['.git'] })
             .then(function () {
-                fs.writeFileSync(path.join(tempPackage, '.bower.json'), JSON.stringify(json));
+                fs.writeFileSync(path.join(tempPackage, '.upt.json'), JSON.stringify(json));
 
                 packageRepository._config.offline = true;
                 return packageRepository.fetch({ name: '', source: 'foo', target: '~0.2.0' })

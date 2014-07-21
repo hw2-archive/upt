@@ -8,7 +8,7 @@ var removeIgnores = require('../../lib/util/removeIgnores');
 describe('removeIgnores', function () {
 
     var tempDir = helpers.createTmpDir({
-        'bower.json': {},
+        'upt.json': {},
         'index.js': 'Not to ignore',
         'node_modules/underscore/index.js': 'Should be ignored'
     });
@@ -29,35 +29,35 @@ describe('removeIgnores', function () {
     it('removes all files in directory', function () {
         return ignoreTest(tempDir,
             { ignore: [ 'node_modules/**/*' ] },
-            [ 'bower.json', 'index.js' ]
+            [ 'upt.json', 'index.js' ]
         );
     });
 
     it('removes whole directory', function () {
         return ignoreTest(tempDir,
             { ignore: [ 'node_modules/' ] },
-            [ 'bower.json', 'index.js' ]
+            [ 'upt.json', 'index.js' ]
         );
     });
 
     it('removes whole directory (no ending slash)', function () {
         return ignoreTest(tempDir,
             { ignore: [ 'node_modules' ] },
-            [ 'bower.json', 'index.js' ]
+            [ 'upt.json', 'index.js' ]
         );
     });
 
     it('removes all but one file', function() {
         return ignoreTest(tempDir,
-            { ignore: [ '**/*', '!bower.json' ] },
-            [ 'bower.json' ]
+            { ignore: [ '**/*', '!upt.json' ] },
+            [ 'upt.json' ]
         );
     });
 
-    it('refuses to ignore bower.json', function() {
+    it('refuses to ignore upt.json', function() {
         return ignoreTest(tempDir,
             { ignore: [ '**/*', '!index.js' ] },
-            [ 'bower.json', 'index.js' ]
+            [ 'upt.json', 'index.js' ]
         );
     });
 
@@ -65,7 +65,7 @@ describe('removeIgnores', function () {
         return ignoreTest(tempDir,
             { ignore: [ '**/*', '!node_modules/underscore/index.js' ] },
             [
-                'bower.json',
+                'upt.json',
                 'node_modules/underscore/index.js'
             ]
         );

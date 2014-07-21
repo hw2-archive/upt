@@ -3,12 +3,12 @@ var expect = require('expect.js');
 var fs = require('fs');
 
 var helpers = require('../helpers');
-var bower = helpers.require('lib/index');
+var upt = helpers.require('lib/index');
 
-describe('bower uninstall', function () {
+describe('upt uninstall', function () {
 
     var tempDir = helpers.createTmpDir({
-        'bower.json': {
+        'upt.json': {
             name: 'hello-world',
             dependencies: {
                 'underscore': '*'
@@ -16,10 +16,10 @@ describe('bower uninstall', function () {
         }
     });
 
-    var bowerJsonPath = path.join(tempDir, 'bower.json');
+    var uptJsonPath = path.join(tempDir, 'upt.json');
 
-    function bowerJson() {
-        return JSON.parse(fs.readFileSync(bowerJsonPath));
+    function uptJson() {
+        return JSON.parse(fs.readFileSync(uptJsonPath));
     }
 
     var config = {
@@ -28,20 +28,20 @@ describe('bower uninstall', function () {
     };
 
     it('does not remove anything from dependencies by default', function () {
-        var logger = bower.commands.uninstall(['underscore'], undefined, config);
+        var logger = upt.commands.uninstall(['underscore'], undefined, config);
 
         return helpers.expectEvent(logger, 'end')
         .then(function () {
-            expect(bowerJson().dependencies).to.eql({ 'underscore': '*' });
+            expect(uptJson().dependencies).to.eql({ 'underscore': '*' });
         });
     });
 
-    it('removes dependency from bower.json if --save flag is used', function () {
-        var logger = bower.commands.uninstall(['underscore'], {save: true}, config);
+    it('removes dependency from upt.json if --save flag is used', function () {
+        var logger = upt.commands.uninstall(['underscore'], {save: true}, config);
 
         return helpers.expectEvent(logger, 'end')
         .then(function () {
-            expect(bowerJson().dependencies).to.eql({});
+            expect(uptJson().dependencies).to.eql({});
         });
     });
 

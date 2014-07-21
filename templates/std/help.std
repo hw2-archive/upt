@@ -3,7 +3,7 @@ Usage:
 
 {{#condense}}
 {{#each usage}}
-    {{#cyan}}hw2-bower{{/cyan}} {{.}}
+    {{#cyan}}upt{{/cyan}} {{.}}
 {{/each}}
 {{/condense}}
 
@@ -23,4 +23,4 @@ Options:
 {{/each}}
 {{/condense}}
 
-See 'hw2-bower help <command>' for more information on a specific command.
+See 'upt help <command>' for more information on a specific command.

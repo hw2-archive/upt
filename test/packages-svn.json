@@ -44,7 +44,7 @@
       "baz": "baz",
       "more/more-foo": "more-foo",
       "test/test.js": "some tests",
-      "bower.json": {
+      "upt.json": {
         "name": "a",
         "version": "0.2.0",
         "ignore": [
@@ -60,7 +60,7 @@
       "more/more-foo": "more-foo",
       "more/docs/doc.html": "doc",
       "more/assets/styles.css": "css",
-      "bower.json": {
+      "upt.json": {
         "name": "a",
         "version": "0.2.2",
         "ignore": [

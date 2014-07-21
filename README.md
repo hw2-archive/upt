@@ -1,35 +1,33 @@
-# Hw2-Bower - Universal package manager
+# UPT - Universal package manager
 
 
-Hw2-Bower is a **crossplatform** ( thanks to nodejs ) and general purpose package manager that 
+UPT is a **crossplatform** ( thanks to nodejs ) and general purpose package manager that 
 
 aims to be an **universal installer for each kind of software**.
 
 Since actually i'm the only tester of this project, please **be careful with your sensible data**. 
 
-Hw2-Bower is a fork of [Bower](https://github.com/bower/bower) project. Official README and LICENSE on (https://github.com/bower/bower)  
+UPT is derived from of [Bower](https://github.com/bower/bower) project. 
 
-See [bower-pullrequest](https://github.com/hw2-core/bower/tree/bower-pullrequest) branch for changes that concern only original project
+we are also on npm https://www.npmjs.org/package/upt
 
-we are also on npm https://www.npmjs.org/package/hw2core-bower
+> npm install upt
 
-> npm install hw2core-bower
+Would you try upt now? just run this command:
 
-Would you try hw2-bower now? just run this command:
-
-> hw2-bower install hw2-core/js-kernel
+> upt install hw2-core/js-kernel
 
 Note:
 
-1. All packages created with features of original Bower are compatible with our system ( but not vice versa )
+1. All packages created with features of original UPT are compatible with our system ( but not vice versa )
 
-2. The commands are the same of original Bower but the binary is called "hw2-bower" to avoid collisions
+2. The commands are the same of original UPT but the binary is called "upt" to avoid collisions
 
-### Actually hw2-bower supports:
+### Actually upt supports:
 
 * the installation of packages that use forward slashes in names. So you can use:
 
-> hw2-bower install vendor/lib/mylib"  -> this package will be installed in same path specified by the name
+> upt install vendor/lib/mylib"  -> this package will be installed in same path specified by the name
 
 ______
 
@@ -42,14 +40,14 @@ ______
 
 ```json
  "dependencies" : {
-   "//" : "it will be installed in Hw2/Js/library ( retrieved from package bower.json )"
+   "//" : "it will be installed in Hw2/Js/library ( retrieved from package upt.json )"
    "%js-library" : "git://github.com/hw2-core/js-library.git"
  }
 ```
 
 ______
 
-* you can preserve folders and files after "update" command using the keyword "keep" in your bower.json file
+* you can preserve folders and files after "update" command using the keyword "keep" in your upt.json file
   it is particularly useful when you've sensible data such as uploads , configurations etc. that updating process should
   not destroy. You can use the same syntax of "ignore" key. Ex:
 
@@ -66,12 +64,12 @@ will be definitively removed.
 ______
 
 * you can create an hook script ( a node module ) for all dependencies/installed package , that will be execute at each installer event
-    without the need of a .bowerrc hook scrips . however bowerrc will continue to execute its hooks but they cannot be determined by dependencies of course
+    without the need of a .uptrc hook scrips . however uptrc will continue to execute its hooks but they cannot be determined by dependencies of course
     You have to create a folder called **_hw2** inside your project where you need to have an **installer_hook.js** script that must have this structure:
 
 ```javascript
 // action: the step reached by the process
-// config: configurations that contains the current working directory where you're running the process, and other .bowerrc specifications
+// config: configurations that contains the current working directory where you're running the process, and other .uptrc specifications
 // pkgPath: absolute path where the package is installed
 // newMeta: meta descriptions of new installed package in json format
 // oldMeta: if we're updating version, it's the old meta description in json format of previous package version.
@@ -97,8 +95,8 @@ module.exports=function(action,cwdPath,pkgPath,newMeta,oldMeta) {
 
 ______
 
-* You can use bower.custom.json file to add your custom specifications to dependencies. For example you're using a dependency that
-    install different folders/files that you don't need? just create your bower.custom.json in directory of dependency with the ignore
+* You can use upt.custom.json file to add your custom specifications to dependencies. For example you're using a dependency that
+    install different folders/files that you don't need? just create your upt.custom.json in directory of dependency with the ignore
     entries. Example:
 
 ```json
@@ -111,17 +109,17 @@ ______
     
 Note: 
 
-1. bower.custom.json will replace keys that you define
+1. upt.custom.json will replace keys that you define
 
-2. if dependency is not installed yet, you need to create an empty folder where the dep. will be installed with bower.custom.json
+2. if dependency is not installed yet, you need to create an empty folder where the dep. will be installed with upt.custom.json
 
-3. each time you change something in bower.custom.json , you need to clean the cache with **hw2-bower cache clean** command
+3. each time you change something in upt.custom.json , you need to clean the cache with **upt cache clean** command
             and then reinstall/update the dependency with --force flag ( we can avoid it in future )
 
 ______
 
 
-* Comments in bower.json using this syntax:
+* Comments in upt.json using this syntax:
 
 ```json
  {
@@ -134,25 +132,7 @@ ______
 
 ## FOR DEVS:
 
-Actually i'm hearing for testers and developers.
-
-Hw2-Bower has a less restrictive policy than its fork , 
-
-so you are free to implement new features for universal purpose nature of the project ( that can be easily pulled to original fork if needed )
-
-Some features implemented in hw2core-bower could not be merged with official repository just for rejected requests by the official team ( https://github.com/bower/bower/pull/1390 )
-since they are considering only the web part.
-
-other bower modules forked and modified for hw2-bower:
-bower-endpoint-parser -> https://github.com/hw2-core/endpoint-parser
-
-Comparing forks: 
-
-hw2-bower < - > bower : 
-https://github.com/hw2-core/bower/compare/bower:master...hw2-core:bower-pullrequest
-
-hw2-endpoint-parser < - > bower-endpoint-parser : 
-https://github.com/hw2-core/endpoint-parser/compare/bower:master...hw2-core:bower-pullrequest
+Actually i'm hearing for testers and developers. Contact me if you're interested
 
 ### Core team
 

@@ -3,15 +3,15 @@ var expect = require('expect.js');
 var fs = require('fs');
 
 var helpers = require('../helpers');
-var bower = helpers.require('lib/index');
+var upt = helpers.require('lib/index');
 
-describe('bower install', function () {
+describe('upt install', function () {
 
     var tempDir = helpers.createTmpDir();
-    var bowerJsonPath = path.join(tempDir, 'bower_components', 'underscore', 'bower.json');
+    var uptJsonPath = path.join(tempDir, 'upt_components', 'underscore', 'upt.json');
 
-    function bowerJson() {
-        return JSON.parse(fs.readFileSync(bowerJsonPath));
+    function uptJson() {
+        return JSON.parse(fs.readFileSync(uptJsonPath));
     }
 
     var config = {
@@ -21,20 +21,20 @@ describe('bower install', function () {
 
     it.skip('installs a package', function () {
         this.timeout(10000);
-        var logger = bower.commands.install(['underscore'], undefined, config);
+        var logger = upt.commands.install(['underscore'], undefined, config);
 
         return helpers.expectEvent(logger, 'end')
         .then(function () {
-            expect(bowerJson()).to.have.key('name');
+            expect(uptJson()).to.have.key('name');
         });
     });
 
     it.skip('installs package with --save flag', function () {
-        var logger = bower.commands.install(['underscore'], {save: true}, config);
+        var logger = upt.commands.install(['underscore'], {save: true}, config);
 
         return helpers.expectEvent(logger, 'end')
         .then(function () {
-            expect(bowerJson()).to.have.key('name');
+            expect(uptJson()).to.have.key('name');
         });
     });
 

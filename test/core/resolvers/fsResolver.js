@@ -18,7 +18,7 @@ describe('FsResolver', function () {
 
     before(function (next) {
         logger = new Logger();
-        // Checkout test package version 0.2.1 which has a bower.json
+        // Checkout test package version 0.2.1 which has a upt.json
         // with ignores
         cmd('git', ['checkout', '0.2.1'], { cwd: testPackage })
         .then(next.bind(next, null), next);
@@ -84,7 +84,7 @@ describe('FsResolver', function () {
 
             tempSource = path.resolve(__dirname, '../../tmp/tmp');
             mkdirp.sync(tempSource);
-            fs.writeFileSync(path.join(tempSource, '.bower.json'), JSON.stringify({
+            fs.writeFileSync(path.join(tempSource, '.upt.json'), JSON.stringify({
                 name: 'test'
             }));
 
@@ -108,7 +108,7 @@ describe('FsResolver', function () {
         // package meta of a canonical dir is set to the
         // expected value
         function assertMain(dir, singleFile) {
-            return Q.nfcall(fs.readFile, path.join(dir, '.bower.json'))
+            return Q.nfcall(fs.readFile, path.join(dir, '.upt.json'))
             .then(function (contents) {
                 var pkgMeta = JSON.parse(contents.toString());
 
@@ -178,7 +178,7 @@ describe('FsResolver', function () {
             .done();
         });
 
-        it('should not rename to index if source is a folder with just bower.json/component.json file in it', function (next) {
+        it('should not rename to index if source is a folder with just upt.json/component.json file in it', function (next) {
             var resolver;
 
             tempSource = path.resolve(__dirname, '../../tmp/tmp');
@@ -186,17 +186,17 @@ describe('FsResolver', function () {
             mkdirp.sync(tempSource);
             resolver = create(tempSource);
 
-            copy.copyFile(path.join(testPackage, 'bower.json'), path.join(tempSource, 'bower.json'))
+            copy.copyFile(path.join(testPackage, 'upt.json'), path.join(tempSource, 'upt.json'))
             .then(resolver.resolve.bind(resolver))
             .then(function (dir) {
-                expect(fs.existsSync(path.join(dir, 'bower.json'))).to.be(true);
+                expect(fs.existsSync(path.join(dir, 'upt.json'))).to.be(true);
 
                 rimraf.sync(tempSource);
                 mkdirp.sync(tempSource);
 
                 resolver = create(tempSource);
             })
-            .then(copy.copyFile.bind(copy, path.join(testPackage, 'bower.json'), path.join(tempSource, 'component.json')))
+            .then(copy.copyFile.bind(copy, path.join(testPackage, 'upt.json'), path.join(tempSource, 'component.json')))
             .then(function () {
                 return resolver.resolve();
             })

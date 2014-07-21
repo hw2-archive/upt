@@ -3,11 +3,11 @@
         "<command> [<args>] [<options>]"
     ],
     "commands": {
-        "cache":           "Manage bower cache",
-        "help":            "Display help information about Bower",
+        "cache":           "Manage upt cache",
+        "help":            "Display help information about Upt",
         "home":            "Opens a package homepage into your favorite browser",
         "info":            "Info of a particular package",
-        "init":            "Interactively create a bower.json file",
+        "init":            "Interactively create a upt.json file",
         "install":         "Install a package locally",
         "link":            "Symlink a package folder",
         "list":            "List local packages",
@@ -61,7 +61,7 @@
         },
         {
             "flag":        "--version",
-            "description": "Output Bower version"
+            "description": "Output Upt version"
         }
     ]
 }

@@ -1,5 +1,5 @@
 var path = require('path');
-var bower = require('../../lib/index.js');
+var upt = require('../../lib/index.js');
 var mkdirp = require('mkdirp');
 var rimraf = require('rimraf');
 var fs = require('fs');
@@ -31,7 +31,7 @@ describe('scripts', function () {
 
     it('should run preinstall and postinstall hooks.', function (next) {
 
-        bower.commands
+        upt.commands
         .install([packageDir], undefined, config)
         .on('end', function (installed) {
 
@@ -45,7 +45,7 @@ describe('scripts', function () {
 
     it('should run preuninstall hook.', function (next) {
 
-        bower.commands
+        upt.commands
         .uninstall([packageName], undefined, config)
         .on('end', function (installed) {
 
@@ -58,7 +58,7 @@ describe('scripts', function () {
 
     it('should not break anything when no hooks configured.', function (next) {
 
-        bower.commands
+        upt.commands
         .uninstall([packageName], undefined, { cwd: tempDir })
         .on('end', function (installed) {
 
@@ -69,7 +69,7 @@ describe('scripts', function () {
 
     });
 
-    it('should reorder packages by dependencies, while trying to maintain order from bower.json, correctly.', function () {
+    it('should reorder packages by dependencies, while trying to maintain order from upt.json, correctly.', function () {
 
         var mockAngularUI = { dependencies: {
             'angular': '*'
@@ -97,7 +97,7 @@ describe('scripts', function () {
             'moment': mockMoment
         };
         var installed = [];
-        var mockBowerJson = { dependencies: {
+        var mockUptJson = { dependencies: {
             'jquery': '*',
             'select2': '*',
             'angular-ui': '*',
@@ -105,16 +105,16 @@ describe('scripts', function () {
             'moment': '*'
         } };
 
-        var ordered = scripts._orderByDependencies(packages, installed, mockBowerJson);
+        var ordered = scripts._orderByDependencies(packages, installed, mockUptJson);
         expect(ordered).to.eql(['jquery', 'select2', 'angular', 'angular-ui', 'moment', 'bad-package']);
 
     });
 
     it('should process scripts with quotes and vars in the cmd properly.', function (next) {
 
-        config.scripts.preinstall = 'touch "$BOWER_PID %"';
+        config.scripts.preinstall = 'touch "$UPT_PID %"';
 
-        bower.commands
+        upt.commands
         .install([packageDir], undefined, config)
         .on('end', function (installed) {
 

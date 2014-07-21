@@ -3,7 +3,7 @@ Usage:
 
 {{#condense}}
 {{#each usage}}
-    {{#cyan}}bower{{/cyan}} {{.}}
+    {{#cyan}}upt{{/cyan}} {{.}}
 {{/each}}
 {{/condense}}
 

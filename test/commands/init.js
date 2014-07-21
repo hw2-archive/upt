@@ -3,20 +3,20 @@ var expect = require('expect.js');
 var fs = require('fs');
 
 var helpers = require('../helpers');
-var bower = helpers.require('lib/index');
+var upt = helpers.require('lib/index');
 
-describe('bower init', function () {
+describe('upt init', function () {
 
     var tempDir = helpers.createTmpDir();
-    var bowerJsonPath = path.join(tempDir, 'bower.json');
+    var uptJsonPath = path.join(tempDir, 'upt.json');
 
     var config = {
         cwd: tempDir,
         interactive: true
     };
 
-    it('generates bower.json file', function () {
-        var logger = bower.commands.init(config);
+    it('generates upt.json file', function () {
+        var logger = upt.commands.init(config);
 
         return helpers.expectEvent(logger, 'prompt')
         .spread(function (prompt, answer) {
@@ -42,7 +42,7 @@ describe('bower init', function () {
             return helpers.expectEvent(logger, 'end');
         })
         .then(function () {
-            expect(fs.existsSync(bowerJsonPath)).to.be(true);
+            expect(fs.existsSync(uptJsonPath)).to.be(true);
         });
     });
 });

@@ -89,7 +89,7 @@ describe('Resolver', function () {
         });
 
         beforeEach(function () {
-            fs.writeFileSync(path.join(tempDir, '.bower.json'), JSON.stringify({
+            fs.writeFileSync(path.join(tempDir, '.upt.json'), JSON.stringify({
                 name: 'test'
             }));
         });
@@ -162,7 +162,7 @@ describe('Resolver', function () {
         it('should resolve to true if the there\'s an error reading the package meta', function (next) {
             var resolver = create('foo');
 
-            rimraf.sync(path.join(tempDir, '.bower.json'));
+            rimraf.sync(path.join(tempDir, '.upt.json'));
             resolver.hasNew(tempDir)
             .then(function (hasNew) {
                 expect(hasNew).to.equal(true);
@@ -446,7 +446,7 @@ describe('Resolver', function () {
     });
 
     describe('._createTempDir', function () {
-        it('should create a directory inside a "username/bower" folder, located within the OS temp folder', function (next) {
+        it('should create a directory inside a "username/upt" folder, located within the OS temp folder', function (next) {
             var resolver = create('foo');
 
             resolver._createTempDir()
@@ -463,7 +463,7 @@ describe('Resolver', function () {
                 expect(dir.indexOf(osTempDir)).to.be(0);
                 expect(dir.indexOf(defaultConfig.tmp)).to.be(0);
 
-                expect(path.basename(dirname)).to.equal('bower');
+                expect(path.basename(dirname)).to.equal('upt');
                 expect(path.dirname(path.dirname(dirname))).to.equal(osTempDir);
                 next();
             })
@@ -590,11 +590,11 @@ describe('Resolver', function () {
             rimraf(tempDir, next);
         });
 
-        it('should read the bower.json file', function (next) {
+        it('should read the upt.json file', function (next) {
             var resolver = create('foo');
 
             mkdirp.sync(tempDir);
-            fs.writeFileSync(path.join(tempDir, 'bower.json'), JSON.stringify({ name: 'foo', version: '0.0.0' }));
+            fs.writeFileSync(path.join(tempDir, 'upt.json'), JSON.stringify({ name: 'foo', version: '0.0.0' }));
             fs.writeFileSync(path.join(tempDir, 'component.json'), JSON.stringify({ name: 'bar', version: '0.0.0' }));
 
             resolver._readJson(tempDir)
@@ -681,7 +681,7 @@ describe('Resolver', function () {
 
             mkdirp.sync(tempDir);
 
-            // Checkout test package version 0.2.1 which has a bower.json
+            // Checkout test package version 0.2.1 which has a upt.json
             // with ignores
             cmd('git', ['checkout', '0.2.2'], { cwd: testPackage })
             // Copy its contents to the temporary dir
@@ -694,14 +694,14 @@ describe('Resolver', function () {
                 // This is a very rudimentary check
                 // Complete checks are made in the 'describe' below
                 resolver._tempDir = tempDir;
-                json = JSON.parse(fs.readFileSync(path.join(tempDir, 'bower.json')).toString());
+                json = JSON.parse(fs.readFileSync(path.join(tempDir, 'upt.json')).toString());
 
                 return resolver._applyPkgMeta(json)
                 .then(function () {
                     expect(fs.existsSync(path.join(tempDir, 'foo'))).to.be(true);
                     expect(fs.existsSync(path.join(tempDir, 'baz'))).to.be(true);
                     expect(fs.existsSync(path.join(tempDir, 'test'))).to.be(false);
-                    expect(fs.existsSync(path.join(tempDir, 'bower.json'))).to.be(true);
+                    expect(fs.existsSync(path.join(tempDir, 'upt.json'))).to.be(true);
                     expect(fs.existsSync(path.join(tempDir, 'main.js'))).to.be(true);
                     expect(fs.existsSync(path.join(tempDir, 'more/docs'))).to.be(false);
                     expect(fs.existsSync(path.join(tempDir, 'more/assets'))).to.be(false);
@@ -733,7 +733,7 @@ describe('Resolver', function () {
         });
 
         afterEach(function (next) {
-            rimraf(path.join(tempDir, '.bower.json'), next);
+            rimraf(path.join(tempDir, '.upt.json'), next);
         });
 
         after(function (next) {
@@ -769,14 +769,14 @@ describe('Resolver', function () {
             .done();
         });
 
-        it('should save the package meta to the package meta file (.bower.json)', function (next) {
+        it('should save the package meta to the package meta file (.upt.json)', function (next) {
             var resolver = create('foo');
 
             resolver._tempDir = tempDir;
 
             resolver._savePkgMeta({ name: 'bar' })
             .then(function (retMeta) {
-                fs.readFile(path.join(tempDir, '.bower.json'), function (err, contents) {
+                fs.readFile(path.join(tempDir, '.upt.json'), function (err, contents) {
                     if (err) return next(err);
 
                     contents = contents.toString();
@@ -787,7 +787,7 @@ describe('Resolver', function () {
             .done();
         });
 
-        it('should warn user for missing attributes in bower.json', function (next) {
+        it('should warn user for missing attributes in upt.json', function (next) {
             var resolver = create('fooooo');
             resolver._tempDir = tempDir;
             var notifiedCount = 0;
@@ -796,9 +796,9 @@ describe('Resolver', function () {
                 expect(log).to.be.an('object');
                 expect(log.level).to.be('warn');
                 if (notifiedCount === 1) {
-                    expect(log.message).to.contain('bar is missing "main" entry in bower.json');
+                    expect(log.message).to.contain('bar is missing "main" entry in upt.json');
                 } else {
-                    expect(log.message).to.contain('bar is missing "ignore" entry in bower.json');
+                    expect(log.message).to.contain('bar is missing "ignore" entry in upt.json');
                 }
             });
             resolver._savePkgMeta({ name: 'bar' });

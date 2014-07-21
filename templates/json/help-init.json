@@ -1,6 +1,6 @@
 {
     "command": "init",
-    "description": "Creates a bower.json file based on answers to questions.",
+    "description": "Creates a upt.json file based on answers to questions.",
     "usage": [
         "init [<options>]"
     ],

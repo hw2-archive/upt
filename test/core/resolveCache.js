@@ -139,9 +139,9 @@ describe('ResolveCache', function () {
         });
 
         it('should read the package meta if not present', function (next) {
-            var pkgMeta = path.join(tempPackage, '.bower.json');
+            var pkgMeta = path.join(tempPackage, '.upt.json');
 
-            // Copy bower.json to .bower.json and add some props
+            // Copy upt.json to .upt.json and add some props
             copy.copyFile(path.join(tempPackage, 'component.json'), pkgMeta)
             .then(function () {
                 return Q.nfcall(fs.readFile, pkgMeta)
@@ -176,7 +176,7 @@ describe('ResolveCache', function () {
             }, function (err) {
                 expect(err).to.be.an(Error);
                 expect(err.code).to.equal('ENOENT');
-                expect(err.message).to.contain(path.join(tempPackage, '.bower.json'));
+                expect(err.message).to.contain(path.join(tempPackage, '.upt.json'));
 
                 next();
             })
@@ -184,7 +184,7 @@ describe('ResolveCache', function () {
         });
 
         it('should error out when reading an invalid package meta', function (next) {
-            var pkgMeta = path.join(tempPackage, '.bower.json');
+            var pkgMeta = path.join(tempPackage, '.upt.json');
 
             return Q.nfcall(fs.writeFile, pkgMeta, 'w00t')
             .then(function () {
@@ -194,7 +194,7 @@ describe('ResolveCache', function () {
                 }, function (err) {
                     expect(err).to.be.an(Error);
                     expect(err.code).to.equal('EMALFORMED');
-                    expect(err.message).to.contain(path.join(tempPackage, '.bower.json'));
+                    expect(err.message).to.contain(path.join(tempPackage, '.upt.json'));
 
                     next();
                 });
@@ -435,7 +435,7 @@ describe('ResolveCache', function () {
             fs.mkdirSync(path.join(sourceDir, '0.2.0'));
 
             // Create an invalid package meta
-            fs.writeFileSync(path.join(sourceDir, '0.2.0', '.bower.json'), 'w00t');
+            fs.writeFileSync(path.join(sourceDir, '0.2.0', '.upt.json'), 'w00t');
 
             resolveCache.retrieve(source, '~0.1.0')
             .spread(function () {
@@ -460,23 +460,23 @@ describe('ResolveCache', function () {
 
             json.version = '0.0.1';
             fs.mkdirSync(path.join(sourceDir, '0.0.1'));
-            fs.writeFileSync(path.join(sourceDir, '0.0.1', '.bower.json'), JSON.stringify(json, null, '  '));
+            fs.writeFileSync(path.join(sourceDir, '0.0.1', '.upt.json'), JSON.stringify(json, null, '  '));
 
             json.version = '0.1.0';
             fs.mkdirSync(path.join(sourceDir, '0.1.0'));
-            fs.writeFileSync(path.join(sourceDir, '0.1.0', '.bower.json'), JSON.stringify(json, null, '  '));
+            fs.writeFileSync(path.join(sourceDir, '0.1.0', '.upt.json'), JSON.stringify(json, null, '  '));
 
             json.version = '0.1.0-rc.1';
             fs.mkdirSync(path.join(sourceDir, '0.1.0-rc.1'));
-            fs.writeFileSync(path.join(sourceDir, '0.1.0-rc.1', '.bower.json'), JSON.stringify(json, null, '  '));
+            fs.writeFileSync(path.join(sourceDir, '0.1.0-rc.1', '.upt.json'), JSON.stringify(json, null, '  '));
 
             json.version = '0.1.9';
             fs.mkdirSync(path.join(sourceDir, '0.1.9'));
-            fs.writeFileSync(path.join(sourceDir, '0.1.9', '.bower.json'), JSON.stringify(json, null, '  '));
+            fs.writeFileSync(path.join(sourceDir, '0.1.9', '.upt.json'), JSON.stringify(json, null, '  '));
 
             json.version = '0.2.0';
             fs.mkdirSync(path.join(sourceDir, '0.2.0'));
-            fs.writeFileSync(path.join(sourceDir, '0.2.0', '.bower.json'), JSON.stringify(json, null, '  '));
+            fs.writeFileSync(path.join(sourceDir, '0.2.0', '.upt.json'), JSON.stringify(json, null, '  '));
 
             resolveCache.retrieve(source, '~0.1.0')
             .spread(function (canonicalDir, pkgMeta) {
@@ -507,11 +507,11 @@ describe('ResolveCache', function () {
 
             json.version = '0.1.0-rc.1';
             fs.mkdirSync(path.join(sourceDir, '0.1.0-rc.1'));
-            fs.writeFileSync(path.join(sourceDir, '0.1.0-rc.1', '.bower.json'), JSON.stringify(json, null, '  '));
+            fs.writeFileSync(path.join(sourceDir, '0.1.0-rc.1', '.upt.json'), JSON.stringify(json, null, '  '));
 
             json.version = '0.1.0-rc.2';
             fs.mkdirSync(path.join(sourceDir, '0.1.0-rc.2'));
-            fs.writeFileSync(path.join(sourceDir, '0.1.0-rc.2', '.bower.json'), JSON.stringify(json, null, '  '));
+            fs.writeFileSync(path.join(sourceDir, '0.1.0-rc.2', '.upt.json'), JSON.stringify(json, null, '  '));
 
             resolveCache.retrieve(source, '~0.1.0')
             .spread(function (canonicalDir, pkgMeta) {
@@ -536,22 +536,22 @@ describe('ResolveCache', function () {
 
             json.version = '0.1.0';
             fs.mkdirSync(path.join(sourceDir, '0.1.0'));
-            fs.writeFileSync(path.join(sourceDir, '0.1.0', '.bower.json'), JSON.stringify(json, null, '  '));
+            fs.writeFileSync(path.join(sourceDir, '0.1.0', '.upt.json'), JSON.stringify(json, null, '  '));
 
             json.version = '0.1.0+build.4';
             encoded = encodeURIComponent('0.1.0+build.4');
             fs.mkdirSync(path.join(sourceDir, encoded));
-            fs.writeFileSync(path.join(sourceDir, encoded, '.bower.json'), JSON.stringify(json, null, '  '));
+            fs.writeFileSync(path.join(sourceDir, encoded, '.upt.json'), JSON.stringify(json, null, '  '));
 
             json.version = '0.1.0+build.5';
             encoded = encodeURIComponent('0.1.0+build.5');
             fs.mkdirSync(path.join(sourceDir, encoded));
-            fs.writeFileSync(path.join(sourceDir, encoded, '.bower.json'), JSON.stringify(json, null, '  '));
+            fs.writeFileSync(path.join(sourceDir, encoded, '.upt.json'), JSON.stringify(json, null, '  '));
 
             json.version = '0.1.0+build.6';
             encoded = encodeURIComponent('0.1.0+build.6');
             fs.mkdirSync(path.join(sourceDir, encoded));
-            fs.writeFileSync(path.join(sourceDir, encoded, '.bower.json'), JSON.stringify(json, null, '  '));
+            fs.writeFileSync(path.join(sourceDir, encoded, '.upt.json'), JSON.stringify(json, null, '  '));
 
             resolveCache.retrieve(source, '0.1.0+build.5')
             .spread(function (canonicalDir, pkgMeta) {
@@ -574,7 +574,7 @@ describe('ResolveCache', function () {
             fs.mkdirSync(sourceDir);
 
             fs.mkdirSync(path.join(sourceDir, '_wildcard'));
-            fs.writeFileSync(path.join(sourceDir, '_wildcard', '.bower.json'), JSON.stringify(json, null, '  '));
+            fs.writeFileSync(path.join(sourceDir, '_wildcard', '.upt.json'), JSON.stringify(json, null, '  '));
 
             resolveCache.retrieve(source, '*')
             .spread(function (canonicalDir, pkgMeta) {
@@ -596,10 +596,10 @@ describe('ResolveCache', function () {
             fs.mkdirSync(sourceDir);
 
             fs.mkdirSync(path.join(sourceDir, 'some-branch'));
-            fs.writeFileSync(path.join(sourceDir, 'some-branch', '.bower.json'), JSON.stringify(json, null, '  '));
+            fs.writeFileSync(path.join(sourceDir, 'some-branch', '.upt.json'), JSON.stringify(json, null, '  '));
 
             fs.mkdirSync(path.join(sourceDir, 'other-branch'));
-            fs.writeFileSync(path.join(sourceDir, 'other-branch', '.bower.json'), JSON.stringify(json, null, '  '));
+            fs.writeFileSync(path.join(sourceDir, 'other-branch', '.upt.json'), JSON.stringify(json, null, '  '));
 
             resolveCache.retrieve(source, 'some-branch')
             .spread(function (canonicalDir, pkgMeta) {
@@ -868,42 +868,42 @@ describe('ResolveCache', function () {
             fs.mkdirSync(sourceDir);
             fs.mkdirSync(path.join(sourceDir, '0.0.1'));
             json.version = '0.0.1';
-            fs.writeFileSync(path.join(sourceDir, '0.0.1', '.bower.json'), JSON.stringify(json, null, '  '));
+            fs.writeFileSync(path.join(sourceDir, '0.0.1', '.upt.json'), JSON.stringify(json, null, '  '));
 
             fs.mkdirSync(path.join(sourceDir, '0.1.0'));
             json.version = '0.1.0';
-            fs.writeFileSync(path.join(sourceDir, '0.1.0', '.bower.json'), JSON.stringify(json, null, '  '));
+            fs.writeFileSync(path.join(sourceDir, '0.1.0', '.upt.json'), JSON.stringify(json, null, '  '));
 
             delete json.version;
 
             fs.mkdirSync(path.join(sourceDir, 'foo'));
             json._target = 'foo';
-            fs.writeFileSync(path.join(sourceDir, 'foo', '.bower.json'), JSON.stringify(json, null, '  '));
+            fs.writeFileSync(path.join(sourceDir, 'foo', '.upt.json'), JSON.stringify(json, null, '  '));
 
             fs.mkdirSync(path.join(sourceDir, 'bar'));
             json._target = 'bar';
-            fs.writeFileSync(path.join(sourceDir, 'bar', '.bower.json'), JSON.stringify(json, null, '  '));
+            fs.writeFileSync(path.join(sourceDir, 'bar', '.upt.json'), JSON.stringify(json, null, '  '));
 
             fs.mkdirSync(path.join(sourceDir, 'aa'));
             json._target = 'aa';
-            fs.writeFileSync(path.join(sourceDir, 'aa', '.bower.json'), JSON.stringify(json, null, '  '));
+            fs.writeFileSync(path.join(sourceDir, 'aa', '.upt.json'), JSON.stringify(json, null, '  '));
 
             delete json._target;
 
             fs.mkdirSync(sourceDir2);
             fs.mkdirSync(path.join(sourceDir2, '0.2.1'));
             json.version = '0.2.1';
-            fs.writeFileSync(path.join(sourceDir2, '0.2.1', '.bower.json'), JSON.stringify(json, null, '  '));
+            fs.writeFileSync(path.join(sourceDir2, '0.2.1', '.upt.json'), JSON.stringify(json, null, '  '));
 
             fs.mkdirSync(path.join(sourceDir2, '0.2.0'));
             json.name = 'abc';
             json.version = '0.2.0';
-            fs.writeFileSync(path.join(sourceDir2, '0.2.0', '.bower.json'), JSON.stringify(json, null, '  '));
+            fs.writeFileSync(path.join(sourceDir2, '0.2.0', '.upt.json'), JSON.stringify(json, null, '  '));
 
             resolveCache.list()
             .then(function (entries) {
                 var expectedJson;
-                var bowerDir = path.join(__dirname, '../..');
+                var uptDir = path.join(__dirname, '../..');
 
                 expect(entries).to.be.an('array');
 
@@ -911,8 +911,8 @@ describe('ResolveCache', function () {
                 expectedJson = expectedJson.toString().trim();
 
                 mout.object.forOwn(entries, function (entry) {
-                    // Trim absolute bower path from json
-                    entry.canonicalDir = entry.canonicalDir.substr(bowerDir.length);
+                    // Trim absolute upt path from json
+                    entry.canonicalDir = entry.canonicalDir.substr(uptDir.length);
                     // Convert windows \ paths to /
                     entry.canonicalDir = entry.canonicalDir.replace(/\\/g, '/');
                 });
@@ -937,7 +937,7 @@ describe('ResolveCache', function () {
             fs.mkdirSync(sourceDir);
             fs.mkdirSync(path.join(sourceDir, '0.0.1'));
             json.version = '0.0.1';
-            fs.writeFileSync(path.join(sourceDir, '0.0.1', '.bower.json'), JSON.stringify(json, null, '  '));
+            fs.writeFileSync(path.join(sourceDir, '0.0.1', '.upt.json'), JSON.stringify(json, null, '  '));
 
             // Create lurking files
             fs.writeFileSync(path.join(cacheDir, 'foo'), 'w00t');
@@ -977,12 +977,12 @@ describe('ResolveCache', function () {
             fs.mkdirSync(path.join(sourceDir, '0.0.1'));
 
             fs.mkdirSync(path.join(sourceDir, '0.0.2'));
-            fs.writeFileSync(path.join(sourceDir, '0.0.2', '.bower.json'), 'w00t');
+            fs.writeFileSync(path.join(sourceDir, '0.0.2', '.upt.json'), 'w00t');
 
             // Create valid version
             fs.mkdirSync(path.join(sourceDir, '0.0.3'));
             json.version = '0.0.3';
-            fs.writeFileSync(path.join(sourceDir, '0.0.3', '.bower.json'), JSON.stringify(json, null, '  '));
+            fs.writeFileSync(path.join(sourceDir, '0.0.3', '.upt.json'), JSON.stringify(json, null, '  '));
 
             // It should not error out
             resolveCache.list()

@@ -3,7 +3,7 @@ Usage:
 
 {{#condense}}
 {{#each usage}}
-    {{#cyan}}bower{{/cyan}} {{.}}
+    {{#cyan}}upt{{/cyan}} {{.}}
 {{/each}}
 {{/condense}}
 
@@ -15,7 +15,7 @@ Options:
 {{/each}}
 {{/condense}}
 
-    Additionally all global options listed in 'bower help' are available
+    Additionally all global options listed in 'upt help' are available
 
 Description:
 
