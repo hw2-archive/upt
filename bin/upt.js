@@ -68,7 +68,7 @@ while (options.argv.remain.length) {
 }
 
 // Ask for Insights on first run.
-//analytics.setup(upt.config).then(function () {
+analytics.setup(upt.config).then(function () {
     // Execute the command
     commandFunc = command && mout.object.get(upt.commands, command);
     command = command && command.replace(/\./g, ' ');
@@ -141,4 +141,4 @@ while (options.argv.remain.length) {
             notifier.notify();
         }
     }
-//});
+});
