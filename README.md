@@ -73,7 +73,9 @@ ______
 // action: the step reached by the process
 // config: configurations that contains the current working directory where you're running the process, and other .bowerrc specifications
 // pkgPath: absolute path where the package is installed
-module.exports=function(action,cwdPath,pkgPath) {
+// newMeta: meta descriptions of new installed package in json format
+// oldMeta: if we're updating version, it's the old meta description in json format of previous package version.
+module.exports=function(action,cwdPath,pkgPath,newMeta,oldMeta) {
 
     switch(action) {
         case "preinstall":
