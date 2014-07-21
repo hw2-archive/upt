@@ -1,4 +1,4 @@
-# UPT - Universal package manager
+# UPT - Universal Package Tool
 
 
 UPT is a **crossplatform** ( thanks to nodejs ) and general purpose package manager that 
