@@ -49,7 +49,6 @@ nbproject/private/
 *.pydevproject
 .metadata
 .gradle
-bin/
 tmp/
 *.tmp
 *.swp
