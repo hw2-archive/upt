@@ -7,7 +7,9 @@ aims to be an **universal installer for each kind of software**.
 
 Since actually i'm the only tester of this project, please **be careful with your sensible data**. 
 
-UPT is derived from of [Bower](https://github.com/bower/bower) project. 
+UPT is derived from of [Bower](https://github.com/bower/bower) project , inheriting all commands and
+
+keeping the compatibility with bower.json/component.json file ( for now )
 
 we are also on npm https://www.npmjs.org/package/upt
 
@@ -33,6 +35,9 @@ ______
 
 * you can keep .git folder when not in **--production mode.** This allow you to work with your repository.
 
+NOTE: you **MUST** know that after an update/install --force 
+the .git folder will be **replaced with new one** from the repository. If you want avoid it atm, you need to add ".git" entry in
+"keep" upt.json array ( read below )
 ______
 
 * you can use the special character "%" for dependencies name to use original package name as directory
