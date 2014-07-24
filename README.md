@@ -25,22 +25,25 @@ Note:
 
 2. The commands are the same of original UPT but the binary is called "upt" to avoid collisions
 
-### Actually upt supports:
+## Actually upt supports:
 
-* the installation of packages that use forward slashes in names. So you can use:
+### CUSTOM PATHS: 
+  the installation of packages that use forward slashes in names. So you can use:
 
 > upt install vendor/lib/mylib"  -> this package will be installed in same path specified by the name
 
 ______
 
-* you can keep .git folder when not in **--production mode.** This allow you to work with your repository.
+### GIT FOR DEVS: 
+  you can keep .git folder when not in **--production** mode. This allow you to work with your repository.
 
 NOTE: you **MUST** know that after an update/install --force 
 the .git folder will be **replaced with new one** from the repository. If you want avoid it atm, you need to add ".git" entry in
 "keep" upt.json array ( read below )
 ______
 
-* you can use the special character "%" for dependencies name to use original package name as directory
+### AUTO DEP. NAME: 
+   you can use the special character "%" for dependencies name to use original package name as directory
     instead of specifying it. However the dependency name must be defined and be unique for json consistency.  Ex:
 
 ```json
@@ -52,7 +55,8 @@ ______
 
 ______
 
-* you can preserve folders and files after "update" command using the keyword "keep" in your upt.json file
+### PRESERVE FOLDERS AFTER UPDATES
+  you can preserve folders and files after "update" command using the keyword "keep" in your upt.json file
   it is particularly useful when you've sensible data such as uploads , configurations etc. that updating process should
   not destroy. You can use the same syntax of "ignore" key. Ex:
 
@@ -68,7 +72,8 @@ If you change one of this keep value in future , remember to use a postinstall s
 will be definitively removed.
 ______
 
-* you can create an hook script ( a node module ) for all dependencies/installed package , that will be execute at each installer event
+### POWERFUL HOOK SCRIPTS FOR ALL PACKAGES
+    you can create an hook script ( a node module ) for all dependencies/installed package , that will be execute at each installer event
     without the need of a .uptrc hook scrips . however uptrc will continue to execute its hooks but they cannot be determined by dependencies of course
     You have to create a folder called **_hw2** inside your project where you need to have an **installer_hook.js** script that must have this structure:
 
@@ -102,7 +107,8 @@ module.exports=function(action,config,name,pkgPath,newMeta,oldMeta,callback) {
 
 ______
 
-* You can use upt.custom.json file to add your custom specifications to dependencies. For example you're using a dependency that
+### CUSTOM PACKAGE PROPERTIES
+    You can use upt.custom.json file to add your custom specifications to dependencies. For example you're using a dependency that
     install different folders/files that you don't need? just create your upt.custom.json in directory of dependency with the ignore
     entries. Example:
 
@@ -126,7 +132,8 @@ Note:
 ______
 
 
-* Comments in upt.json using this syntax:
+### JSON COMMENTS ( EXPERIMENTAL )
+ Comments in upt.json using this syntax:
 
 ```json
  {
