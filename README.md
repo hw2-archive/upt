@@ -38,7 +38,7 @@ ______
   you can keep .git folder when not in **--production** mode. This allow you to work with your repository.
 
 NOTE: you **MUST** know that after an update/install --force 
-the .git folder will be **replaced with new one** from the repository. If you want avoid it atm, you need to add ".git" entry in
+the .git folder will be **replaced with new one** from the repository. If you want avoid it atm, you need to add ".git" or ".git/config" entry in
 "keep" upt.json array ( read below )
 ______
 
@@ -128,18 +128,6 @@ Note:
 
 3. each time you change something in upt.custom.json , you need to clean the cache with **upt cache clean** command
             and then reinstall/update the dependency with --force flag ( we can avoid it in future )
-
-______
-
-
-### JSON COMMENTS ( EXPERIMENTAL )
- Comments in upt.json using this syntax:
-
-```json
- {
-   "//" : "it's a comment"
- }
-```
 
 ______
 
