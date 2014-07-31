@@ -75,7 +75,7 @@ ______
 ### POWERFUL HOOK SCRIPTS FOR ALL PACKAGES
     you can create an hook script ( a node module ) for all dependencies/installed package , that will be execute at each installer event
     without the need of a .uptrc hook scrips . however uptrc will continue to execute its hooks but they cannot be determined by dependencies of course
-    You have to create a folder called **_hw2** inside your project where you need to have an **installer_hook.js** script that must have this structure:
+    You have to create a folder called **_upt** inside your project where you need to have an **installer_hook.js** script that must have this structure:
 
 ```javascript
 // action: the step reached by the process
