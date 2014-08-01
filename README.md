@@ -80,14 +80,17 @@ ______
 ```javascript
 // action: the step reached by the process
 // name: package resolved name ( it's the name of the final directory too)
-// config: configurations that contains the current working directory where you're running the process, and other .uptrc specifications
-// pkgPath: absolute path where the package is installed ( postinstall / preuninstall ) or temp directory ( preuninstall )
+// config: configurations that contains the current working directory where you're running the process, and other .uptrc / default specifications
+// pkgPath: absolute path where the package is installed ( postinstall / preuninstall ) or temp directory ( preinstall / postresolved )
 // newMeta: meta descriptions of new installed package in json format
 // oldMeta: if we're updating version, it's the old meta description in json format of previous package version.
 // callback: you MUST call this function when your instructions end for an ordered execution of hook scripts
 module.exports=function(action,config,name,pkgPath,newMeta,oldMeta,callback) {
 
     switch(action) {
+        case "postresolved":
+            // YOUR CODE HERE
+        break;
         case "preinstall":
             // YOUR CODE HERE
         break;
@@ -100,6 +103,8 @@ module.exports=function(action,config,name,pkgPath,newMeta,oldMeta,callback) {
         
         //[...]
     }
+
+    callback();
 
     return 0;
 };
