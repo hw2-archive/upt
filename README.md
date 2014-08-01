@@ -7,7 +7,7 @@ aims to be an **universal installer for each kind of software**.
 
 Since actually i'm the only tester of this project, please **be careful with your sensible data**. 
 
-UPT is derived from of [Bower](https://github.com/bower/bower) project , inheriting all commands and
+UPT is derived from [Bower](https://github.com/bower/bower) project , inheriting all commands and
 
 keeping the compatibility with bower.json/component.json file ( for now )
 
