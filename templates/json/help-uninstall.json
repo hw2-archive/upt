@@ -1,6 +1,6 @@
 {
     "command": "uninstall",
-    "description": "Uninstalls a package locally from your upt_modules directory",
+    "description": "Uninstalls a package locally from your upt-modules directory",
     "usage": [
         "uninstall <name> [<name> ..] [<options>]"
     ],
