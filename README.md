@@ -43,12 +43,11 @@ the .git folder will be **replaced with new one** from the repository. If you wa
 ______
 
 ### AUTO DEP. NAME: 
-   you can use the special character "%" for dependencies name to use original package name as directory
+   you can use the special character "%" for name of dependencies to use original package name as directory
     instead of specifying it. However the dependency name must be defined and be unique for json consistency.  Ex:
 
 ```json
  "dependencies" : {
-   "//" : "it will be installed in Hw2/Js/library ( retrieved from package upt.json )"
    "%js-library" : "git://github.com/hw2-core/js-library.git"
  }
 ```
