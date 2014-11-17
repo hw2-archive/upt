@@ -12,7 +12,7 @@
     "type": "git",
     "url": "https://github.com/hyperweb2/upt.git"
   },
-  "main": "lib",
+  "main": "src/lib",
   "homepage": "https://github.com/hyperweb2/upt",
   "engines": {
     "node": ">=0.10.0"

@@ -6,11 +6,11 @@ var Q = require('q');
 var mout = require('mout');
 var Logger = require('bower-logger');
 var osenv = require('osenv');
-var upt = require('../lib');
 var pkg = require('../package.json');
-var cli = require('../lib/util/cli');
-var rootCheck = require('../lib/util/rootCheck');
-var analytics = require('../lib/util/analytics');
+var upt = require('../src/lib');
+var cli = require('../src/lib/util/cli');
+var rootCheck = require('../src/lib/util/rootCheck');
+var analytics = require('../src/lib/util/analytics');
 
 var options;
 var renderer;

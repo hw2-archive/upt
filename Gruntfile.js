@@ -10,11 +10,11 @@ module.exports = function (grunt) {
             files: [
                 'Gruntfile.js',
                 'bin/*',
-                'lib/**/*.js',
-                'test/**/*.js',
-                '!test/assets/**/*',
-                '!test/reports/**/*',
-                '!test/tmp/**/*'
+                'src/lib/**/*.js',
+                'src/test/**/*.js',
+                '!src/test/assets/**/*',
+                '!src/test/reports/**/*',
+                '!src/test/tmp/**/*'
             ]
         },
         simplemocha: {
@@ -23,27 +23,27 @@ module.exports = function (grunt) {
                 timeout: '5000'
             },
             full: {
-                src: ['test/test.js']
+                src: ['src/test/test.js']
             },
             short: {
                 options: {
                     reporter: 'dot'
                 },
-                src: ['test/test.js']
+                src: ['src/test/test.js']
             }
         },
         exec: {
             assets: {
-                command: 'node test/packages.js && node test/packages-svn.js'
+                command: 'node src/test/packages.js && node src/test/packages-svn.js'
             },
             'assets-force': {
-                command: 'node test/packages.js --force && node test/packages-svn.js --force'
+                command: 'node src/test/packages.js --force && node src/test/packages-svn.js --force'
             },
             cover: {
-                command: 'STRICT_REQUIRE=1 node node_modules/istanbul/lib/cli.js cover --dir ./test/reports node_modules/mocha/bin/_mocha -- -R dot test/test.js'
+                command: 'STRICT_REQUIRE=1 node node_modules/istanbul/lib/cli.js cover --dir ./src/test/reports node_modules/mocha/bin/_mocha -- -R dot src/test/test.js'
             },
             coveralls: {
-                command: 'node node_modules/.bin/coveralls < test/reports/lcov.info'
+                command: 'node node_modules/.bin/coveralls < src/test/reports/lcov.info'
             }
         },
         watch: {
