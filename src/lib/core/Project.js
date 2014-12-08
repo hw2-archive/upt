@@ -798,9 +798,10 @@ Project.prototype._restoreNode = function (node, flattened, jsonKey, processed) 
         // Cross reference
         node.dependencies[key] = restored;
         processed[node.name + ':' + key] = true;
-
         restored.dependants = restored.dependants || {};
         restored.dependants[node.name] = mout.object.mixIn({}, node);  // We need to clone due to shared objects in the manager!
+        // keep trace of dep type
+        restored.dependants[node.name].jsonKey = jsonKey;
 
         // Call restore for this dependency
         this._restoreNode(restored, flattened, 'dependencies', processed);

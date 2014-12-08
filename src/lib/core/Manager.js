@@ -13,7 +13,7 @@ var scripts = require('./scripts');
 var cli = require('../util/cli');
 var fstreamIgnore = require('fstream-ignore');
 
-function Manager(config, logger) {
+function Manager (config, logger) {
     this._config = config;
     this._logger = logger;
     this._repository = new PackageRepository(this._config, this._logger);
@@ -28,9 +28,26 @@ Manager.prototype.configure = function (setup) {
 
     this._conflicted = {};
 
+    // Resolved & installed
+    this._dynamicDep = [];  // dynamic dependencies found
+    this._pendingDyn = [];
+    this._resolved = {};
+    this._installed = {};
+
+    var that = this;
     // Targets
     this._targets = setup.targets || [];
     this._targets.forEach(function (decEndpoint) {
+        if (decEndpoint.dependants && decEndpoint.dependants.length > 0) {
+            for (var id in decEndpoint.dependants) {
+                var dep = decEndpoint.dependants[id];
+                // TODO: maybe split the checkDyn in 2 parts since it could be redudant in this case
+                that._checkDyn(dep.pkgMeta, dep.jsonKey, decEndpoint.name, decEndpoint.source, decEndpoint, dep);
+            }
+        } else {
+            that._checkDyn(null, null, decEndpoint.name, decEndpoint.source, decEndpoint, null);
+        }
+
         decEndpoint.initialName = decEndpoint.name;
         decEndpoint.dependants = mout.object.values(decEndpoint.dependants);
         targetsHash[decEndpoint.name] = true;
@@ -39,11 +56,6 @@ Manager.prototype.configure = function (setup) {
         decEndpoint.unresolvable = !!decEndpoint.newly;
     });
 
-    // Resolved & installed
-    this._dynamicDep = [];  // dynamic dependencies found
-    this._pendingDyn = [];
-    this._resolved = {};
-    this._installed = {};
     mout.object.forOwn(setup.resolved, function (decEndpoint, name) {
         decEndpoint.dependants = mout.object.values(decEndpoint.dependants);
         this._resolved[name] = [decEndpoint];
@@ -102,24 +114,24 @@ Manager.prototype.resolve = function () {
     // If there's nothing to resolve, simply dissect
     if (!this._targets.length) {
         process.nextTick(this._dissect.bind(this));
-    // Otherwise, fetch each target from the repository
-    // and let the process roll out
+        // Otherwise, fetch each target from the repository
+        // and let the process roll out
     } else {
         this._targets.forEach(this._fetch.bind(this));
     }
 
     // Unset working flag when done
     return this._deferred.promise
-    .fin(function () {
-        // write pending dynamic dep
-        for (var dynDep in this._pendingDyn) {
-            info=this._pendingDyn[dynDep];
-            if (info.dynInfo["realName"])
-                this._changeDep(info,info.jsonKey);
-        }
+            .fin(function () {
+                // write pending dynamic dep
+                for (var dynDep in this._pendingDyn) {
+                    info = this._pendingDyn[dynDep];
+                    if (info.dynInfo["realName"])
+                        this._changeDep(info, info.jsonKey);
+                }
 
-        this._working = false;
-    }.bind(this));
+                this._working = false;
+            }.bind(this));
 };
 
 Manager.prototype.install = function (json) {
@@ -136,173 +148,173 @@ Manager.prototype.install = function (json) {
     }
 
     return Q.nfcall(mkdirp, this.componentsDir)
-    .then(function () {
-        return scripts.preinstall(that._config, that._logger, that._dissected, that._installed, json);
-    })
-    .then(function () {
-        var promises = [];
+            .then(function () {
+                return scripts.preinstall(that._config, that._logger, that._dissected, that._installed, json);
+            })
+            .then(function () {
+                var promises = [];
 
-        var depFilters=[];
-        for (var depDir in that._dissected) {
-            depFilters.push(depDir);
-        }
-
-        mout.object.forOwn(that._dissected, function (decEndpoint, name) {
-            var promise;
-            var dst;
-            var release = decEndpoint.pkgMeta._release;
-
-            that._logger.action('install', name + (release ? '#' + release : ''), that.toData(decEndpoint));
-
-            dst = path.join(that.componentsDir, name);
-
-            var metaFile = path.join(dst, '.upt.json');
-            var tmpMetaFile= path.join(decEndpoint.canonicalDir,'upt.json');
-
-            var filters=[];
-            function getKeeps(metaFile) {
-                if (fs.existsSync(metaFile)) {
-                    var json=require(metaFile);
-                    if (json && json.keep) {
-                        // slice 0 to duplicate it
-                        return json.keep.slice(0);
-                    }
+                var depFilters = [];
+                for (var depDir in that._dissected) {
+                    depFilters.push(depDir);
                 }
 
-                return [];
-            }
+                mout.object.forOwn(that._dissected, function (decEndpoint, name) {
+                    var promise;
+                    var dst;
+                    var release = decEndpoint.pkgMeta._release;
 
-            // duplicates will be removed below
-            filters=getKeeps(metaFile);
-            filters=filters.concat(getKeeps(tmpMetaFile));
+                    that._logger.action('install', name + (release ? '#' + release : ''), that.toData(decEndpoint));
 
-            // add custom json that must remain after updates
-            filters.push("upt.custom.json");
+                    dst = path.join(that.componentsDir, name);
 
-            // filter ( keep) also dependencies installed in other dependencies subdirs
-            for (var df in depFilters) {
-                df=depFilters[df]; 
-                if (df.indexOf(name)===0) {
-                    var str=df.replace(new RegExp("^"+(name+'').replace(/([.?*+^$[\]\\(){}|-])/g, "\\$1")+"/","g"),'');
-                    if (str != df) {
-                        filters.push(str);
-                    }
-                }
-            }
+                    var metaFile = path.join(dst, '.upt.json');
+                    var tmpMetaFile = path.join(decEndpoint.canonicalDir, 'upt.json');
 
-            filters = mout.array.unique(filters);
-
-            function cp (ignore) {
-                // Remove existent and copy canonical dir
-                return Q.nfcall(rmrf.purgeDeploy, dst, filters)
-                        .then(copy.copyDir.bind(copy, decEndpoint.canonicalDir, dst, {"ignore": ignore || []}))
-                        .then(function () {
-                            decEndpoint.canonicalDir = dst;
-                            // Store additional metadata in upt.json
-                            return Q.nfcall(fs.readFile, metaFile)
-                                    .then(function (contents) {
-                                        var json = JSON.parse(contents.toString());
-
-                                        json._target = decEndpoint.target;
-                                        json._originalSource = decEndpoint.source;
-                                        if (decEndpoint.newly) {
-                                            json._direct = true;
-                                        }
-
-                                        json = JSON.stringify(json, null, '  ');
-                                        return Q.nfcall(fs.writeFile, metaFile, json);
-                                    });
-                        });
-            }
-
-            if (fs.existsSync(dst)) {
-                //  files specified to "keep" will be copied only when they doesn't already
-                //  exists in destination folder
-                function ignoreExisting () {
-                    var ignore = [], nonIgnored = [];
-                    var reader = fstreamIgnore({
-                        path: dst,
-                        type: 'Directory'
-                    });
-
-                    reader.addIgnoreRules(filters);
-
-                    var applyIgnores = reader.applyIgnores;
-                    reader.applyIgnores = function (entry) {
-                        var ret = applyIgnores.apply(this, arguments);
-
-                        if (!ret) {
-                            var p = path.join(dst, entry);
-                            if (fs.existsSync(p)) // ignore if file already exists
-                                ignore.push(entry);
+                    var filters = [];
+                    function getKeeps (metaFile) {
+                        if (fs.existsSync(metaFile)) {
+                            var json = require(metaFile);
+                            if (json && json.keep) {
+                                // slice 0 to duplicate it
+                                return json.keep.slice(0);
+                            }
                         }
 
-                        return ret;
-                    };
+                        return [];
+                    }
 
-                    var deferred = Q.defer();
+                    // duplicates will be removed below
+                    filters = getKeeps(metaFile);
+                    filters = filters.concat(getKeeps(tmpMetaFile));
 
-                    deferred.promise = cp(ignore);
+                    // add custom json that must remain after updates
+                    filters.push("upt.custom.json");
 
-                    reader
-                            .on('child', function (entry) {
-                                nonIgnored.push(entry.path);
-                            })
-                            .on('error', deferred.reject)
-                            .on('end', function () {
-                                // Ensure that we are not ignoring files that should not be ignored!
-                                ignore = mout.array.unique(ignore);
-                                ignore = ignore.filter(function (file) {
-                                    return nonIgnored.indexOf(file) === -1;
+                    // filter ( keep) also dependencies installed in other dependencies subdirs
+                    for (var df in depFilters) {
+                        df = depFilters[df];
+                        if (df.indexOf(name) === 0) {
+                            var str = df.replace(new RegExp("^" + (name + '').replace(/([.?*+^$[\]\\(){}|-])/g, "\\$1") + "/", "g"), '');
+                            if (str != df) {
+                                filters.push(str);
+                            }
+                        }
+                    }
+
+                    filters = mout.array.unique(filters);
+
+                    function cp (ignore) {
+                        // Remove existent and copy canonical dir
+                        return Q.nfcall(rmrf.purgeDeploy, dst, filters)
+                                .then(copy.copyDir.bind(copy, decEndpoint.canonicalDir, dst, {"ignore": ignore || []}))
+                                .then(function () {
+                                    decEndpoint.canonicalDir = dst;
+                                    // Store additional metadata in upt.json
+                                    return Q.nfcall(fs.readFile, metaFile)
+                                            .then(function (contents) {
+                                                var json = JSON.parse(contents.toString());
+
+                                                json._target = decEndpoint.target;
+                                                json._originalSource = decEndpoint.source;
+                                                if (decEndpoint.newly) {
+                                                    json._direct = true;
+                                                }
+
+                                                json = JSON.stringify(json, null, '  ');
+                                                return Q.nfcall(fs.writeFile, metaFile, json);
+                                            });
                                 });
+                    }
 
-                                deferred.resolve();
+                    if (fs.existsSync(dst)) {
+                        //  files specified to "keep" will be copied only when they doesn't already
+                        //  exists in destination folder
+                        function ignoreExisting () {
+                            var ignore = [], nonIgnored = [];
+                            var reader = fstreamIgnore({
+                                path: dst,
+                                type: 'Directory'
                             });
 
-                    return deferred.promise;
-                }
+                            reader.addIgnoreRules(filters);
 
-                promise = ignoreExisting();
+                            var applyIgnores = reader.applyIgnores;
+                            reader.applyIgnores = function (entry) {
+                                var ret = applyIgnores.apply(this, arguments);
 
-            } else {
-                promise = cp();
-            }
+                                if (!ret) {
+                                    var p = path.join(dst, entry);
+                                    if (fs.existsSync(p)) // ignore if file already exists
+                                        ignore.push(entry);
+                                }
 
-            promises.push(promise);
-        });
+                                return ret;
+                            };
 
-        return Q.all(promises);
-    })
-    .then(function () {
-        return scripts.postinstall(that._config, that._logger, that._dissected, that._installed, json);
-    })
-    .then(function () {
-        // Sync up dissected dependencies and dependants
-        // See: https://github.com/bower/bower/issues/879
-        mout.object.forOwn(that._dissected, function (pkg) {
-            // Sync dependencies
-            mout.object.forOwn(pkg.dependencies, function (dependency, name) {
-                var dissected = this._dissected[name] || (this._resolved[name] ? this._resolved[name][0] : dependency);
-                pkg.dependencies[name] = dissected;
-            }, this);
+                            var deferred = Q.defer();
 
-            // Sync dependants
-            pkg.dependants = pkg.dependants.map(function (dependant) {
-                var name = dependant.name;
-                var dissected = this._dissected[name] || (this._resolved[name] ? this._resolved[name][0] : dependant);
+                            deferred.promise = cp(ignore);
 
-                return dissected;
-            }, this);
-        }, that);
+                            reader
+                                    .on('child', function (entry) {
+                                        nonIgnored.push(entry.path);
+                                    })
+                                    .on('error', deferred.reject)
+                                    .on('end', function () {
+                                        // Ensure that we are not ignoring files that should not be ignored!
+                                        ignore = mout.array.unique(ignore);
+                                        ignore = ignore.filter(function (file) {
+                                            return nonIgnored.indexOf(file) === -1;
+                                        });
 
-        // Resolve with meaningful data
-        return mout.object.map(that._dissected, function (decEndpoint) {
-            return this.toData(decEndpoint);
-        }, that);
-    })
-    .fin(function () {
-        this._working = false;
-    }.bind(this));
+                                        deferred.resolve();
+                                    });
+
+                            return deferred.promise;
+                        }
+
+                        promise = ignoreExisting();
+
+                    } else {
+                        promise = cp();
+                    }
+
+                    promises.push(promise);
+                });
+
+                return Q.all(promises);
+            })
+            .then(function () {
+                return scripts.postinstall(that._config, that._logger, that._dissected, that._installed, json);
+            })
+            .then(function () {
+                // Sync up dissected dependencies and dependants
+                // See: https://github.com/bower/bower/issues/879
+                mout.object.forOwn(that._dissected, function (pkg) {
+                    // Sync dependencies
+                    mout.object.forOwn(pkg.dependencies, function (dependency, name) {
+                        var dissected = this._dissected[name] || (this._resolved[name] ? this._resolved[name][0] : dependency);
+                        pkg.dependencies[name] = dissected;
+                    }, this);
+
+                    // Sync dependants
+                    pkg.dependants = pkg.dependants.map(function (dependant) {
+                        var name = dependant.name;
+                        var dissected = this._dissected[name] || (this._resolved[name] ? this._resolved[name][0] : dependant);
+
+                        return dissected;
+                    }, this);
+                }, that);
+
+                // Resolve with meaningful data
+                return mout.object.map(that._dissected, function (decEndpoint) {
+                    return this.toData(decEndpoint);
+                }, that);
+            })
+            .fin(function () {
+                this._working = false;
+            }.bind(this));
 };
 
 Manager.prototype.toData = function (decEndpoint, extraKeys, upperDeps) {
@@ -339,8 +351,8 @@ Manager.prototype.toData = function (decEndpoint, extraKeys, upperDeps) {
             // dependencies
             if (!mout.array.contains(upperDeps, name)) {
                 data.dependencies[name] = this.toData(decEndpoint.dependencies[name],
-                    extraKeys,
-                    upperDeps.concat(decEndpoint.name));
+                        extraKeys,
+                        upperDeps.concat(decEndpoint.name));
             }
         }, this);
     }
@@ -373,10 +385,10 @@ Manager.prototype._fetch = function (decEndpoint) {
     // Note that the promise is stored in the decomposed endpoint
     // because it might be reused if a similar endpoint needs to be resolved
     return decEndpoint.promise = this._repository.fetch(decEndpoint)
-    // When done, call onFetchSuccess
-    .spread(this._onFetchSuccess.bind(this, decEndpoint))
-    // If it fails, call onFetchFailure
-    .fail(this._onFetchError.bind(this, decEndpoint));
+            // When done, call onFetchSuccess
+            .spread(this._onFetchSuccess.bind(this, decEndpoint))
+            // If it fails, call onFetchFailure
+            .fail(this._onFetchError.bind(this, decEndpoint));
 };
 
 Manager.prototype._onFetchSuccess = function (decEndpoint, canonicalDir, pkgMeta, isTargetable) {
@@ -400,15 +412,15 @@ Manager.prototype._onFetchSuccess = function (decEndpoint, canonicalDir, pkgMeta
     // if we are fetching a dynamic dependance not already resolved
     // we store it and change the parent json info
     if (decEndpoint._parent && decEndpoint._dynSrc) {
-        this._dynamicDep[decEndpoint._dynSrc].realName=decEndpoint.name;
+        this._dynamicDep[decEndpoint._dynSrc].realName = decEndpoint.name;
 
-        var newMeta=decEndpoint._parent;
-        newMeta.dynInfo={};
-        newMeta.dynInfo.dynName=decEndpoint._dynName;
-        newMeta.dynInfo.realName=decEndpoint.name;
-        
-        this._changeDep(newMeta,"dependencies") 
-        || this._changeDep(newMeta,"devDependencies");
+        var newMeta = decEndpoint._parent;
+        newMeta.dynInfo = {};
+        newMeta.dynInfo.dynName = decEndpoint._dynName;
+        newMeta.dynInfo.realName = decEndpoint.name;
+
+        this._changeDep(newMeta, "dependencies")
+                || this._changeDep(newMeta, "devDependencies");
     }
 
     // Add to the resolved list
@@ -465,10 +477,10 @@ Manager.prototype._onFetchSuccess = function (decEndpoint, canonicalDir, pkgMeta
     if (this._nrFetching <= 0) {
         // remove specials
         for (var key in this._resolved) {
-            if (key[0]==="%")
+            if (key[0] === "%")
                 delete this._resolved[key];
         }
-        
+
         process.nextTick(this._dissect.bind(this));
     }
 };
@@ -513,6 +525,58 @@ Manager.prototype._failFast = function () {
     }.bind(this), 20000);
 };
 
+
+Manager.prototype._checkDyn = function (pkgMeta, jsonKey, name, source, decEndpoint, parentEndpoint) {
+    if (name[0] === "%") {
+        // search for a compatible dynamic dependance
+        // resolved before otherwise continue to fetch process
+        for (var dynKey in this._dynamicDep) {
+            var dynDep = this._dynamicDep[dynKey];
+            if (dynKey === source) {
+                var info = {};
+                // add additional info for write
+                info.pkgMeta = pkgMeta;
+                info.jsonKey = jsonKey;
+                info.canonicalDir = decEndpoint.canonicalDir;
+                info.dynInfo = dynDep;
+                if (dynDep.realName) {
+                    // if real name has been already found
+                    // by fetching, then write directly
+                    this._changeDep(info, jsonKey);
+                } else {
+                    // or pending the operation
+                    this._pendingDyn.push(info);
+                }
+
+                return;
+            }
+        }
+
+        // create dynamicDep 
+        this._dynamicDep[source] = {"source": source, "dynName": name};
+
+        try {
+            var localMeta = require(path.join(this.componentsDir, pkgMeta.name, ".upt.json"));
+            if (localMeta["_dyn_" + jsonKey] !== "undefined"
+                    && localMeta["_dyn_" + jsonKey][name] !== "undefined"
+                    && localMeta["_dyn_" + jsonKey][name]["source"] === source
+                    ) {
+                decEndpoint.name = localMeta["_dyn_" + jsonKey][name]["name"] || "";
+            } else {
+                // set empty name to get it from the source
+                decEndpoint.name = "";
+            }
+
+        } catch (e) {
+            decEndpoint.name = "";
+        }
+
+        decEndpoint._parent = parentEndpoint;
+        decEndpoint._dynName = name;
+        decEndpoint._dynSrc = source;
+    }
+};
+
 Manager.prototype._parseDependencies = function (decEndpoint, pkgMeta, jsonKey) {
     var pending = [];
 
@@ -525,54 +589,7 @@ Manager.prototype._parseDependencies = function (decEndpoint, pkgMeta, jsonKey) 
         var compatible;
         var childDecEndpoint = endpointParser.json2decomposed(key, value);
 
-        if (key[0]==="%") {
-            // search for a compatible dynamic dependance
-            // resolved before otherwise continue to fetch process
-            for (var dynKey in this._dynamicDep) {
-                var dynDep=this._dynamicDep[dynKey];
-                if (dynKey===value) {
-                    var info={};
-                    // add additional info for write
-                    info.pkgMeta=pkgMeta;
-                    info.jsonKey=jsonKey;
-                    info.canonicalDir=decEndpoint.canonicalDir;
-                    info.dynInfo=dynDep;
-                    if (dynDep.realName) {
-                        // if real name has been already found
-                        // by fetching, then write directly
-                        this._changeDep(info,jsonKey);
-                    } else {
-                        // or pending the operation
-                        this._pendingDyn.push(info);
-                    }
-                        
-                    return;
-                }
-            }
-
-            // create dynamicDep 
-            this._dynamicDep[value] = { "source": value, "dynName" : key };
-
-            try {
-                var localMeta=require(path.join(this.componentsDir,pkgMeta.name,".upt.json"));
-                if (localMeta["_dyn_"+jsonKey]!=="undefined"
-                    && localMeta["_dyn_"+jsonKey][key]!=="undefined"
-                    && localMeta["_dyn_"+jsonKey][key]["source"]===value
-                ) {
-                    childDecEndpoint.name=localMeta["_dyn_"+jsonKey][key]["name"] || "";
-                } else {
-                    // set empty name to get it from the source
-                    childDecEndpoint.name="";
-                }
-
-            } catch(e) {
-               childDecEndpoint.name="";
-            }
-
-            childDecEndpoint._parent=decEndpoint;
-            childDecEndpoint._dynName=key;
-            childDecEndpoint._dynSrc=value;
-        }
+        this._checkDyn(pkgMeta, jsonKey, key, value, childDecEndpoint, decEndpoint);
 
         // Check if a compatible one is already resolved
         // If there's one, we don't need to resolve it twice
@@ -635,9 +652,9 @@ Manager.prototype._parseDependencies = function (decEndpoint, pkgMeta, jsonKey) 
 
     if (pending.length > 0) {
         Q.all(pending)
-        .then(function () {
-            this._parseDependencies(decEndpoint, pkgMeta, jsonKey);
-        }.bind(this));
+                .then(function () {
+                    this._parseDependencies(decEndpoint, pkgMeta, jsonKey);
+                }.bind(this));
     }
 };
 
@@ -702,59 +719,59 @@ Manager.prototype._dissect = function () {
 
         promise = promise.then(function () {
             return that._electSuitable(name, semvers, nonSemvers)
-            .then(function (suitable) {
-                suitables[name] = suitable;
-            });
+                    .then(function (suitable) {
+                        suitables[name] = suitable;
+                    });
         });
     }, this);
 
     // After a suitable version has been elected for every package
     promise
-    .then(function () {
-        // Look for extraneous resolutions
-        mout.object.forOwn(this._resolutions, function (resolution, name) {
-            if (this._conflicted[name]) {
-                return;
-            }
+            .then(function () {
+                // Look for extraneous resolutions
+                mout.object.forOwn(this._resolutions, function (resolution, name) {
+                    if (this._conflicted[name]) {
+                        return;
+                    }
 
-            this._logger.info('resolution', 'Removed unnecessary ' + name + '#' + resolution + ' resolution', {
-                name: name,
-                resolution: resolution,
-                action: 'delete'
-            });
+                    this._logger.info('resolution', 'Removed unnecessary ' + name + '#' + resolution + ' resolution', {
+                        name: name,
+                        resolution: resolution,
+                        action: 'delete'
+                    });
 
-            delete this._resolutions[name];
-        }, this);
+                    delete this._resolutions[name];
+                }, this);
 
-        // Filter only packages that need to be installed
-        this._dissected = mout.object.filter(suitables, function (decEndpoint, name) {
-            var installedMeta = this._installed[name];
-            var dst;
+                // Filter only packages that need to be installed
+                this._dissected = mout.object.filter(suitables, function (decEndpoint, name) {
+                    var installedMeta = this._installed[name];
+                    var dst;
 
-            // Skip linked dependencies
-            if (decEndpoint.linked) {
-                return false;
-            }
+                    // Skip linked dependencies
+                    if (decEndpoint.linked) {
+                        return false;
+                    }
 
-            // Skip if source is the same as dest
-            dst = path.join(this.componentsDir, name);
-            if (dst === decEndpoint.canonicalDir) {
-                return false;
-            }
+                    // Skip if source is the same as dest
+                    dst = path.join(this.componentsDir, name);
+                    if (dst === decEndpoint.canonicalDir) {
+                        return false;
+                    }
 
-            // Analyse a few props
-            if (installedMeta &&
-                installedMeta._target === decEndpoint.target &&
-                installedMeta._originalSource === decEndpoint.source &&
-                installedMeta._release === decEndpoint.pkgMeta._release
-            ) {
-                return this._config.force;
-            }
+                    // Analyse a few props
+                    if (installedMeta &&
+                            installedMeta._target === decEndpoint.target &&
+                            installedMeta._originalSource === decEndpoint.source &&
+                            installedMeta._release === decEndpoint.pkgMeta._release
+                            ) {
+                        return this._config.force;
+                    }
 
-            return true;
-        }, this);
-    }.bind(this))
-    .then(this._deferred.resolve, this._deferred.reject);
+                    return true;
+                }, this);
+            }.bind(this))
+            .then(this._deferred.resolve, this._deferred.reject);
 };
 
 Manager.prototype._electSuitable = function (name, semvers, nonSemvers) {
@@ -771,21 +788,21 @@ Manager.prototype._electSuitable = function (name, semvers, nonSemvers) {
     if (semvers.length && nonSemvers.length) {
         picks.push.apply(picks, semvers);
         picks.push.apply(picks, nonSemvers);
-    // If there are only non-semver ones, the suitable is elected
-    // only if there's one
+        // If there are only non-semver ones, the suitable is elected
+        // only if there's one
     } else if (nonSemvers.length) {
         if (nonSemvers.length === 1) {
             return Q.resolve(nonSemvers[0]);
         }
 
         picks.push.apply(picks, nonSemvers);
-    // If there are only semver ones, figure out which one is
-    // compatible with every requirement
+        // If there are only semver ones, figure out which one is
+        // compatible with every requirement
     } else {
         suitable = mout.array.find(semvers, function (subject) {
             return semvers.every(function (decEndpoint) {
                 return subject === decEndpoint ||
-                       semver.satisfies(subject.pkgMeta.version, decEndpoint.target);
+                        semver.satisfies(subject.pkgMeta.version, decEndpoint.target);
             });
         });
 
@@ -858,7 +875,7 @@ Manager.prototype._electSuitable = function (name, semvers, nonSemvers) {
         if (semver.validRange(resolution)) {
             suitable = mout.array.findIndex(picks, function (pick) {
                 return pick.pkgMeta.version &&
-                       semver.satisfies(pick.pkgMeta.version, resolution);
+                        semver.satisfies(pick.pkgMeta.version, resolution);
             });
         }
 
@@ -866,7 +883,7 @@ Manager.prototype._electSuitable = function (name, semvers, nonSemvers) {
         if (suitable === -1) {
             suitable = mout.array.findIndex(picks, function (pick) {
                 return pick.target === resolution ||
-                       pick.pkgMeta._release === resolution;
+                        pick.pkgMeta._release === resolution;
             });
         }
 
@@ -919,7 +936,9 @@ Manager.prototype._electSuitable = function (name, semvers, nonSemvers) {
         picks: dataPicks
     });
 
-    choices = picks.map(function (pick, index) { return index + 1; });
+    choices = picks.map(function (pick, index) {
+        return index + 1;
+    });
     return Q.nfcall(this._logger.prompt.bind(this._logger), {
         type: 'input',
         message: 'Answer:',
@@ -933,22 +952,22 @@ Manager.prototype._electSuitable = function (name, semvers, nonSemvers) {
             return true;
         }
     })
-    .then(function (choice) {
-        var pick;
+            .then(function (choice) {
+                var pick;
 
-        // Sanitize choice
-        choice = choice.trim();
-        save = /^!/.test(choice) || /!$/.test(choice);  // Save if prefixed or suffixed with !
-        choice = Number(mout.string.trim(choice, '!'));
-        pick = picks[choice - 1];
+                // Sanitize choice
+                choice = choice.trim();
+                save = /^!/.test(choice) || /!$/.test(choice);  // Save if prefixed or suffixed with !
+                choice = Number(mout.string.trim(choice, '!'));
+                pick = picks[choice - 1];
 
-        // Save resolution
-        if (save) {
-            this._storeResolution(pick);
-        }
+                // Save resolution
+                if (save) {
+                    this._storeResolution(pick);
+                }
 
-        return pick;
-    }.bind(this));
+                return pick;
+            }.bind(this));
 };
 
 Manager.prototype._storeResolution = function (pick) {
@@ -1019,9 +1038,9 @@ Manager.prototype._areCompatible = function (candidate, resolved) {
         // higher cap
         if (resolvedIsRange && candidateIsRange) {
             highestCandidate =
-                this._getCap(semver.toComparators(candidate.target), 'highest');
+                    this._getCap(semver.toComparators(candidate.target), 'highest');
             highestResolved =
-                this._getCap(semver.toComparators(resolved.target), 'highest');
+                    this._getCap(semver.toComparators(resolved.target), 'highest');
 
             // This never happens, but you can't be sure without tests
             if (!highestResolved.version || !highestCandidate.version) {
@@ -1029,7 +1048,7 @@ Manager.prototype._areCompatible = function (candidate, resolved) {
             }
 
             return semver.eq(highestCandidate.version, highestResolved.version) &&
-                highestCandidate.comparator === highestResolved.comparator;
+                    highestCandidate.comparator === highestResolved.comparator;
         }
         return false;
     }
@@ -1085,8 +1104,8 @@ Manager.prototype._getCap = function (comparators, side) {
             if (!cap.version || compare(candidate.version, cap.version)) {
                 cap = candidate;
             }
-        // Otherwise extract the version from the comparator
-        // using a simple regexp
+            // Otherwise extract the version from the comparator
+            // using a simple regexp
         } else {
             matches = comparator.match(/(.*?)(\d+\.\d+\.\d+.*)$/);
             if (!matches) {
@@ -1161,27 +1180,27 @@ Manager.prototype._uniquify = function (decEndpoints) {
  * @param {type} jsonKey
  * @returns {Boolean}
  */
-Manager.prototype._changeDep = function(info,jsonKey) {
+Manager.prototype._changeDep = function (info, jsonKey) {
     // get dependencies object inside json
-    var meta=info.pkgMeta[jsonKey];
+    var meta = info.pkgMeta[jsonKey];
 
     if (!meta || !meta[info.dynInfo.dynName])
         return false;
 
     // change dynamic name with resolved
-    var tmp=meta[info.dynInfo.dynName];
+    var tmp = meta[info.dynInfo.dynName];
     delete meta[info.dynInfo.dynName];
-    meta[info.dynInfo.realName]=tmp;
+    meta[info.dynInfo.realName] = tmp;
 
     // store dynamic name inside a private object to compare next time
-    if (typeof info.pkgMeta["_dyn_"+jsonKey] === 'undefined') {
-        info.pkgMeta["_dyn_"+jsonKey]={};
+    if (typeof info.pkgMeta["_dyn_" + jsonKey] === 'undefined') {
+        info.pkgMeta["_dyn_" + jsonKey] = {};
     }
 
-    info.pkgMeta["_dyn_"+jsonKey][info.dynInfo.dynName]={"source" : tmp, "name" : info.dynInfo.realName };
+    info.pkgMeta["_dyn_" + jsonKey][info.dynInfo.dynName] = {"source": tmp, "name": info.dynInfo.realName};
 
     var json = JSON.stringify(info.pkgMeta, null, '  ');
-    fs.writeFileSync(path.join(info.canonicalDir,".upt.json"), json);
+    fs.writeFileSync(path.join(info.canonicalDir, ".upt.json"), json);
 
     return true;
 };
