@@ -40,6 +40,10 @@ ______
 NOTE: you **MUST** know that after an update/install --force 
 the .git folder will be **replaced with new one** from the repository. If you want avoid it atm, you need to add ".git" or ".git/config" entry in
 "keep" upt.json array ( read below )
+
+NOTE2: if you're keeping the .git folder, upt will compare the current commit hash during updates ( without --force )
+So if the commit hash of new version from repository source is equal to current hash of local git repository, 
+the update will be skipped.
 ______
 
 ### AUTO DEP. NAME: 

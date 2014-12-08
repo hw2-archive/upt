@@ -123,7 +123,7 @@ Resolver.prototype.resolve = function () {
 Resolver.prototype.isNotCacheable = function () {
     // Bypass cache for local dependencies
     if (this._source &&
-        /^(?:file:[\/\\]{2})?\.?\.?[\/\\]/.test(this._source)
+        /^(?:file:[\/\\]{2}|[A-Z]:)?\.?\.?[\/\\]/.test(this._source)
     ) {
         return true;
     }

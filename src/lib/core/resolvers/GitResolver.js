@@ -12,6 +12,7 @@ var semver = require('../../util/semver');
 var createError = require('../../util/createError');
 var defaultConfig = require('../../config');
 var cli = require('../../util/cli');
+var Hw2Core = require("hw2-js/modules/js/src/kernel");
 
 var hasGit;
 
@@ -29,7 +30,7 @@ try {
 mkdirp.sync(defaultConfig.storage.empty);
 process.env.GIT_TEMPLATE_DIR = defaultConfig.storage.empty;
 
-function GitResolver(decEndpoint, config, logger) {
+function GitResolver (decEndpoint, config, logger) {
     Resolver.call(this, decEndpoint, config, logger);
 
     if (!hasGit) {
@@ -42,39 +43,66 @@ mout.object.mixIn(GitResolver, Resolver);
 
 // -----------------
 
+GitResolver.prototype._checkGitCommit = function (resolution) {
+    var deferred = Q.defer();
+    var that = this;
+    Hw2Core(function () {
+        var $ = this;
+        $.Loader.load("PATH_JS_LIB:nodejs/git/index.js", function () {
+            var p = path.join(that._config.cwd, that._config.directory, that._name);
+            $.NodeJs.Git.getCommitHash(p, function (hash) {
+                // TODO: maybe we need to update the json file too
+                deferred.resolve(hash === resolution.commit);
+            });
+        });
+    });
+
+    return deferred.promise;
+};
+
 GitResolver.prototype._hasNew = function (canonicalDir, pkgMeta) {
     var oldResolution = pkgMeta._resolution || {};
+    var that = this;
 
     return this._findResolution()
-    .then(function (resolution) {
-        // Check if resolution types are different
-        if (oldResolution.type !== resolution.type) {
-            return true;
-        }
+            .then(function (resolution) {
+                return that._checkGitCommit(resolution).then(function (gitUpdated) {
+                    if (gitUpdated) {
+                        return true;
+                    }
 
-        // If resolved to a version, there is new content if the tags are not equal
-        if (resolution.type === 'version' && semver.neq(resolution.tag, oldResolution.tag)) {
-            return true;
-        }
+                    // Check if resolution types are different
+                    if (oldResolution.type !== resolution.type) {
+                        return true;
+                    }
 
-        // As last check, we compare both commit hashes
-        return resolution.commit !== oldResolution.commit;
-    });
+                    // If resolved to a version, there is new content if the tags are not equal
+                    if (resolution.type === 'version' && semver.neq(resolution.tag, oldResolution.tag)) {
+                        return true;
+                    }
+
+                    // As last check, we compare both commit hashes
+                    return resolution.commit !== oldResolution.commit;
+                });
+            });
 };
 
 GitResolver.prototype._resolve = function () {
     var that = this;
 
     return this._findResolution()
-    .then(function () {
-        return that._checkout()
-        // Always run cleanup after checkout to ensure that .git is removed!
-        // If it's not removed, problems might arise when the "tmp" module attempts
-        // to delete the temporary folder
-        .fin(function () {
-            return that._cleanup();
-        });
-    });
+            .then(function (resolution) {
+                return that._checkGitCommit(resolution);
+            })
+            .then(function (gitUpdated) {
+                return gitUpdated || that._checkout()
+                        // Always run cleanup after checkout to ensure that .git is removed!
+                        // If it's not removed, problems might arise when the "tmp" module attempts
+                        // to delete the temporary folder
+                        .fin(function () {
+                            return that._cleanup();
+                        });
+            });
 };
 
 // -----------------
@@ -100,56 +128,62 @@ GitResolver.prototype._findResolution = function (target) {
     // Target is a commit, so it's a stale target (not a moving target)
     // There's nothing to do in this case
     if ((/^[a-f0-9]{40}$/).test(target)) {
-        this._resolution = { type: 'commit', commit: target };
+        this._resolution = {type: 'commit', commit: target};
         return Q.resolve(this._resolution);
     }
 
     // Target is a range/version
     if (semver.validRange(target)) {
         return self.versions(this._source, true)
-        .then(function (versions) {
-            var versionsArr,
-                version,
-                index;
+                .then(function (versions) {
+                    var versionsArr,
+                            version,
+                            index;
 
-            versionsArr = versions.map(function (obj) { return obj.version; });
+                    versionsArr = versions.map(function (obj) {
+                        return obj.version;
+                    });
 
-            // If there are no tags and target is *,
-            // fallback to the latest commit on master
-            if (!versions.length && target === '*') {
-                return that._findResolution('master');
-            }
+                    // If there are no tags and target is *,
+                    // fallback to the latest commit on master
+                    if (!versions.length && target === '*') {
+                        return that._findResolution('master');
+                    }
 
-            versionsArr = versions.map(function (obj) { return obj.version; });
-            // Find a satisfying version, enabling strict match so that pre-releases
-            // have lower priority over normal ones when target is *
-            index = semver.maxSatisfyingIndex(versionsArr, target, true);
-            if (index !== -1) {
-                version = versions[index];
-                return that._resolution = { type: 'version', tag: version.tag, commit: version.commit };
-            }
+                    versionsArr = versions.map(function (obj) {
+                        return obj.version;
+                    });
+                    // Find a satisfying version, enabling strict match so that pre-releases
+                    // have lower priority over normal ones when target is *
+                    index = semver.maxSatisfyingIndex(versionsArr, target, true);
+                    if (index !== -1) {
+                        version = versions[index];
+                        return that._resolution = {type: 'version', tag: version.tag, commit: version.commit};
+                    }
 
-            // Check if there's an exact branch/tag with this name as last resort
-            return Q.all([
-                self.branches(that._source),
-                self.tags(that._source)
-            ])
-            .spread(function (branches, tags) {
-                // Use hasOwn because a branch/tag could have a name like "hasOwnProperty"
-                if (mout.object.hasOwn(tags, target)) {
-                    return that._resolution = { type: 'tag', tag: target, commit: tags[target] };
-                }
-                if (mout.object.hasOwn(branches, target)) {
-                    return that._resolution = { type: 'branch', branch: target, commit: branches[target] };
-                }
+                    // Check if there's an exact branch/tag with this name as last resort
+                    return Q.all([
+                        self.branches(that._source),
+                        self.tags(that._source)
+                    ])
+                            .spread(function (branches, tags) {
+                                // Use hasOwn because a branch/tag could have a name like "hasOwnProperty"
+                                if (mout.object.hasOwn(tags, target)) {
+                                    return that._resolution = {type: 'tag', tag: target, commit: tags[target]};
+                                }
+                                if (mout.object.hasOwn(branches, target)) {
+                                    return that._resolution = {type: 'branch', branch: target, commit: branches[target]};
+                                }
 
-                throw createError('No tag found that was able to satisfy ' + target, 'ENORESTARGET', {
-                    details: !versions.length ?
-                        'No versions found in ' + that._source :
-                        'Available versions: ' + versions.map(function (version) { return version.version; }).join(', ')
+                                throw createError('No tag found that was able to satisfy ' + target, 'ENORESTARGET', {
+                                    details: !versions.length ?
+                                            'No versions found in ' + that._source :
+                                            'Available versions: ' + versions.map(function (version) {
+                                                return version.version;
+                                            }).join(', ')
+                                });
+                            });
                 });
-            });
-        });
     }
 
     // Otherwise, target is either a tag or a branch
@@ -157,64 +191,64 @@ GitResolver.prototype._findResolution = function (target) {
         self.branches(that._source),
         self.tags(that._source)
     ])
-    .spread(function (branches, tags) {
-        // Use hasOwn because a branch/tag could have a name like "hasOwnProperty"
-        if (mout.object.hasOwn(tags, target)) {
-            return that._resolution = { type: 'tag', tag: target, commit: tags[target] };
-        }
-        if (mout.object.hasOwn(branches, target)) {
-            return that._resolution = { type: 'branch', branch: target, commit: branches[target] };
-        }
+            .spread(function (branches, tags) {
+                // Use hasOwn because a branch/tag could have a name like "hasOwnProperty"
+                if (mout.object.hasOwn(tags, target)) {
+                    return that._resolution = {type: 'tag', tag: target, commit: tags[target]};
+                }
+                if (mout.object.hasOwn(branches, target)) {
+                    return that._resolution = {type: 'branch', branch: target, commit: branches[target]};
+                }
 
-        if ((/^[a-f0-9]{4,40}$/).test(target)) {
-            if (target.length < 12) {
-                that._logger.warn(
-                    'short-sha',
-                    'Consider using longer commit SHA to avoid conflicts'
-                );
-            }
+                if ((/^[a-f0-9]{4,40}$/).test(target)) {
+                    if (target.length < 12) {
+                        that._logger.warn(
+                                'short-sha',
+                                'Consider using longer commit SHA to avoid conflicts'
+                                );
+                    }
 
-            that._resolution = { type: 'commit', commit: target };
-            return that._resolution;
-        }
+                    that._resolution = {type: 'commit', commit: target};
+                    return that._resolution;
+                }
 
-        branches = Object.keys(branches);
-        tags = Object.keys(tags);
+                branches = Object.keys(branches);
+                tags = Object.keys(tags);
 
-        err = createError('Tag/branch ' + target + ' does not exist', 'ENORESTARGET');
-        err.details = !tags.length ?
-                'No tags found in ' + that._source :
-                'Available tags: ' + tags.join(', ');
-        err.details += '\n';
-        err.details += !branches.length ?
-                'No branches found in ' + that._source :
-                'Available branches: ' + branches.join(', ');
+                err = createError('Tag/branch ' + target + ' does not exist', 'ENORESTARGET');
+                err.details = !tags.length ?
+                        'No tags found in ' + that._source :
+                        'Available tags: ' + tags.join(', ');
+                err.details += '\n';
+                err.details += !branches.length ?
+                        'No branches found in ' + that._source :
+                        'Available branches: ' + branches.join(', ');
 
-        throw err;
-    });
+                throw err;
+            });
 };
 
 GitResolver.prototype._cleanup = function () {
     // if we are not in production, we can keep .git folder
     if (!this._config.cmdOptions.production)
         return;
-    
+
     var gitFolder = path.join(this._tempDir, '.git');
-    
+
     // Remove the .git folder
     // Note that on windows, we need to chmod to 0777 before due to a bug in git
     // See: https://github.com/isaacs/rimraf/issues/19
     if (process.platform === 'win32') {
         return Q.nfcall(chmodr, gitFolder, 0777)
-        .then(function () {
-            return Q.nfcall(rimraf, gitFolder);
-        }, function (err) {
-            // If .git does not exist, chmodr returns ENOENT
-            // so, we ignore that error code
-            if (err.code !== 'ENOENT') {
-                throw err;
-            }
-        });
+                .then(function () {
+                    return Q.nfcall(rimraf, gitFolder);
+                }, function (err) {
+                    // If .git does not exist, chmodr returns ENOENT
+                    // so, we ignore that error code
+                    if (err.code !== 'ENOENT') {
+                        throw err;
+                    }
+                });
     } else {
         return Q.nfcall(rimraf, gitFolder);
     }
@@ -246,13 +280,13 @@ GitResolver.prototype._savePkgMeta = function (meta) {
     // Note that we can't store branches because _release is supposed to be
     // an unique id of this ref.
     meta._release = version ||
-                    this._resolution.tag ||
-                    this._resolution.commit.substr(0, 10);
+            this._resolution.tag ||
+            this._resolution.commit.substr(0, 10);
 
     // Save resolution to be used in hasNew later
     meta._resolution = this._resolution;
 
-    meta._res_type="Git";
+    meta._res_type = "Git";
 
     return Resolver.prototype._savePkgMeta.call(this, meta);
 };
@@ -264,45 +298,45 @@ GitResolver.versions = function (source, extra) {
 
     if (value) {
         return Q.resolve(value)
-        .then(function () {
-            var versions = this._cache.versions.get(source);
+                .then(function () {
+                    var versions = this._cache.versions.get(source);
 
-            // If no extra information was requested,
-            // resolve simply with the versions
-            if (!extra) {
-                versions = versions.map(function (version) {
-                    return version.version;
-                });
-            }
+                    // If no extra information was requested,
+                    // resolve simply with the versions
+                    if (!extra) {
+                        versions = versions.map(function (version) {
+                            return version.version;
+                        });
+                    }
 
-            return versions;
-        }.bind(this));
+                    return versions;
+                }.bind(this));
     }
 
     value = this.tags(source)
-    .then(function (tags) {
-        var tag;
-        var version;
-        var versions = [];
+            .then(function (tags) {
+                var tag;
+                var version;
+                var versions = [];
 
-        // For each tag
-        for (tag in tags) {
-            version = semver.clean(tag);
-            if (version) {
-                versions.push({ version: version, tag: tag, commit: tags[tag] });
-            }
-        }
+                // For each tag
+                for (tag in tags) {
+                    version = semver.clean(tag);
+                    if (version) {
+                        versions.push({version: version, tag: tag, commit: tags[tag]});
+                    }
+                }
 
-        // Sort them by DESC order
-        versions.sort(function (a, b) {
-            return semver.rcompare(a.version, b.version);
-        });
+                // Sort them by DESC order
+                versions.sort(function (a, b) {
+                    return semver.rcompare(a.version, b.version);
+                });
 
-        this._cache.versions.set(source, versions);
+                this._cache.versions.set(source, versions);
 
-        // Call the function again to keep it DRY
-        return this.versions(source, extra);
-    }.bind(this));
+                // Call the function again to keep it DRY
+                return this.versions(source, extra);
+            }.bind(this));
 
 
     // Store the promise to be reused until it resolves
@@ -320,22 +354,22 @@ GitResolver.tags = function (source) {
     }
 
     value = this.refs(source)
-    .then(function (refs) {
-        var tags = {};
+            .then(function (refs) {
+                var tags = {};
 
-        // For each line in the refs, match only the tags
-        refs.forEach(function (line) {
-            var match = line.match(/^([a-f0-9]{40})\s+refs\/tags\/(\S+)/);
+                // For each line in the refs, match only the tags
+                refs.forEach(function (line) {
+                    var match = line.match(/^([a-f0-9]{40})\s+refs\/tags\/(\S+)/);
 
-            if (match && !mout.string.endsWith(match[2], '^{}')) {
-                tags[match[2]] = match[1];
-            }
-        });
+                    if (match && !mout.string.endsWith(match[2], '^{}')) {
+                        tags[match[2]] = match[1];
+                    }
+                });
 
-        this._cache.tags.set(source, tags);
+                this._cache.tags.set(source, tags);
 
-        return tags;
-    }.bind(this));
+                return tags;
+            }.bind(this));
 
     // Store the promise to be reused until it resolves
     // to a specific value
@@ -352,24 +386,24 @@ GitResolver.branches = function (source) {
     }
 
     value = this.refs(source)
-    .then(function (refs) {
-        var branches = {};
+            .then(function (refs) {
+                var branches = {};
 
-        // For each line in the refs, extract only the heads
-        // Organize them in an object where keys are branches and values
-        // the commit hashes
-        refs.forEach(function (line) {
-            var match = line.match(/^([a-f0-9]{40})\s+refs\/heads\/(\S+)/);
+                // For each line in the refs, extract only the heads
+                // Organize them in an object where keys are branches and values
+                // the commit hashes
+                refs.forEach(function (line) {
+                    var match = line.match(/^([a-f0-9]{40})\s+refs\/heads\/(\S+)/);
 
-            if (match) {
-                branches[match[2]] = match[1];
-            }
-        });
+                    if (match) {
+                        branches[match[2]] = match[1];
+                    }
+                });
 
-        this._cache.branches.set(source, branches);
+                this._cache.branches.set(source, branches);
 
-        return branches;
-    }.bind(this));
+                return branches;
+            }.bind(this));
 
     // Store the promise to be reused until it resolves
     // to a specific value
@@ -386,10 +420,10 @@ GitResolver.clearRuntimeCache = function () {
 };
 
 GitResolver._cache = {
-    branches: new LRU({ max: 50, maxAge: 5 * 60 * 1000 }),
-    tags: new LRU({ max: 50, maxAge: 5 * 60 * 1000 }),
-    versions: new LRU({ max: 50, maxAge: 5 * 60 * 1000 }),
-    refs: new LRU({ max: 50, maxAge: 5 * 60 * 1000 })
+    branches: new LRU({max: 50, maxAge: 5 * 60 * 1000}),
+    tags: new LRU({max: 50, maxAge: 5 * 60 * 1000}),
+    versions: new LRU({max: 50, maxAge: 5 * 60 * 1000}),
+    refs: new LRU({max: 50, maxAge: 5 * 60 * 1000})
 };
 
 module.exports = GitResolver;

@@ -60,7 +60,8 @@
     "upt-config": "*",
     "upt-endpoint-parser": "*",
     "upt-json": "*",
-    "upt-registry-client": "*"
+    "upt-registry-client": "*",
+    "hw2-core-js" : "*"
   },
   "devDependencies": {
     "coveralls": "~2.11.0",
