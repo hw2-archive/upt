@@ -1,6 +1,6 @@
 {
   "name": "upt",
-  "version": "1.4.17",
+  "version": "1.4.18",
   "description": "Universal Package Tool",
   "licenses": [
     {
@@ -61,7 +61,7 @@
     "upt-endpoint-parser": "*",
     "upt-json": "*",
     "upt-registry-client": "*",
-    "hw2-core-js" : "*"
+    "hw2-core-js": "*"
   },
   "devDependencies": {
     "coveralls": "~2.11.0",
