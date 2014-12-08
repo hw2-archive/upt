@@ -38,7 +38,7 @@ Manager.prototype.configure = function (setup) {
     // Targets
     this._targets = setup.targets || [];
     this._targets.forEach(function (decEndpoint) {
-        if (decEndpoint.dependants && decEndpoint.dependants.length > 0) {
+        if (decEndpoint.dependants) {
             for (var id in decEndpoint.dependants) {
                 var dep = decEndpoint.dependants[id];
                 // TODO: maybe split the checkDyn in 2 parts since it could be redudant in this case
@@ -1181,6 +1181,10 @@ Manager.prototype._uniquify = function (decEndpoints) {
  * @returns {Boolean}
  */
 Manager.prototype._changeDep = function (info, jsonKey) {
+    if (!info.canonicalDir) {
+        return;
+    }
+
     // get dependencies object inside json
     var meta = info.pkgMeta[jsonKey];
 
