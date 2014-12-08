@@ -12,7 +12,7 @@ var semver = require('../../util/semver');
 var createError = require('../../util/createError');
 var defaultConfig = require('../../config');
 var cli = require('../../util/cli');
-var Hw2Core = require("hw2-js/modules/js/src/kernel");
+var Hw2Core = require("hw2-core-js/modules/js/src/kernel");
 
 var hasGit;
 
