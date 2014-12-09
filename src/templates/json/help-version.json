@@ -9,6 +9,25 @@
             "shorthand": "-m",
             "flag": "--message",
             "description": "Custom git commit and tag message"
+        },
+        {
+            "shorthand": "-R",
+            "flag": "--recursive",
+            "description": "Recursive search for git repository and do a version batch operation"
+        },
+        {
+            "shorthand": "-p",
+            "flag": "--push",
+            "description": "Push committed changes"
+        },
+        {
+            "flag": "--skip-json",
+            "description": "Do only git operations"
+        },
+        {
+            "shorthand": "-d",
+            "flag": "--dry-run",
+            "description": "Do everything except commit/push and do not update the json"
         }
     ]
 }

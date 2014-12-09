@@ -139,6 +139,19 @@ Note:
 
 ______
 
+### UPDATE VERSION AND COMMIT/PUSH CHANGES IN BATCH MODE TOO
+
+  Via the 'version' command now you are able to recursively change the version to all packages
+  installed and/or commit/push repository changes.
+
+  Use case:
+  You have a project with many personal libraries subdivided in multiple repositories
+  and you've changed a library function that which involves all other repositories?
+
+    upt version --push --recursive -m "updated code to fit new foo library changes"
+
+______
+
 
 ## FOR DEVS:
 
