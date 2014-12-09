@@ -2,7 +2,7 @@ var tty = require('tty');
 var mout = require('mout');
 var config = require('upt-config').read();
 var cli = require('./util/cli');
-var shared = require('./util/shared');
+var Shared = require('./util/Shared');
 
 // Delete the json attribute because it is no longer supported
 // and conflicts with --json
@@ -35,6 +35,6 @@ mout.object.mixIn(config, cli.readOptions({
     silent: {type: Boolean, shorthand: 's'}
 }));
 
-config.cmdOptions = shared.get("options");
+config.cmdOptions = Shared.get("options");
 
 module.exports = config;

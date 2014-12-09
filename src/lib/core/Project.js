@@ -14,6 +14,8 @@ var createError = require('../util/createError');
 var readJson = require('../util/readJson');
 var validLink = require('../util/validLink');
 var scripts = require('./scripts');
+var Shared = require('../util/Shared');
+var Utils = require('../util/Utils');
 
 function Project (config, logger) {
     // This is the only architecture component that ensures defaults
@@ -21,6 +23,8 @@ function Project (config, logger) {
     // The reason behind it is that users can likely use this component
     // directly if commands do not fulfil their needs
     this._config = config || defaultConfig;
+    Shared.componentsDir = path.resolve(this._config.cwd, this._config.directory);
+
     this._logger = logger || new Logger();
     this._manager = new Manager(this._config, this._logger);
     this._options = {};
@@ -450,66 +454,81 @@ Project.prototype._analyse = function () {
         this._readJson(),
         this._readInstalled(),
         this._readLinks()
-    ])
-            .spread(function (json, installed, links) {
-                var root;
-                var jsonCopy = mout.lang.deepClone(json);
+    ]).spread(function (json, installed, links) {
+        var root;
+        var jsonCopy = mout.lang.deepClone(json);
 
-                root = {
-                    name: json.name,
-                    source: this._config.cwd,
-                    target: json.version || '*',
-                    pkgMeta: jsonCopy,
-                    canonicalDir: this._config.cwd,
-                    root: true
-                };
+        root = {
+            name: json.name,
+            source: this._config.cwd,
+            target: json.version || '*',
+            pkgMeta: jsonCopy,
+            canonicalDir: this._config.cwd,
+            root: true
+        };
 
-                mout.object.mixIn(installed, links);
+        mout.object.mixIn(installed, links);
 
-                // Mix direct extraneous as dependencies
-                // (dependencies installed without --save/--save-dev)
-                jsonCopy.dependencies = jsonCopy.dependencies || {};
-                jsonCopy.devDependencies = jsonCopy.devDependencies || {};
-                mout.object.forOwn(installed, function (decEndpoint, key) {
-                    var pkgMeta = decEndpoint.pkgMeta;
-                    var isSaved = jsonCopy.dependencies[key] || jsonCopy.devDependencies[key];
+        // Mix direct extraneous as dependencies
+        // (dependencies installed without --save/--save-dev)
+        jsonCopy.dependencies = jsonCopy.dependencies || {};
+        jsonCopy.devDependencies = jsonCopy.devDependencies || {};
 
-                    // The _direct propery is saved by the manager when .newly is specified
-                    // It may happen pkgMeta is undefined if package is uninstalled
-                    if (!isSaved && pkgMeta && pkgMeta._direct) {
-                        decEndpoint.extraneous = true;
-
-                        if (decEndpoint.linked) {
-                            jsonCopy.dependencies[key] = pkgMeta.version || '*';
-                        } else {
-                            jsonCopy.dependencies[key] = (pkgMeta._originalSource || pkgMeta._source) + '#' + pkgMeta._target;
-                        }
-                    }
-                });
-
-                // Restore the original dependencies cross-references,
-                // that is, the parent-child relationships
-                this._restoreNode(root, installed, 'dependencies');
-                // Do the same for the dev dependencies
-                if (!this._options.production) {
-                    this._restoreNode(root, installed, 'devDependencies');
+        function replaceDyn (jsonKey) {
+            var deps = jsonCopy[jsonKey];
+            for (var dep in deps) {
+                var key = Utils.findDyn(jsonKey, dep, deps[dep], root.source)
+                if (key !== "") {
+                    deps[key] = deps[dep];
+                    delete deps[dep];
                 }
+            }
+        }
 
-                // Restore the rest of the extraneous (not installed directly)
-                mout.object.forOwn(installed, function (decEndpoint, name) {
-                    if (!decEndpoint.dependants) {
-                        decEndpoint.extraneous = true;
-                        this._restoreNode(decEndpoint, installed, 'dependencies');
-                        // Note that it has no dependants, just dependencies!
-                        root.dependencies[name] = decEndpoint;
-                    }
-                }, this);
+        replaceDyn("dependencies");
+        replaceDyn("devDependencies");
 
-                // Remove root from the flattened tree
-                delete installed[json.name];
+        mout.object.forOwn(installed, function (decEndpoint, key) {
+            var pkgMeta = decEndpoint.pkgMeta;
 
-                return [json, root, installed];
-            }.bind(this));
+            var isSaved = jsonCopy.dependencies[key] || jsonCopy.devDependencies[key];
+
+            // The _direct propery is saved by the manager when .newly is specified
+            // It may happen pkgMeta is undefined if package is uninstalled
+            if (!isSaved && pkgMeta && pkgMeta._direct) {
+                decEndpoint.extraneous = true;
+
+                if (decEndpoint.linked) {
+                    jsonCopy.dependencies[key] = pkgMeta.version || '*';
+                } else {
+                    jsonCopy.dependencies[key] = (pkgMeta._originalSource || pkgMeta._source) + '#' + pkgMeta._target;
+                }
+            }
+        });
+
+        // Restore the original dependencies cross-references,
+        // that is, the parent-child relationships
+        this._restoreNode(root, installed, 'dependencies');
+        // Do the same for the dev dependencies
+        if (!this._options.production) {
+            this._restoreNode(root, installed, 'devDependencies');
+        }
+
+        // Restore the rest of the extraneous (not installed directly)
+        mout.object.forOwn(installed, function (decEndpoint, name) {
+            if (!decEndpoint.dependants) {
+                decEndpoint.extraneous = true;
+                this._restoreNode(decEndpoint, installed, 'dependencies');
+                // Note that it has no dependants, just dependencies!
+                root.dependencies[name] = decEndpoint;
+            }
+        }, this);
+
+        // Remove root from the flattened tree
+        delete installed[json.name];
+
+        return [json, root, installed];
+    }.bind(this));
 };
 
 Project.prototype._bootstrap = function (targets, resolved, incompatibles) {
@@ -550,22 +569,21 @@ Project.prototype._readJson = function () {
     // Read local json
     return this._json = readJson(this._config.cwd, {
         assume: {name: path.basename(this._config.cwd) || 'root'}
-    })
-            .spread(function (json, deprecated, assumed) {
-                var jsonStr;
+    }).spread(function (json, deprecated, assumed) {
+        var jsonStr;
 
-                if (deprecated) {
-                    that._logger.warn('deprecated', 'You are using the deprecated ' + deprecated + ' file');
-                }
+        if (deprecated) {
+            that._logger.warn('deprecated', 'You are using the deprecated ' + deprecated + ' file');
+        }
 
-                if (!assumed) {
-                    that._jsonFile = path.join(that._config.cwd, deprecated ? deprecated : 'upt.json');
-                }
+        if (!assumed) {
+            that._jsonFile = path.join(that._config.cwd, deprecated ? deprecated : 'upt.json');
+        }
 
-                jsonStr = JSON.stringify(json, null, '  ') + '\n';
-                that._jsonHash = md5(jsonStr);
-                return that._json = json;
-            });
+        jsonStr = JSON.stringify(json, null, '  ') + '\n';
+        that._jsonHash = md5(jsonStr);
+        return that._json = json;
+    });
 };
 
 Project.prototype._readInstalled = function () {
@@ -582,36 +600,35 @@ Project.prototype._readInstalled = function () {
     return this._installed = Q.nfcall(glob, '*/**/.upt.json', {
         cwd: componentsDir,
         dot: true
-    })
-            .then(function (filenames) {
-                var promises;
-                var decEndpoints = {};
+    }).then(function (filenames) {
+        var promises;
+        var decEndpoints = {};
 
-                // Foreach upt.json found
-                promises = filenames.map(function (filename) {
-                    var name = path.dirname(filename);
-                    var metaFile = path.join(componentsDir, filename);
+        // Foreach upt.json found
+        promises = filenames.map(function (filename) {
+            var name = path.dirname(filename);
+            var metaFile = path.join(componentsDir, filename);
 
-                    // Read package metadata
-                    return readJson(metaFile)
-                            .spread(function (pkgMeta) {
-                                decEndpoints[name] = {
-                                    name: name,
-                                    source: pkgMeta._originalSource || pkgMeta._source,
-                                    target: pkgMeta._target,
-                                    canonicalDir: path.dirname(metaFile),
-                                    pkgMeta: pkgMeta
-                                };
-                            });
+            // Read package metadata
+            return readJson(metaFile)
+                    .spread(function (pkgMeta) {
+                        decEndpoints[name] = {
+                            name: name,
+                            source: pkgMeta._originalSource || pkgMeta._source,
+                            target: pkgMeta._target,
+                            canonicalDir: path.dirname(metaFile),
+                            pkgMeta: pkgMeta
+                        };
+                    });
+        });
+
+        // Wait until all files have been read
+        // and resolve with the decomposed endpoints
+        return Q.all(promises)
+                .then(function () {
+                    return that._installed = decEndpoints;
                 });
-
-                // Wait until all files have been read
-                // and resolve with the decomposed endpoints
-                return Q.all(promises)
-                        .then(function () {
-                            return that._installed = decEndpoints;
-                        });
-            });
+    });
 };
 
 Project.prototype._readLinks = function () {

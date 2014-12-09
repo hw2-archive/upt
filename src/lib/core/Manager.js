@@ -12,11 +12,14 @@ var createError = require('../util/createError');
 var scripts = require('./scripts');
 var cli = require('../util/cli');
 var fstreamIgnore = require('fstream-ignore');
+var Utils = require('../util/Utils');
+var Shared = require('../util/Shared');
 
 function Manager (config, logger) {
     this._config = config;
     this._logger = logger;
     this._repository = new PackageRepository(this._config, this._logger);
+    this.componentsDir = Shared.componentsDir;
 
     this.configure({});
 }
@@ -92,8 +95,6 @@ Manager.prototype.configure = function (setup) {
 
     // Force-latest
     this._forceLatest = !!setup.forceLatest;
-
-    this.componentsDir = path.resolve(this._config.cwd, this._config.directory);
 
     return this;
 };
@@ -525,7 +526,16 @@ Manager.prototype._failFast = function () {
     }.bind(this), 20000);
 };
 
-
+/*
+ * 
+ * @param {Object} pkgMeta : package meta of parent package
+ * @param {String} jsonKey : the json key where the dependency is stored
+ * @param {String} name : name of dependency
+ * @param {String} source : source of dependency
+ * @param {Object} decEndpoint : endpoint of dependency
+ * @param {Object} parentEndpoint :  parent endpoint
+ * @returns {undefined}
+ */
 Manager.prototype._checkDyn = function (pkgMeta, jsonKey, name, source, decEndpoint, parentEndpoint) {
     if (name[0] === "%") {
         // search for a compatible dynamic dependance
@@ -554,22 +564,8 @@ Manager.prototype._checkDyn = function (pkgMeta, jsonKey, name, source, decEndpo
 
         // create dynamicDep 
         this._dynamicDep[source] = {"source": source, "dynName": name};
-
-        try {
-            var localMeta = require(path.join(this.componentsDir, pkgMeta.name, ".upt.json"));
-            if (localMeta["_dyn_" + jsonKey] !== "undefined"
-                    && localMeta["_dyn_" + jsonKey][name] !== "undefined"
-                    && localMeta["_dyn_" + jsonKey][name]["source"] === source
-                    ) {
-                decEndpoint.name = localMeta["_dyn_" + jsonKey][name]["name"] || "";
-            } else {
-                // set empty name to get it from the source
-                decEndpoint.name = "";
-            }
-
-        } catch (e) {
-            decEndpoint.name = "";
-        }
+        // if empty name, try to find it by fetching later
+        decEndpoint.name = Utils.findDyn(jsonKey, name, source, path.join(this.componentsDir, parentEndpoint.name));
 
         decEndpoint._parent = parentEndpoint;
         decEndpoint._dynName = name;
