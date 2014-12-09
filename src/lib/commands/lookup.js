@@ -4,7 +4,7 @@ var RegistryClient = require('upt-registry-client');
 var cli = require('../util/cli');
 var defaultConfig = require('../config');
 
-function lookup(logger, name, config) {
+function lookup (logger, name, config) {
     var registryClient;
 
     config = mout.object.deepFillIn(config || {}, defaultConfig);
@@ -13,20 +13,20 @@ function lookup(logger, name, config) {
     registryClient = new RegistryClient(config, logger);
 
     return Q.nfcall(registryClient.lookup.bind(registryClient), name)
-    .then(function (entry) {
-        // TODO: Handle entry.type.. for now it's only 'alias'
-        //       When we got published packages, this needs to be adjusted
-        return !entry ? null : {
-            name: name,
-            url: entry && entry.url
-        };
-    });
+            .then(function (entry) {
+                // TODO: Handle entry.type.. for now it's only 'alias'
+                //       When we got published packages, this needs to be adjusted
+                return !entry ? null : {
+                    name: name,
+                    url: entry && entry.url
+                };
+            });
 }
 
 // -------------------
 
 lookup.line = function (logger, argv) {
-    var options =  cli.readOptions(argv);
+    var options = cli.readOptions(argv);
     var name = options.argv.remain[1];
 
     if (!name) {

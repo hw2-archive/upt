@@ -4,7 +4,7 @@ var fs = require('graceful-fs');
 var cli = require('../util/cli');
 var createError = require('../util/createError');
 
-function help(logger, name) {
+function help (logger, name) {
     var json;
 
     if (name) {
@@ -16,15 +16,15 @@ function help(logger, name) {
     return Q.promise(function (resolve) {
         fs.exists(json, resolve);
     })
-    .then(function (exists) {
-        if (!exists) {
-            throw createError('Unknown command: ' + name, 'EUNKOWNCMD', {
-                command: name
-            });
-        }
+            .then(function (exists) {
+                if (!exists) {
+                    throw createError('Unknown command: ' + name, 'EUNKOWNCMD', {
+                        command: name
+                    });
+                }
 
-        return require(json);
-    });
+                return require(json);
+            });
 }
 
 // -------------------

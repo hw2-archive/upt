@@ -4,7 +4,7 @@ var _fs = require('fs'),
         //_wrench = require('wrench'),
         _fstreamIgnore = require('fstream-ignore');
 
-function purgeDeploy(dir, filters, callback) {
+function purgeDeploy (dir, filters, callback) {
     if (_fs.existsSync(dir)) {
         // [TODO] deprecated code
         //var files = _wrench.readdirSyncRecursive(dir);
@@ -17,13 +17,13 @@ function purgeDeploy(dir, filters, callback) {
         worker.addIgnoreRules(filters);
 
         worker
-                .on("child", function(e) {
+                .on("child", function (e) {
                     files.push(e.path);
                 })
-                .on("close", function() {
+                .on("close", function () {
                     // reverting array we will delete files before and then the emptied directory
                     files.reverse();
-                    files.forEach(function(path) {
+                    files.forEach(function (path) {
                         //don't remove folders since it will cause SVN conflict
                         if (_fs.statSync(path).isFile()) {
                             _fs.unlinkSync(path);

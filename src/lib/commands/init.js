@@ -11,7 +11,7 @@ var cli = require('../util/cli');
 var cmd = require('../util/cmd');
 var createError = require('../util/createError');
 
-function init(logger, config) {
+function init (logger, config) {
     var project;
 
     config = mout.object.deepFillIn(config || {}, defaultConfig);
@@ -30,30 +30,30 @@ function init(logger, config) {
 
     // Start with existing JSON details
     return readJson(project, logger)
-    // Fill in defaults
-    .then(setDefaults.bind(null, config))
-    // Now prompt user to make changes
-    .then(promptUser.bind(null, logger))
-    // Set ignore based on the response
-    .spread(setIgnore.bind(null, config))
-    // Set dependencies based on the response
-    .spread(setDependencies.bind(null, project))
-    // All done!
-    .spread(saveJson.bind(null, project, logger));
+            // Fill in defaults
+            .then(setDefaults.bind(null, config))
+            // Now prompt user to make changes
+            .then(promptUser.bind(null, logger))
+            // Set ignore based on the response
+            .spread(setIgnore.bind(null, config))
+            // Set dependencies based on the response
+            .spread(setDependencies.bind(null, project))
+            // All done!
+            .spread(saveJson.bind(null, project, logger));
 }
 
-function readJson(project, logger) {
+function readJson (project, logger) {
     return project.hasJson()
-    .then(function (json) {
-        if (json) {
-            logger.warn('existing', 'The existing ' + path.basename(json) + ' file will be used and filled in');
-        }
+            .then(function (json) {
+                if (json) {
+                    logger.warn('existing', 'The existing ' + path.basename(json) + ' file will be used and filled in');
+                }
 
-        return project.getJson();
-    });
+                return project.getJson();
+            });
 }
 
-function saveJson(project, logger, json) {
+function saveJson (project, logger, json) {
     // Cleanup empty props (null values, empty strings, objects and arrays)
     mout.object.forOwn(json, function (value, key) {
         if (value == null || mout.lang.isEmpty(value)) {
@@ -61,7 +61,7 @@ function saveJson(project, logger, json) {
         }
     });
 
-    logger.info('json', 'Generated json', { json: json });
+    logger.info('json', 'Generated json', {json: json});
 
     // Confirm the json with the user
     return Q.nfcall(logger.prompt.bind(logger), {
@@ -69,17 +69,17 @@ function saveJson(project, logger, json) {
         message: 'Looks good?',
         default: true
     })
-    .then(function (good) {
-        if (!good) {
-            return null;
-        }
+            .then(function (good) {
+                if (!good) {
+                    return null;
+                }
 
-        // Save json (true forces file creation)
-        return project.saveJson(true);
-    });
+                // Save json (true forces file creation)
+                return project.saveJson(true);
+            });
 }
 
-function setDefaults(config, json) {
+function setDefaults (config, json) {
     var name;
     var promise = Q.resolve();
 
@@ -93,11 +93,11 @@ function setDefaults(config, json) {
         // Assume latest semver tag if it's a git repo
         promise = promise.then(function () {
             return GitFsResolver.versions(config.cwd)
-            .then(function (versions) {
-                json.version = versions[0] || '0.0.0';
-            }, function () {
-                json.version = '0.0.0';
-            });
+                    .then(function (versions) {
+                        json.version = versions[0] || '0.0.0';
+                    }, function () {
+                        json.version = '0.0.0';
+                    });
         });
     }
 
@@ -118,20 +118,21 @@ function setDefaults(config, json) {
         // Set as GitHub homepage if it's a GitHub repository
         promise = promise.then(function () {
             return cmd('git', ['config', '--get', 'remote.origin.url'])
-            .spread(function (stdout) {
-                var pair;
+                    .spread(function (stdout) {
+                        var pair;
 
-                stdout = stdout.trim();
-                if (!stdout) {
-                    return;
-                }
+                        stdout = stdout.trim();
+                        if (!stdout) {
+                            return;
+                        }
 
-                pair = GitHubResolver.getOrgRepoPair(stdout);
-                if (pair) {
-                    json.homepage = 'https://github.com/' + pair.org + '/' + pair.repo;
-                }
-            })
-            .fail(function () { });
+                        pair = GitHubResolver.getOrgRepoPair(stdout);
+                        if (pair) {
+                            json.homepage = 'https://github.com/' + pair.org + '/' + pair.repo;
+                        }
+                    })
+                    .fail(function () {
+                    });
         });
     }
 
@@ -139,25 +140,27 @@ function setDefaults(config, json) {
         promise = promise.then(function () {
             // Get the user name configured in git
             return cmd('git', ['config', '--get', '--global', 'user.name'])
-            .spread(function (stdout) {
-                var gitEmail;
-                var gitName = stdout.trim();
+                    .spread(function (stdout) {
+                        var gitEmail;
+                        var gitName = stdout.trim();
 
-                // Abort if no name specified
-                if (!gitName) {
-                    return;
-                }
+                        // Abort if no name specified
+                        if (!gitName) {
+                            return;
+                        }
 
-                // Get the user email configured in git
-                return cmd('git', ['config', '--get', '--global', 'user.email'])
-                .spread(function (stdout) {
-                    gitEmail = stdout.trim();
-                }, function () {})
-                .then(function () {
-                    json.authors = gitName;
-                    json.authors += gitEmail ? ' <' + gitEmail + '>' : '';
-                });
-            }, function () {});
+                        // Get the user email configured in git
+                        return cmd('git', ['config', '--get', '--global', 'user.email'])
+                                .spread(function (stdout) {
+                                    gitEmail = stdout.trim();
+                                }, function () {
+                                })
+                                .then(function () {
+                                    json.authors = gitName;
+                                    json.authors += gitEmail ? ' <' + gitEmail + '>' : '';
+                                });
+                    }, function () {
+                    });
         });
     }
 
@@ -166,7 +169,7 @@ function setDefaults(config, json) {
     });
 }
 
-function promptUser(logger, json) {
+function promptUser (logger, json) {
     var questions = [
         {
             'name': 'name',
@@ -243,23 +246,23 @@ function promptUser(logger, json) {
     ];
 
     return Q.nfcall(logger.prompt.bind(logger), questions)
-    .then(function (answers) {
-        json.name = answers.name;
-        json.version = answers.version;
-        json.description = answers.description;
-        json.main = answers.main;
-        json.moduleType = answers.moduleType;
-        json.keywords = toArray(answers.keywords);
-        json.authors = toArray(answers.authors, ',');
-        json.license = answers.license;
-        json.homepage = answers.homepage;
-        json.private = answers.private || null;
+            .then(function (answers) {
+                json.name = answers.name;
+                json.version = answers.version;
+                json.description = answers.description;
+                json.main = answers.main;
+                json.moduleType = answers.moduleType;
+                json.keywords = toArray(answers.keywords);
+                json.authors = toArray(answers.authors, ',');
+                json.license = answers.license;
+                json.homepage = answers.homepage;
+                json.private = answers.private || null;
 
-        return [json, answers];
-    });
+                return [json, answers];
+            });
 }
 
-function toArray(value, splitter) {
+function toArray (value, splitter) {
     var arr = value.split(splitter || /[\s,]/);
 
     // Trim values
@@ -275,7 +278,7 @@ function toArray(value, splitter) {
     return arr.length ? arr : null;
 }
 
-function setIgnore(config, json, answers) {
+function setIgnore (config, json, answers) {
     if (answers.ignore) {
         json.ignore = mout.array.combine(json.ignore || [], [
             '**/.*',
@@ -290,29 +293,29 @@ function setIgnore(config, json, answers) {
     return [json, answers];
 }
 
-function setDependencies(project, json, answers) {
+function setDependencies (project, json, answers) {
     if (answers.dependencies) {
         return project.getTree()
-        .spread(function (tree, flattened, extraneous) {
-            if (extraneous.length) {
-                json.dependencies = {};
+                .spread(function (tree, flattened, extraneous) {
+                    if (extraneous.length) {
+                        json.dependencies = {};
 
-                // Add extraneous as dependencies
-                extraneous.forEach(function (extra) {
-                    var jsonEndpoint;
+                        // Add extraneous as dependencies
+                        extraneous.forEach(function (extra) {
+                            var jsonEndpoint;
 
-                    // Skip linked packages
-                    if (extra.linked) {
-                        return;
+                            // Skip linked packages
+                            if (extra.linked) {
+                                return;
+                            }
+
+                            jsonEndpoint = endpointParser.decomposed2json(extra.endpoint);
+                            mout.object.mixIn(json.dependencies, jsonEndpoint);
+                        });
                     }
 
-                    jsonEndpoint = endpointParser.decomposed2json(extra.endpoint);
-                    mout.object.mixIn(json.dependencies, jsonEndpoint);
+                    return [json, answers];
                 });
-            }
-
-            return [json, answers];
-        });
     }
 
     return [json, answers];

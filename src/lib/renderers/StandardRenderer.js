@@ -8,9 +8,9 @@ var os = require('os');
 var pkg = require(path.join(__dirname, '../../..', 'package.json'));
 var template = require('../util/template');
 
-function StandardRenderer(command, config) {
+function StandardRenderer (command, config) {
     this._sizes = {
-        id: 13,    // Id max chars
+        id: 13, // Id max chars
         label: 20, // Label max chars
         sumup: 5   // Amount to sum when the label exceeds
     };
@@ -127,7 +127,7 @@ StandardRenderer.prototype._help = function (data) {
         if (template.exists(specific)) {
             str = template.render(specific, data);
         } else {
-            str =  template.render('std/help-generic.std', data);
+            str = template.render('std/help-generic.std', data);
         }
 
         that._write(process.stdout, str);
@@ -169,7 +169,7 @@ StandardRenderer.prototype._list = function (tree) {
         tree.root = true;
         cliTree = archy(this._tree2archy(tree));
     } else {
-        cliTree = stringifyObject(tree, { indent: '  ' }) + '\n';
+        cliTree = stringifyObject(tree, {indent: '  '}) + '\n';
     }
 
     this._write(process.stdout, cliTree);
@@ -394,7 +394,7 @@ StandardRenderer.prototype._write = function (stream, str) {
 StandardRenderer.prototype._highlightJson = function (json) {
     var cardinal = require('cardinal');
 
-    return cardinal.highlight(stringifyObject(json, { indent: '  ' }), {
+    return cardinal.highlight(stringifyObject(json, {indent: '  '}), {
         theme: {
             String: {
                 _default: function (str) {

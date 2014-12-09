@@ -5,7 +5,7 @@ var ResolveCache = require('./ResolveCache');
 var resolverFactory = require('./resolverFactory');
 var createError = require('../util/createError');
 
-function PackageRepository(config, logger) {
+function PackageRepository (config, logger) {
     var registryOptions;
 
     this._config = config;
@@ -40,93 +40,93 @@ PackageRepository.prototype.fetch = function (decEndpoint) {
 
     // Get the appropriate resolver
     return resolverFactory(decEndpoint, this._config, logger, this._registryClient)
-    // Decide if we retrieve from the cache or not
-    // Also decide if we validate the cached entry or not
-    .then(function (resolver) {
-        info.resolver = resolver;
-        isTargetable = resolver.constructor.isTargetable;
+            // Decide if we retrieve from the cache or not
+            // Also decide if we validate the cached entry or not
+            .then(function (resolver) {
+                info.resolver = resolver;
+                isTargetable = resolver.constructor.isTargetable;
 
-        if (resolver.isNotCacheable()) {
-            return that._resolve(resolver, logger);
-        }
-
-        // If force flag is used, bypass cache, but write to cache anyway
-        if (that._config.force) {
-            logger.action('resolve', resolver.getSource() + '#' + resolver.getTarget());
-            return that._resolve(resolver, logger);
-        }
-
-        // Note that we use the resolver methods to query the
-        // cache because transformations/normalisations can occur
-        return that._resolveCache.retrieve(resolver.getSource(), resolver.getTarget())
-        // Decide if we can use the one from the resolve cache
-        .spread(function (canonicalDir, pkgMeta) {
-            // If there's no package in the cache
-            if (!canonicalDir) {
-                // And the offline flag is passed, error out
-                if (that._config.offline) {
-                    throw createError('No cached version for ' + resolver.getSource() + '#' + resolver.getTarget(), 'ENOCACHE', {
-                        resolver: resolver
-                    });
+                if (resolver.isNotCacheable()) {
+                    return that._resolve(resolver, logger);
                 }
 
-                // Otherwise, we have to resolve it
-                logger.info('not-cached', resolver.getSource() + (resolver.getTarget() ? '#' + resolver.getTarget() : ''));
-                logger.action('resolve', resolver.getSource() + '#' + resolver.getTarget());
-
-                return that._resolve(resolver, logger);
-            }
-
-            info.canonicalDir = canonicalDir;
-            info.pkgMeta = pkgMeta;
-
-            logger.info('cached', resolver.getSource() + (pkgMeta._release ? '#' + pkgMeta._release : ''));
-
-            // If offline flag is used, use directly the cached one
-            if (that._config.offline) {
-                return [canonicalDir, pkgMeta, isTargetable];
-            }
-
-            // Otherwise check for new contents
-            logger.action('validate', (pkgMeta._release ? pkgMeta._release + ' against ': '') +
-                                      resolver.getSource() + (resolver.getTarget() ? '#' + resolver.getTarget() : ''));
-
-            return resolver.hasNew(canonicalDir, pkgMeta)
-            .then(function (hasNew) {
-                // If there are no new contents, resolve to
-                // the cached one
-                if (!hasNew) {
-                    return [canonicalDir, pkgMeta, isTargetable];
+                // If force flag is used, bypass cache, but write to cache anyway
+                if (that._config.force) {
+                    logger.action('resolve', resolver.getSource() + '#' + resolver.getTarget());
+                    return that._resolve(resolver, logger);
                 }
 
-                // Otherwise resolve to the newest one
-                logger.info('new', 'version for ' + resolver.getSource() + '#' + resolver.getTarget());
-                logger.action('resolve', resolver.getSource() + '#' + resolver.getTarget());
+                // Note that we use the resolver methods to query the
+                // cache because transformations/normalisations can occur
+                return that._resolveCache.retrieve(resolver.getSource(), resolver.getTarget())
+                        // Decide if we can use the one from the resolve cache
+                        .spread(function (canonicalDir, pkgMeta) {
+                            // If there's no package in the cache
+                            if (!canonicalDir) {
+                                // And the offline flag is passed, error out
+                                if (that._config.offline) {
+                                    throw createError('No cached version for ' + resolver.getSource() + '#' + resolver.getTarget(), 'ENOCACHE', {
+                                        resolver: resolver
+                                    });
+                                }
 
-                return that._resolve(resolver, logger);
+                                // Otherwise, we have to resolve it
+                                logger.info('not-cached', resolver.getSource() + (resolver.getTarget() ? '#' + resolver.getTarget() : ''));
+                                logger.action('resolve', resolver.getSource() + '#' + resolver.getTarget());
+
+                                return that._resolve(resolver, logger);
+                            }
+
+                            info.canonicalDir = canonicalDir;
+                            info.pkgMeta = pkgMeta;
+
+                            logger.info('cached', resolver.getSource() + (pkgMeta._release ? '#' + pkgMeta._release : ''));
+
+                            // If offline flag is used, use directly the cached one
+                            if (that._config.offline) {
+                                return [canonicalDir, pkgMeta, isTargetable];
+                            }
+
+                            // Otherwise check for new contents
+                            logger.action('validate', (pkgMeta._release ? pkgMeta._release + ' against ' : '') +
+                                    resolver.getSource() + (resolver.getTarget() ? '#' + resolver.getTarget() : ''));
+
+                            return resolver.hasNew(canonicalDir, pkgMeta)
+                                    .then(function (hasNew) {
+                                        // If there are no new contents, resolve to
+                                        // the cached one
+                                        if (!hasNew) {
+                                            return [canonicalDir, pkgMeta, isTargetable];
+                                        }
+
+                                        // Otherwise resolve to the newest one
+                                        logger.info('new', 'version for ' + resolver.getSource() + '#' + resolver.getTarget());
+                                        logger.action('resolve', resolver.getSource() + '#' + resolver.getTarget());
+
+                                        return that._resolve(resolver, logger);
+                                    });
+                        });
+            })
+            // If something went wrong, also extend the error
+            .fail(function (err) {
+                that._extendLog(err, info);
+                throw err;
             });
-        });
-    })
-    // If something went wrong, also extend the error
-    .fail(function (err) {
-        that._extendLog(err, info);
-        throw err;
-    });
 };
 
 PackageRepository.prototype.versions = function (source) {
     // Resolve the source using the factory because the
     // source can actually be a registry name
     return resolverFactory.getConstructor(source, this._config, this._registryClient)
-    .spread(function (ConcreteResolver, source) {
-        // If offline, resolve using the cached versions
-        if (this._config.offline) {
-            return this._resolveCache.versions(source);
-        }
+            .spread(function (ConcreteResolver, source) {
+                // If offline, resolve using the cached versions
+                if (this._config.offline) {
+                    return this._resolveCache.versions(source);
+                }
 
-        // Otherwise, fetch remotely
-        return ConcreteResolver.versions(source);
-    }.bind(this));
+                // Otherwise, fetch remotely
+                return ConcreteResolver.versions(source);
+            }.bind(this));
 };
 
 PackageRepository.prototype.eliminate = function (pkgMeta) {
@@ -173,21 +173,21 @@ PackageRepository.prototype._resolve = function (resolver, logger) {
 
     // Resolve the resolver
     return resolver.resolve()
-    // Store in the cache
-    .then(function (canonicalDir) {
-        if (resolver.isNotCacheable()) {
-            return canonicalDir;
-        }
+            // Store in the cache
+            .then(function (canonicalDir) {
+                if (resolver.isNotCacheable()) {
+                    return canonicalDir;
+                }
 
-        return that._resolveCache.store(canonicalDir, resolver.getPkgMeta());
-    })
-    // Resolve promise with canonical dir and package meta
-    .then(function (dir) {
-        var pkgMeta = resolver.getPkgMeta();
+                return that._resolveCache.store(canonicalDir, resolver.getPkgMeta());
+            })
+            // Resolve promise with canonical dir and package meta
+            .then(function (dir) {
+                var pkgMeta = resolver.getPkgMeta();
 
-        logger.info('resolved', resolver.getSource() + (pkgMeta._release ? '#' + pkgMeta._release : ''));
-        return [dir, pkgMeta, resolver.constructor.isTargetable()];
-    });
+                logger.info('resolved', resolver.getSource() + (pkgMeta._release ? '#' + pkgMeta._release : ''));
+                return [dir, pkgMeta, resolver.constructor.isTargetable()];
+            });
 };
 
 PackageRepository.prototype._extendLog = function (log, info) {

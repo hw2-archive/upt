@@ -2,7 +2,7 @@ var mout = require('mout');
 var nopt = require('nopt');
 var renderers = require('../renderers');
 
-function readOptions(options, argv) {
+function readOptions (options, argv) {
     var types;
     var noptOptions;
     var parsedOptions = {};
@@ -37,7 +37,7 @@ function readOptions(options, argv) {
     return parsedOptions;
 }
 
-function getRenderer(command, json, config) {
+function getRenderer (command, json, config) {
     if (config.json || json) {
         return new renderers.Json(command, config);
     }

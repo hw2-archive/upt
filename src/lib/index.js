@@ -10,14 +10,14 @@ abbreviations.rm = 'uninstall';
 abbreviations.unlink = 'uninstall';
 abbreviations.ls = 'list';
 require('../../package.json');
-shared.set("options",cli.readOptions({
-        'force-latest': { type: Boolean, shorthand: 'F'},
-        'production': { type: Boolean, shorthand: 'p' },
-        'save': { type: Boolean, shorthand: 'S' },
-        'save-dev': { type: Boolean, shorthand: 'D' }
-    }, process.argv));
+shared.set("options", cli.readOptions({
+    'force-latest': {type: Boolean, shorthand: 'F'},
+    'production': {type: Boolean, shorthand: 'p'},
+    'save': {type: Boolean, shorthand: 'S'},
+    'save-dev': {type: Boolean, shorthand: 'D'}
+}, process.argv));
 
-function expandNames(obj, prefix, stack) {
+function expandNames (obj, prefix, stack) {
     prefix = prefix || '';
     stack = stack || [];
 
@@ -34,7 +34,7 @@ function expandNames(obj, prefix, stack) {
     return stack;
 }
 
-function clearRuntimeCache() {
+function clearRuntimeCache () {
     // Note that in edge cases, some architecture components instance's
     // in-memory cache might be skipped.
     // If that's a problem, you should create and fresh instances instead.

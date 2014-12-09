@@ -7,7 +7,7 @@ var createLink = require('../util/createLink');
 var cli = require('../util/cli');
 var defaultConfig = require('../config');
 
-function link(logger, name, localName) {
+function link (logger, name, localName) {
     if (name) {
         return linkTo(logger, name, localName);
     } else {
@@ -15,33 +15,33 @@ function link(logger, name, localName) {
     }
 }
 
-function linkSelf(logger, config) {
+function linkSelf (logger, config) {
     var project;
 
     config = mout.object.deepFillIn(config || {}, defaultConfig);
     project = new Project(config, logger);
 
     return project.getJson()
-    .then(function (json) {
-        var src = config.cwd;
-        var dst = path.join(config.storage.links, json.name);
+            .then(function (json) {
+                var src = config.cwd;
+                var dst = path.join(config.storage.links, json.name);
 
-        // Delete previous link if any
-        return Q.nfcall(rimraf, dst)
-        // Link globally
-        .then(function () {
-            return createLink(src, dst);
-        })
-        .then(function () {
-            return {
-                src: src,
-                dst: dst
-            };
-        });
-    });
+                // Delete previous link if any
+                return Q.nfcall(rimraf, dst)
+                        // Link globally
+                        .then(function () {
+                            return createLink(src, dst);
+                        })
+                        .then(function () {
+                            return {
+                                src: src,
+                                dst: dst
+                            };
+                        });
+            });
 }
 
-function linkTo(logger, name, localName, config) {
+function linkTo (logger, name, localName, config) {
     var src;
     var dst;
     var project = new Project(config, logger);
@@ -54,21 +54,21 @@ function linkTo(logger, name, localName, config) {
 
     // Delete destination folder if any
     return Q.nfcall(rimraf, dst)
-    // Link locally
-    .then(function () {
-        return createLink(src, dst);
-    })
-    // Install linked package deps
-    .then(function () {
-        return project.update([localName]);
-    })
-    .then(function (installed) {
-        return {
-            src: src,
-            dst: dst,
-            installed: installed
-        };
-    });
+            // Link locally
+            .then(function () {
+                return createLink(src, dst);
+            })
+            // Install linked package deps
+            .then(function () {
+                return project.update([localName]);
+            })
+            .then(function (installed) {
+                return {
+                    src: src,
+                    dst: dst,
+                    installed: installed
+                };
+            });
 }
 
 // -------------------

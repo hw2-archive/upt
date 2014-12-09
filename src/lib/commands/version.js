@@ -10,7 +10,7 @@ var cli = require('../util/cli');
 var defaultConfig = require('../config');
 var createError = require('../util/createError');
 
-function version(logger, versionArg, options, config) {
+function version (logger, versionArg, options, config) {
     var project;
 
     config = mout.object.deepFillIn(config || {}, defaultConfig);
@@ -19,31 +19,31 @@ function version(logger, versionArg, options, config) {
     return bump(project, versionArg, options.message);
 }
 
-function bump(project, versionArg, message) {
+function bump (project, versionArg, message) {
     var newVersion;
     var doGitCommit = false;
 
     return checkGit()
-    .then(function (hasGit) {
-        doGitCommit = hasGit;
-    })
-    .then(project.getJson.bind(project))
-    .then(function (json) {
-        newVersion = getNewVersion(json.version, versionArg);
-        json.version = newVersion;
-    })
-    .then(project.saveJson.bind(project))
-    .then(function () {
-        if (doGitCommit) {
-            return gitCommitAndTag(newVersion, message);
-        }
-    })
-    .then(function () {
-        console.log('v' + newVersion);
-    });
+            .then(function (hasGit) {
+                doGitCommit = hasGit;
+            })
+            .then(project.getJson.bind(project))
+            .then(function (json) {
+                newVersion = getNewVersion(json.version, versionArg);
+                json.version = newVersion;
+            })
+            .then(project.saveJson.bind(project))
+            .then(function () {
+                if (doGitCommit) {
+                    return gitCommitAndTag(newVersion, message);
+                }
+            })
+            .then(function () {
+                console.log('v' + newVersion);
+            });
 }
 
-function getNewVersion(currentVersion, versionArg) {
+function getNewVersion (currentVersion, versionArg) {
     var newVersion = semver.valid(versionArg);
     if (!newVersion) {
         newVersion = semver.inc(currentVersion, versionArg);
@@ -57,59 +57,59 @@ function getNewVersion(currentVersion, versionArg) {
     return newVersion;
 }
 
-function checkGit() {
+function checkGit () {
     var gitDir = path.join(process.cwd(), '.git');
     return Q.nfcall(fs.stat, gitDir)
-    .then(function (stat) {
-        if (stat.isDirectory()) {
-            return checkGitStatus();
-        }
-        return false;
-    }, function () {
-        //Ignore not found .git directory
-        return false;
-    });
+            .then(function (stat) {
+                if (stat.isDirectory()) {
+                    return checkGitStatus();
+                }
+                return false;
+            }, function () {
+                //Ignore not found .git directory
+                return false;
+            });
 }
 
-function checkGitStatus() {
+function checkGitStatus () {
     return Q.nfcall(which, 'git')
-    .fail(function (err) {
-        err.code = 'ENOGIT';
-        throw err;
-    })
-    .then(function () {
-        return Q.nfcall(execFile, 'git', ['status', '--porcelain'], {env: process.env});
-    })
-    .then(function (value) {
-        var stdout = value[0];
-        var lines = filterModifiedStatusLines(stdout);
-        if (lines.length) {
-            throw createError('Git working directory not clean.\n' + lines.join('\n'), 'EWORKINGDIRECTORYDIRTY');
-        }
-        return true;
-    });
+            .fail(function (err) {
+                err.code = 'ENOGIT';
+                throw err;
+            })
+            .then(function () {
+                return Q.nfcall(execFile, 'git', ['status', '--porcelain'], {env: process.env});
+            })
+            .then(function (value) {
+                var stdout = value[0];
+                var lines = filterModifiedStatusLines(stdout);
+                if (lines.length) {
+                    throw createError('Git working directory not clean.\n' + lines.join('\n'), 'EWORKINGDIRECTORYDIRTY');
+                }
+                return true;
+            });
 }
 
-function filterModifiedStatusLines(stdout) {
+function filterModifiedStatusLines (stdout) {
     return stdout.trim().split('\n')
-    .filter(function (line) {
-        return line.trim() && !line.match(/^\?\? /);
-    }).map(function (line) {
+            .filter(function (line) {
+                return line.trim() && !line.match(/^\?\? /);
+            }).map(function (line) {
         return line.trim();
     });
 }
 
-function gitCommitAndTag(newVersion, message) {
+function gitCommitAndTag (newVersion, message) {
     var tag = 'v' + newVersion;
     message = message || tag;
     message = message.replace(/%s/g, newVersion);
     return Q.nfcall(execFile, 'git', ['add', 'upt.json'], {env: process.env})
-    .then(function () {
-        return Q.nfcall(execFile, 'git', ['commit', '-m', message], {env: process.env});
-    })
-    .then(function () {
-        return Q.nfcall(execFile, 'git', ['tag', tag, '-am', message], {env: process.env});
-    });
+            .then(function () {
+                return Q.nfcall(execFile, 'git', ['commit', '-m', message], {env: process.env});
+            })
+            .then(function () {
+                return Q.nfcall(execFile, 'git', ['tag', tag, '-am', message], {env: process.env});
+            });
 }
 
 // -------------------
@@ -121,7 +121,7 @@ version.line = function (logger, argv) {
 
 version.options = function (argv) {
     return cli.readOptions({
-        'message': { type: String, shorthand: 'm'}
+        'message': {type: String, shorthand: 'm'}
     }, argv);
 };
 

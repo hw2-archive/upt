@@ -5,7 +5,7 @@ var cli = require('../util/cli');
 var Tracker = require('../util/analytics').Tracker;
 var defaultConfig = require('../config');
 
-function install(logger, endpoints, options, config) {
+function install (logger, endpoints, options, config) {
     var project;
     var decEndpoints;
     var tracker;
@@ -37,10 +37,10 @@ install.line = function (logger, argv) {
 
 install.options = function (argv) {
     return cli.readOptions({
-        'force-latest': { type: Boolean, shorthand: 'F'},
-        'production': { type: Boolean, shorthand: 'p' },
-        'save': { type: Boolean, shorthand: 'S' },
-        'save-dev': { type: Boolean, shorthand: 'D' }
+        'force-latest': {type: Boolean, shorthand: 'F'},
+        'production': {type: Boolean, shorthand: 'p'},
+        'save': {type: Boolean, shorthand: 'S'},
+        'save-dev': {type: Boolean, shorthand: 'D'}
     }, argv);
 };
 

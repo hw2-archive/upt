@@ -3,7 +3,7 @@ var Project = require('../core/Project');
 var cli = require('../util/cli');
 var defaultConfig = require('../config');
 
-function update(logger, names, options, config) {
+function update (logger, names, options, config) {
     var project;
 
     options = options || {};
@@ -28,8 +28,8 @@ update.line = function (logger, argv) {
 
 update.options = function (argv) {
     return cli.readOptions({
-        'force-latest': { type: Boolean, shorthand: 'F' },
-        'production': { type: Boolean, shorthand: 'p' }
+        'force-latest': {type: Boolean, shorthand: 'F'},
+        'production': {type: Boolean, shorthand: 'p'}
     }, argv);
 };
 

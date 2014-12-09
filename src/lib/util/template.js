@@ -12,7 +12,7 @@ mout.object.forOwn(helpers, function (register) {
     register(Handlebars);
 });
 
-function render(name, data, escape) {
+function render (name, data, escape) {
     var contents;
 
     // Check if already compiled
@@ -30,7 +30,7 @@ function render(name, data, escape) {
     return render(name, data, escape);
 }
 
-function exists(name) {
+function exists (name) {
     if (cache[name]) {
         return true;
     }

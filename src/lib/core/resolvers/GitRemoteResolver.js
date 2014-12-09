@@ -6,7 +6,7 @@ var LRU = require('lru-cache');
 var GitResolver = require('./GitResolver');
 var cmd = require('../../util/cmd');
 
-function GitRemoteResolver(decEndpoint, config, logger) {
+function GitRemoteResolver (decEndpoint, config, logger) {
     GitResolver.call(this, decEndpoint, config, logger);
 
     if (!mout.string.startsWith(this._source, 'file://')) {
@@ -46,9 +46,9 @@ GitRemoteResolver.prototype._checkout = function () {
 
     // If resolution is a commit, we need to clone the entire repo and check it out
     // Because a commit is not a named ref, there's no better solution
-    if (resolution.type === 'commit' || ( !this._config.cmdOptions.production && this._config.argv.remain[0]!=="info") ) {
+    if (resolution.type === 'commit' || (!this._config.cmdOptions.production && this._config.argv.remain[0] !== "info")) {
         promise = this._slowClone(resolution);
-    // Otherwise we are checking out a named ref so we can optimize it
+        // Otherwise we are checking out a named ref so we can optimize it
     } else {
         promise = this._fastClone(resolution);
     }
@@ -73,16 +73,16 @@ GitRemoteResolver.prototype._checkout = function () {
     }, 8000);
 
     return promise
-    // Add additional proxy information to the error if necessary
-    .fail(function (err) {
-        that._suggestProxyWorkaround(err);
-        throw err;
-    })
-    // Clear timer at the end
-    .fin(function () {
-        clearTimeout(timer);
-        reporter.cancel();
-    });
+            // Add additional proxy information to the error if necessary
+            .fail(function (err) {
+                that._suggestProxyWorkaround(err);
+                throw err;
+            })
+            // Clear timer at the end
+            .fin(function () {
+                clearTimeout(timer);
+                reporter.cancel();
+            });
 };
 
 GitRemoteResolver.prototype._findResolution = function (target) {
@@ -91,70 +91,70 @@ GitRemoteResolver.prototype._findResolution = function (target) {
     // Override this function to include a meaningful message related to proxies
     // if necessary
     return GitResolver.prototype._findResolution.call(this, target)
-    .fail(function (err) {
-        that._suggestProxyWorkaround(err);
-        throw err;
-    });
+            .fail(function (err) {
+                that._suggestProxyWorkaround(err);
+                throw err;
+            });
 };
 
 // ------------------------------
 
 GitRemoteResolver.prototype._slowClone = function (resolution) {
-    var args=['clone', this._source, this._tempDir, '--progress'];
+    var args = ['clone', this._source, this._tempDir, '--progress'];
 
     // point to specified branch
     if (resolution.branch)
-        args.push('-b',resolution.branch);
+        args.push('-b', resolution.branch);
 
     return cmd('git', args)
-    // reset repository to requested commit
-    .then(cmd.bind(cmd, 'git', ['reset', resolution.commit,'--hard'] , { cwd: this._tempDir }));
+            // reset repository to requested commit
+            .then(cmd.bind(cmd, 'git', ['reset', resolution.commit, '--hard'], {cwd: this._tempDir}));
 };
 
 GitRemoteResolver.prototype._fastClone = function (resolution) {
     var branch,
-        args,
-        that = this;
+            args,
+            that = this;
 
     branch = resolution.tag || resolution.branch;
-    args = ['clone',  this._source, '-b', branch, '--progress', '.'];
+    args = ['clone', this._source, '-b', branch, '--progress', '.'];
 
     // If the host does not support shallow clones, we don't use --depth=1
     if (!GitRemoteResolver._noShallow.get(this._host)) {
         args.push('--depth', 1);
     }
 
-    return cmd('git', args, { cwd: this._tempDir })
-    .spread(function (stdout, stderr) {
-        // Only after 1.7.10 --branch accepts tags
-        // Detect those cases and inform the user to update git otherwise it's
-        // a lot slower than newer versions
-        if (!/branch .+? not found/i.test(stderr)) {
-            return;
-        }
+    return cmd('git', args, {cwd: this._tempDir})
+            .spread(function (stdout, stderr) {
+                // Only after 1.7.10 --branch accepts tags
+                // Detect those cases and inform the user to update git otherwise it's
+                // a lot slower than newer versions
+                if (!/branch .+? not found/i.test(stderr)) {
+                    return;
+                }
 
-        that._logger.warn('old-git', 'It seems you are using an old version of git, it will be slower and propitious to errors!');
-        return cmd('git', ['checkout', resolution.commit], { cwd: that._tempDir });
-    }, function (err) {
-        // Some git servers do not support shallow clones
-        // When that happens, we mark this host and try again
-        if (!GitRemoteResolver._noShallow.has(that._source) &&
-            err.details &&
-            /(rpc failed|shallow|--depth)/i.test(err.details)
-        ) {
-            GitRemoteResolver._noShallow.set(that._host, true);
-            return that._fastClone(resolution);
-        }
+                that._logger.warn('old-git', 'It seems you are using an old version of git, it will be slower and propitious to errors!');
+                return cmd('git', ['checkout', resolution.commit], {cwd: that._tempDir});
+            }, function (err) {
+                // Some git servers do not support shallow clones
+                // When that happens, we mark this host and try again
+                if (!GitRemoteResolver._noShallow.has(that._source) &&
+                        err.details &&
+                        /(rpc failed|shallow|--depth)/i.test(err.details)
+                        ) {
+                    GitRemoteResolver._noShallow.set(that._host, true);
+                    return that._fastClone(resolution);
+                }
 
-        throw err;
-    });
+                throw err;
+            });
 };
 
 GitRemoteResolver.prototype._suggestProxyWorkaround = function (err) {
     if ((this._config.proxy || this._config.httpsProxy) &&
-        mout.string.startsWith(this._source, 'git://') &&
-        err.code === 'ECMDERR' && err.details
-    ) {
+            mout.string.startsWith(this._source, 'git://') &&
+            err.code === 'ECMDERR' && err.details
+            ) {
         err.details = err.details.trim();
         err.details += '\n\nWhen under a proxy, you must configure git to use https:// instead of git://.';
         err.details += '\nYou can configure it for every endpoint or for this specific host as follows:';
@@ -178,19 +178,19 @@ GitRemoteResolver.refs = function (source) {
 
     // Store the promise in the refs object
     value = cmd('git', ['ls-remote', '--tags', '--heads', source])
-    .spread(function (stdout) {
-        var refs;
+            .spread(function (stdout) {
+                var refs;
 
-        refs = stdout.toString()
-        .trim()                         // Trim trailing and leading spaces
-        .replace(/[\t ]+/g, ' ')        // Standardize spaces (some git versions make tabs, other spaces)
-        .split(/[\r\n]+/);              // Split lines into an array
+                refs = stdout.toString()
+                        .trim()                         // Trim trailing and leading spaces
+                        .replace(/[\t ]+/g, ' ')        // Standardize spaces (some git versions make tabs, other spaces)
+                        .split(/[\r\n]+/);              // Split lines into an array
 
-        // Update the refs with the actual refs
-        this._cache.refs.set(source, refs);
+                // Update the refs with the actual refs
+                this._cache.refs.set(source, refs);
 
-        return refs;
-    }.bind(this));
+                return refs;
+            }.bind(this));
 
     // Store the promise to be reused until it resolves
     // to a specific value
@@ -200,6 +200,6 @@ GitRemoteResolver.refs = function (source) {
 };
 
 // Store hosts that do not support shallow clones here
-GitRemoteResolver._noShallow = new LRU({ max: 50, maxAge: 5 * 60 * 1000 });
+GitRemoteResolver._noShallow = new LRU({max: 50, maxAge: 5 * 60 * 1000});
 
 module.exports = GitRemoteResolver;

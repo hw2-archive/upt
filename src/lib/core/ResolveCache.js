@@ -11,7 +11,7 @@ var readJson = require('../util/readJson');
 var copy = require('../util/copy');
 var md5 = require('../util/md5');
 
-function ResolveCache(config) {
+function ResolveCache (config) {
     // TODO: Make some config entries, such as:
     //       - Max MB
     //       - Max versions per source
@@ -48,53 +48,53 @@ ResolveCache.prototype.retrieve = function (source, target) {
     target = target || '*';
 
     return this._getVersions(sourceId)
-    .spread(function (versions) {
-        var suitable;
+            .spread(function (versions) {
+                var suitable;
 
-        // If target is a semver, find a suitable version
-        if (semver.validRange(target)) {
-            suitable = semver.maxSatisfying(versions, target, true);
+                // If target is a semver, find a suitable version
+                if (semver.validRange(target)) {
+                    suitable = semver.maxSatisfying(versions, target, true);
 
-            if (suitable) {
-                return suitable;
-            }
-        }
+                    if (suitable) {
+                        return suitable;
+                    }
+                }
 
-        // If target is '*' check if there's a cached '_wildcard'
-        if (target === '*') {
-            return mout.array.find(versions, function (version) {
-                return version === '_wildcard';
+                // If target is '*' check if there's a cached '_wildcard'
+                if (target === '*') {
+                    return mout.array.find(versions, function (version) {
+                        return version === '_wildcard';
+                    });
+                }
+
+                // Otherwise check if there's an exact match
+                return mout.array.find(versions, function (version) {
+                    return version === target;
+                });
+            })
+            .then(function (version) {
+                var canonicalDir;
+
+                if (!version) {
+                    return [];
+                }
+
+                // Resolve with canonical dir and package meta
+                canonicalDir = path.join(dir, encodeURIComponent(version));
+                return that._readPkgMeta(canonicalDir)
+                        .then(function (pkgMeta) {
+                            return [canonicalDir, pkgMeta];
+                        }, function () {
+                            // If there was an error, invalidate the in-memory cache,
+                            // delete the cached package and try again
+                            that._cache.del(sourceId);
+
+                            return Q.nfcall(rimraf, canonicalDir)
+                                    .then(function () {
+                                        return that.retrieve(source, target);
+                                    });
+                        });
             });
-        }
-
-        // Otherwise check if there's an exact match
-        return mout.array.find(versions, function (version) {
-            return version === target;
-        });
-    })
-    .then(function (version) {
-        var canonicalDir;
-
-        if (!version) {
-            return [];
-        }
-
-        // Resolve with canonical dir and package meta
-        canonicalDir = path.join(dir, encodeURIComponent(version));
-        return that._readPkgMeta(canonicalDir)
-        .then(function (pkgMeta) {
-            return [canonicalDir, pkgMeta];
-        }, function () {
-            // If there was an error, invalidate the in-memory cache,
-            // delete the cached package and try again
-            that._cache.del(sourceId);
-
-            return Q.nfcall(rimraf, canonicalDir)
-            .then(function () {
-                return that.retrieve(source, target);
-            });
-        });
-    });
 };
 
 ResolveCache.prototype.store = function (canonicalDir, pkgMeta) {
@@ -108,60 +108,60 @@ ResolveCache.prototype.store = function (canonicalDir, pkgMeta) {
     promise = pkgMeta ? Q.resolve(pkgMeta) : this._readPkgMeta(canonicalDir);
 
     return promise
-    .then(function (pkgMeta) {
-        sourceId = md5(pkgMeta._source);
-        release = that._getPkgRelease(pkgMeta);
-        dir = path.join(that._dir, sourceId, release);
-        pkgLock = path.join(that._lockDir, sourceId + '-' + release + '.lock');
+            .then(function (pkgMeta) {
+                sourceId = md5(pkgMeta._source);
+                release = that._getPkgRelease(pkgMeta);
+                dir = path.join(that._dir, sourceId, release);
+                pkgLock = path.join(that._lockDir, sourceId + '-' + release + '.lock');
 
-        // Check if destination directory exists to prevent issuing lock at all times
-        return Q.nfcall(fs.stat, dir)
-        .fail(function (err) {
-            var lockParams = { wait: 250, retries: 25, stale: 60000 };
-            return Q.nfcall(lockFile.lock, pkgLock, lockParams).then(function () {
-                // Ensure other process didn't start copying files before lock was created
+                // Check if destination directory exists to prevent issuing lock at all times
                 return Q.nfcall(fs.stat, dir)
-                .fail(function (err) {
-                    // If stat fails, it is expected to return ENOENT
-                    if (err.code !== 'ENOENT') {
-                        throw err;
-                    }
-
-                    // Create missing directory and copy files there
-                    return Q.nfcall(mkdirp, path.dirname(dir)).then(function () {
-                        return Q.nfcall(fs.rename, canonicalDir, dir)
                         .fail(function (err) {
-                            // If error is EXDEV it means that we are trying to rename
-                            // across different drives, so we copy and remove it instead
-                            if (err.code !== 'EXDEV') {
-                                throw err;
-                            }
+                            var lockParams = {wait: 250, retries: 25, stale: 60000};
+                            return Q.nfcall(lockFile.lock, pkgLock, lockParams).then(function () {
+                                // Ensure other process didn't start copying files before lock was created
+                                return Q.nfcall(fs.stat, dir)
+                                        .fail(function (err) {
+                                            // If stat fails, it is expected to return ENOENT
+                                            if (err.code !== 'ENOENT') {
+                                                throw err;
+                                            }
 
-                            return copy.copyDir(canonicalDir, dir);
-                        });
-                    });
+                                            // Create missing directory and copy files there
+                                            return Q.nfcall(mkdirp, path.dirname(dir)).then(function () {
+                                                return Q.nfcall(fs.rename, canonicalDir, dir)
+                                                        .fail(function (err) {
+                                                            // If error is EXDEV it means that we are trying to rename
+                                                            // across different drives, so we copy and remove it instead
+                                                            if (err.code !== 'EXDEV') {
+                                                                throw err;
+                                                            }
+
+                                                            return copy.copyDir(canonicalDir, dir);
+                                                        });
+                                            });
+                                        });
+                            }).finally(function () {
+                                lockFile.unlockSync(pkgLock);
+                            });
+                        }).finally(function () {
+                    // Ensure no tmp dir is left on disk.
+                    return Q.nfcall(rimraf, canonicalDir);
                 });
-            }).finally(function () {
-                lockFile.unlockSync(pkgLock);
+            })
+            .then(function () {
+                var versions = that._cache.get(sourceId);
+
+                // Add it to the in memory cache
+                // and sort the versions afterwards
+                if (versions && versions.indexOf(release) === -1) {
+                    versions.push(release);
+                    that._sortVersions(versions);
+                }
+
+                // Resolve with the final location
+                return dir;
             });
-        }).finally(function () {
-            // Ensure no tmp dir is left on disk.
-            return Q.nfcall(rimraf, canonicalDir);
-        });
-    })
-    .then(function () {
-        var versions = that._cache.get(sourceId);
-
-        // Add it to the in memory cache
-        // and sort the versions afterwards
-        if (versions && versions.indexOf(release) === -1) {
-            versions.push(release);
-            that._sortVersions(versions);
-        }
-
-        // Resolve with the final location
-        return dir;
-    });
 };
 
 ResolveCache.prototype.eliminate = function (pkgMeta) {
@@ -171,39 +171,39 @@ ResolveCache.prototype.eliminate = function (pkgMeta) {
     var that = this;
 
     return Q.nfcall(rimraf, dir)
-    .then(function () {
-        var versions = that._cache.get(sourceId) || [];
-        mout.array.remove(versions, release);
+            .then(function () {
+                var versions = that._cache.get(sourceId) || [];
+                mout.array.remove(versions, release);
 
-        // If this was the last package in the cache,
-        // delete the parent folder (source)
-        // For extra security, check against the file system
-        // if this was really the last package
-        if (!versions.length) {
-            that._cache.del(sourceId);
-
-            return that._getVersions(sourceId)
-            .spread(function (versions) {
+                // If this was the last package in the cache,
+                // delete the parent folder (source)
+                // For extra security, check against the file system
+                // if this was really the last package
                 if (!versions.length) {
-                    // Do not keep in-memory cache if it's completely
-                    // empty
                     that._cache.del(sourceId);
 
-                    return Q.nfcall(rimraf, path.dirname(dir));
+                    return that._getVersions(sourceId)
+                            .spread(function (versions) {
+                                if (!versions.length) {
+                                    // Do not keep in-memory cache if it's completely
+                                    // empty
+                                    that._cache.del(sourceId);
+
+                                    return Q.nfcall(rimraf, path.dirname(dir));
+                                }
+                            });
                 }
             });
-        }
-    });
 };
 
 ResolveCache.prototype.clear = function () {
     return Q.nfcall(rimraf, this._dir)
-    .then(function () {
-        return Q.nfcall(fs.mkdir, this._dir);
-    }.bind(this))
-    .then(function () {
-        this._cache.reset();
-    }.bind(this));
+            .then(function () {
+                return Q.nfcall(fs.mkdir, this._dir);
+            }.bind(this))
+            .then(function () {
+                this._cache.reset();
+            }.bind(this));
 };
 
 ResolveCache.prototype.reset = function () {
@@ -215,11 +215,11 @@ ResolveCache.prototype.versions = function (source) {
     var sourceId = md5(source);
 
     return this._getVersions(sourceId)
-    .spread(function (versions) {
-        return versions.filter(function (version) {
-            return semver.valid(version);
-        });
-    });
+            .spread(function (versions) {
+                return versions.filter(function (version) {
+                    return semver.valid(version);
+                });
+            });
 };
 
 ResolveCache.prototype.list = function () {
@@ -229,81 +229,81 @@ ResolveCache.prototype.list = function () {
 
     // Get the list of directories
     return Q.nfcall(fs.readdir, this._dir)
-    .then(function (sourceIds) {
-        promises = sourceIds.map(function (sourceId) {
-            return Q.nfcall(fs.readdir, path.join(that._dir, sourceId))
-            .then(function (versions) {
-                versions.forEach(function (version) {
-                    var dir = path.join(that._dir, sourceId, version);
-                    dirs.push(dir);
+            .then(function (sourceIds) {
+                promises = sourceIds.map(function (sourceId) {
+                    return Q.nfcall(fs.readdir, path.join(that._dir, sourceId))
+                            .then(function (versions) {
+                                versions.forEach(function (version) {
+                                    var dir = path.join(that._dir, sourceId, version);
+                                    dirs.push(dir);
+                                });
+                            }, function (err) {
+                                // Ignore lurking files, e.g.: .DS_Store if the user
+                                // has navigated throughout the cache
+                                if (err.code === 'ENOTDIR' && err.path) {
+                                    return Q.nfcall(rimraf, err.path);
+                                }
+
+                                throw err;
+                            });
                 });
-            }, function (err) {
-                // Ignore lurking files, e.g.: .DS_Store if the user
-                // has navigated throughout the cache
-                if (err.code === 'ENOTDIR' && err.path) {
-                    return Q.nfcall(rimraf, err.path);
-                }
 
-                throw err;
+                return Q.all(promises);
+            })
+            // Read every package meta
+            .then(function () {
+                promises = dirs.map(function (dir) {
+                    return that._readPkgMeta(dir)
+                            .then(function (pkgMeta) {
+                                return {
+                                    canonicalDir: dir,
+                                    pkgMeta: pkgMeta
+                                };
+                            }, function () {
+                                // If it fails to read, invalidate the in memory
+                                // cache for the source and delete the entry directory
+                                var sourceId = path.basename(path.dirname(dir));
+                                that._cache.del(sourceId);
+
+                                return Q.nfcall(rimraf, dir);
+                            });
+                });
+
+                return Q.all(promises);
+            })
+            // Sort by name ASC & release ASC
+            .then(function (entries) {
+                // Ignore falsy entries due to errors reading
+                // package metas
+                entries = entries.filter(function (entry) {
+                    return !!entry;
+                });
+
+                return entries.sort(function (entry1, entry2) {
+                    var pkgMeta1 = entry1.pkgMeta;
+                    var pkgMeta2 = entry2.pkgMeta;
+                    var comp = pkgMeta1.name.localeCompare(pkgMeta2.name);
+
+                    // Sort by name
+                    if (comp) {
+                        return comp;
+                    }
+
+                    // Sort by version
+                    if (pkgMeta1.version && pkgMeta2.version) {
+                        return semver.compare(pkgMeta1.version, pkgMeta2.version);
+                    }
+                    if (pkgMeta1.version) {
+                        return -1;
+                    }
+                    if (pkgMeta2.version) {
+                        return 1;
+                    }
+
+                    // Sort by target
+                    return pkgMeta1._target.localeCompare(pkgMeta2._target);
+                });
             });
-        });
-
-        return Q.all(promises);
-    })
-    // Read every package meta
-    .then(function () {
-        promises = dirs.map(function (dir) {
-            return that._readPkgMeta(dir)
-            .then(function (pkgMeta) {
-                return {
-                    canonicalDir: dir,
-                    pkgMeta: pkgMeta
-                };
-            }, function () {
-                // If it fails to read, invalidate the in memory
-                // cache for the source and delete the entry directory
-                var sourceId = path.basename(path.dirname(dir));
-                that._cache.del(sourceId);
-
-                return Q.nfcall(rimraf, dir);
-            });
-        });
-
-        return Q.all(promises);
-    })
-    // Sort by name ASC & release ASC
-    .then(function (entries) {
-        // Ignore falsy entries due to errors reading
-        // package metas
-        entries = entries.filter(function (entry) {
-            return !!entry;
-        });
-
-        return entries.sort(function (entry1, entry2) {
-            var pkgMeta1 = entry1.pkgMeta;
-            var pkgMeta2 = entry2.pkgMeta;
-            var comp = pkgMeta1.name.localeCompare(pkgMeta2.name);
-
-            // Sort by name
-            if (comp) {
-                return comp;
-            }
-
-            // Sort by version
-            if (pkgMeta1.version && pkgMeta2.version) {
-                return semver.compare(pkgMeta1.version, pkgMeta2.version);
-            }
-            if (pkgMeta1.version) {
-                return -1;
-            }
-            if (pkgMeta2.version) {
-                return 1;
-            }
-
-            // Sort by target
-            return pkgMeta1._target.localeCompare(pkgMeta2._target);
-        });
-    });
 };
 
 // ------------------------
@@ -337,9 +337,9 @@ ResolveCache.prototype._readPkgMeta = function (dir) {
     var filename = path.join(dir, '.upt.json');
 
     return readJson(filename)
-    .spread(function (json) {
-        return json;
-    });
+            .spread(function (json) {
+                return json;
+            });
 };
 
 ResolveCache.prototype._getVersions = function (sourceId) {
@@ -353,23 +353,23 @@ ResolveCache.prototype._getVersions = function (sourceId) {
 
     dir = path.join(this._dir, sourceId);
     return Q.nfcall(fs.readdir, dir)
-    .then(function (versions) {
-        // Sort and cache in memory
-        that._sortVersions(versions);
-        versions = versions.map(decodeURIComponent);
-        that._cache.set(sourceId, versions);
-        return [versions, false];
-    }, function (err) {
-        // If the directory does not exists, resolve
-        // as an empty array
-        if (err.code === 'ENOENT') {
-            versions = [];
-            that._cache.set(sourceId, versions);
-            return [versions, false];
-        }
+            .then(function (versions) {
+                // Sort and cache in memory
+                that._sortVersions(versions);
+                versions = versions.map(decodeURIComponent);
+                that._cache.set(sourceId, versions);
+                return [versions, false];
+            }, function (err) {
+                // If the directory does not exists, resolve
+                // as an empty array
+                if (err.code === 'ENOENT') {
+                    versions = [];
+                    that._cache.set(sourceId, versions);
+                    return [versions, false];
+                }
 
-        throw err;
-    });
+                throw err;
+            });
 };
 
 ResolveCache.prototype._sortVersions = function (versions) {

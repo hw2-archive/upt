@@ -3,7 +3,7 @@ var Q = require('q');
 var promptly = require('promptly');
 var createError = require('../util/createError');
 
-function JsonRenderer() {
+function JsonRenderer () {
     this._nrLogs = 0;
 }
 
@@ -65,9 +65,9 @@ JsonRenderer.prototype.prompt = function (prompts) {
 
         // Prompt
         opts = {
-            silent: true,                                           // To not mess with JSON output
-            trim: false,                                            // To allow " " to not assume the default value
-            default: prompt.default == null ? '' : prompt.default,  // If default is null, make it '' so that it does not retry
+            silent: true, // To not mess with JSON output
+            trim: false, // To allow " " to not assume the default value
+            default: prompt.default == null ? '' : prompt.default, // If default is null, make it '' so that it does not retry
             validator: !prompt.validate ? null : function (value) {
                 var ret = prompt.validate(value);
 
@@ -81,21 +81,21 @@ JsonRenderer.prototype.prompt = function (prompts) {
 
         // For now only "input", "confirm" and "password" are supported
         switch (prompt.type) {
-        case 'input':
-            funcName = 'prompt';
-            break;
-        case 'confirm':
-        case 'password':
-            funcName = prompt.type;
-            break;
-        case 'checkbox':
-            funcName = 'prompt';
-            break;
-        default:
-            promise = promise.then(function () {
-                throw createError('Unknown prompt type', 'ENOTSUP');
-            });
-            return;
+            case 'input':
+                funcName = 'prompt';
+                break;
+            case 'confirm':
+            case 'password':
+                funcName = prompt.type;
+                break;
+            case 'checkbox':
+                funcName = 'prompt';
+                break;
+            default:
+                promise = promise.then(function () {
+                    throw createError('Unknown prompt type', 'ENOTSUP');
+                });
+                return;
         }
 
         promise = promise.then(function () {
@@ -104,9 +104,9 @@ JsonRenderer.prototype.prompt = function (prompts) {
             that.log(prompt);
 
             return Q.nfcall(promptly[funcName], '', opts)
-            .then(function (answer) {
-                answers[prompt.name] = answer;
-            });
+                    .then(function (answer) {
+                        answers[prompt.name] = answer;
+                    });
         });
 
         if (prompt.type === 'checkbox') {

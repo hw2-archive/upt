@@ -6,7 +6,7 @@ var cli = require('../util/cli');
 var Tracker = require('../util/analytics').Tracker;
 var defaultConfig = require('../config');
 
-function info(logger, endpoint, property, config) {
+function info (logger, endpoint, property, config) {
     var repository;
     var decEndpoint;
     var tracker;
@@ -22,33 +22,33 @@ function info(logger, endpoint, property, config) {
         getPkgMeta(repository, decEndpoint, property),
         decEndpoint.target === '*' && !property ? repository.versions(decEndpoint.source) : null
     ])
-    .spread(function (pkgMeta, versions) {
-        if (versions) {
-            return {
-                name: decEndpoint.source,
-                versions: versions,
-                latest: pkgMeta
-            };
-        }
+            .spread(function (pkgMeta, versions) {
+                if (versions) {
+                    return {
+                        name: decEndpoint.source,
+                        versions: versions,
+                        latest: pkgMeta
+                    };
+                }
 
-        return pkgMeta;
-    });
+                return pkgMeta;
+            });
 }
 
-function getPkgMeta(repository, decEndpoint, property) {
+function getPkgMeta (repository, decEndpoint, property) {
     return repository.fetch(decEndpoint)
-    .spread(function (canonicalDir, pkgMeta) {
-        pkgMeta = mout.object.filter(pkgMeta, function (value, key) {
-            return key.charAt(0) !== '_';
-        });
+            .spread(function (canonicalDir, pkgMeta) {
+                pkgMeta = mout.object.filter(pkgMeta, function (value, key) {
+                    return key.charAt(0) !== '_';
+                });
 
-        // Retrieve specific property
-        if (property) {
-            pkgMeta = mout.object.get(pkgMeta, property);
-        }
+                // Retrieve specific property
+                if (property) {
+                    pkgMeta = mout.object.get(pkgMeta, property);
+                }
 
-        return pkgMeta;
-    });
+                return pkgMeta;
+            });
 }
 
 // -------------------

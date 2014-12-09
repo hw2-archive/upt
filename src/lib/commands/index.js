@@ -8,12 +8,12 @@ var Logger = require('bower-logger');
  * a command function. The difference is that `cmd = commandFactory()` and `cmd()`
  * return as soon as possible and load and execute the command asynchronously.
  */
-function commandFactory(id) {
+function commandFactory (id) {
     if (process.env.STRICT_REQUIRE) {
         require(id);
     }
 
-    function command() {
+    function command () {
         var commandArgs = [].slice.call(arguments);
 
         return withLogger(function (logger) {
@@ -22,23 +22,23 @@ function commandFactory(id) {
         });
     }
 
-    function runFromArgv(argv) {
+    function runFromArgv (argv) {
         return withLogger(function (logger) {
             return require(id).line.call(undefined, logger, argv);
         });
     }
 
-    function withLogger(func) {
+    function withLogger (func) {
         var logger = new Logger();
 
         Q.try(func, logger)
-        .done(function () {
-            var args = [].slice.call(arguments);
-            args.unshift('end');
-            logger.emit.apply(logger, args);
-        }, function (error) {
-            logger.emit('error', error);
-        });
+                .done(function () {
+                    var args = [].slice.call(arguments);
+                    args.unshift('end');
+                    logger.emit.apply(logger, args);
+                }, function (error) {
+                    logger.emit('error', error);
+                });
 
         return logger;
     }

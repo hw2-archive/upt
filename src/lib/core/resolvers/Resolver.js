@@ -11,7 +11,7 @@ var scripts = require('../scripts.js');
 
 tmp.setGracefulCleanup();
 
-function Resolver(decEndpoint, config, logger) {
+function Resolver (decEndpoint, config, logger) {
     this._source = decEndpoint.source;
     this._target = decEndpoint.target || '*';
     this._name = decEndpoint.name || path.basename(this._source);
@@ -59,24 +59,24 @@ Resolver.prototype.hasNew = function (canonicalDir, pkgMeta) {
     // Avoid reading the package meta if already given
     if (pkgMeta) {
         promise = this._hasNew(canonicalDir, pkgMeta);
-    // Otherwise call _hasNew with both the package meta and the canonical dir
+        // Otherwise call _hasNew with both the package meta and the canonical dir
     } else {
         metaFile = path.join(canonicalDir, '.upt.json');
 
-        promise = readJson(metaFile,{
+        promise = readJson(metaFile, {
             //config: this._config,
             //name: this._guessedName ? "" : this._name
         })
-        .spread(function (pkgMeta) {
-            return that._hasNew(canonicalDir, pkgMeta);
-        }, function (err) {
-            that._logger.debug('read-json', 'Failed to read ' + metaFile, {
-                filename: metaFile,
-                error: err
-            });
+                .spread(function (pkgMeta) {
+                    return that._hasNew(canonicalDir, pkgMeta);
+                }, function (err) {
+                    that._logger.debug('read-json', 'Failed to read ' + metaFile, {
+                        filename: metaFile,
+                        error: err
+                    });
 
-            return true;  // Simply resolve to true if there was an error reading the file
-        });
+                    return true;  // Simply resolve to true if there was an error reading the file
+                });
     }
 
     return promise.fin(function () {
@@ -96,42 +96,42 @@ Resolver.prototype.resolve = function () {
 
     // Create temporary dir
     return this._createTempDir()
-    // Resolve self
-    .then(this._resolve.bind(this))
-    // Read json, generating the package meta
-    .then(this._readJson.bind(this, null))
-    // Apply and save package meta
-    .then(function (meta) {
-        return that._applyPkgMeta(meta)
-        .then(that._savePkgMeta.bind(that, meta))
-        // calling postresolved script
-        .then(scripts.postresolved(that._config, that._name, that._tempDir, meta));
-    })
-    .then(function () {
-        // Resolve with the folder
-        return that._tempDir;
-    }, function (err) {
-        // If something went wrong, unset the temporary dir
-        that._tempDir = null;
-        throw err;
-    })
-    .fin(function () {
-        that._working = false;
-    });
+            // Resolve self
+            .then(this._resolve.bind(this))
+            // Read json, generating the package meta
+            .then(this._readJson.bind(this, null))
+            // Apply and save package meta
+            .then(function (meta) {
+                return that._applyPkgMeta(meta)
+                        .then(that._savePkgMeta.bind(that, meta))
+                        // calling postresolved script
+                        .then(scripts.postresolved(that._config, that._name, that._tempDir, meta));
+            })
+            .then(function () {
+                // Resolve with the folder
+                return that._tempDir;
+            }, function (err) {
+                // If something went wrong, unset the temporary dir
+                that._tempDir = null;
+                throw err;
+            })
+            .fin(function () {
+                that._working = false;
+            });
 };
 
 Resolver.prototype.isNotCacheable = function () {
     // Bypass cache for local dependencies
     if (this._source &&
-        /^(?:file:[\/\\]{2}|[A-Z]:)?\.?\.?[\/\\]/.test(this._source)
-    ) {
+            /^(?:file:[\/\\]{2}|[A-Z]:)?\.?\.?[\/\\]/.test(this._source)
+            ) {
         return true;
     }
 
     // We don't want to cache moving targets like branches
     if (this._pkgMeta &&
-        this._pkgMeta._resolution &&
-        this._pkgMeta._resolution.type === 'branch')
+            this._pkgMeta._resolution &&
+            this._pkgMeta._resolution.type === 'branch')
     {
         return true;
     }
@@ -161,24 +161,25 @@ Resolver.versions = function (source) {
     return Q.resolve([]);
 };
 
-Resolver.clearRuntimeCache = function () {};
+Resolver.clearRuntimeCache = function () {
+};
 
 // -----------------
 
 Resolver.prototype._createTempDir = function () {
     return Q.nfcall(mkdirp, this._config.tmp)
-    .then(function () {
-        var name = this._name.replace(/\//g, "-"); // avoid subdirectories not supported by tmp.dir
-        return Q.nfcall(tmp.dir, {
-            template: path.join(this._config.tmp, name + '-' + process.pid + '-XXXXXX'),
-            mode: 0777 & ~process.umask(),
-            unsafeCleanup: true
-        });
-    }.bind(this))
-    .then(function (dir) {
-        this._tempDir = dir;
-        return dir;
-    }.bind(this));
+            .then(function () {
+                var name = this._name.replace(/\//g, "-"); // avoid subdirectories not supported by tmp.dir
+                return Q.nfcall(tmp.dir, {
+                    template: path.join(this._config.tmp, name + '-' + process.pid + '-XXXXXX'),
+                    mode: 0777 & ~process.umask(),
+                    unsafeCleanup: true
+                });
+            }.bind(this))
+            .then(function (dir) {
+                this._tempDir = dir;
+                return dir;
+            }.bind(this));
 };
 
 Resolver.prototype._cleanTempDir = function () {
@@ -190,12 +191,12 @@ Resolver.prototype._cleanTempDir = function () {
 
     // Delete and create folder
     return Q.nfcall(rimraf, tempDir)
-    .then(function () {
-        return Q.nfcall(mkdirp, tempDir, 0777 & ~process.umask());
-    })
-    .then(function () {
-        return tempDir;
-    });
+            .then(function () {
+                return Q.nfcall(mkdirp, tempDir, 0777 & ~process.umask());
+            })
+            .then(function () {
+                return tempDir;
+            });
 };
 
 Resolver.prototype._readJson = function (dir) {
@@ -203,18 +204,18 @@ Resolver.prototype._readJson = function (dir) {
 
     dir = dir || this._tempDir;
     return readJson(dir, {
-            assume: { name: this._name },
-            config: this._config,
-            name: this._guessedName ? "" : this._name
-        }
+        assume: {name: this._name},
+        config: this._config,
+        name: this._guessedName ? "" : this._name
+    }
     )
-    .spread(function (json, deprecated) {
-        if (deprecated) {
-            that._logger.warn('deprecated', 'Package ' + that._name + ' is using the deprecated ' + deprecated);
-        }
+            .spread(function (json, deprecated) {
+                if (deprecated) {
+                    that._logger.warn('deprecated', 'Package ' + that._name + ' is using the deprecated ' + deprecated);
+                }
 
-        return json;
-    });
+                return json;
+            });
 };
 
 Resolver.prototype._applyPkgMeta = function (meta) {
@@ -232,9 +233,9 @@ Resolver.prototype._applyPkgMeta = function (meta) {
 
     // Otherwise remove them from the temp dir
     return removeIgnores(this._tempDir, meta)
-    .then(function () {
-        return meta;
-    });
+            .then(function () {
+                return meta;
+            });
 };
 
 Resolver.prototype._savePkgMeta = function (meta) {
@@ -246,21 +247,22 @@ Resolver.prototype._savePkgMeta = function (meta) {
     meta._target = this._target;
 
     ['main', 'ignore'].forEach(function (attr) {
-        if (meta[attr]) return;
+        if (meta[attr])
+            return;
 
         that._logger.log(
-            'warn', 'invalid-meta',
-            (meta.name || 'component') + ' is missing "' + attr + '" entry in upt.json'
-        );
+                'warn', 'invalid-meta',
+                (meta.name || 'component') + ' is missing "' + attr + '" entry in upt.json'
+                );
     });
 
     // Stringify contents
     contents = JSON.stringify(meta, null, 2);
 
     return Q.nfcall(fs.writeFile, path.join(this._tempDir, '.upt.json'), contents)
-    .then(function () {
-        return that._pkgMeta = meta;
-    });
+            .then(function () {
+                return that._pkgMeta = meta;
+            });
 };
 
 module.exports = Resolver;

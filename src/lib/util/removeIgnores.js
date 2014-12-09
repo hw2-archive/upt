@@ -4,7 +4,7 @@ var fstreamIgnore = require('fstream-ignore');
 var mout = require('mout');
 var Q = require('q');
 
-function removeIgnores(dir, meta) {
+function removeIgnores (dir, meta) {
     var reader;
     var applyIgnores;
     var deferred = Q.defer();
@@ -38,27 +38,27 @@ function removeIgnores(dir, meta) {
     };
 
     reader
-    .on('child', function (entry) {
-        nonIgnored.push(entry.path);
-    })
-    .on('error', deferred.reject)
-    .on('end', function () {
-        var promises;
+            .on('child', function (entry) {
+                nonIgnored.push(entry.path);
+            })
+            .on('error', deferred.reject)
+            .on('end', function () {
+                var promises;
 
-        // Ensure that we are not ignoring files that should not be ignored!
-        ignored = mout.array.unique(ignored);
-        ignored = ignored.filter(function (file) {
-            return nonIgnored.indexOf(file) === -1;
-        });
+                // Ensure that we are not ignoring files that should not be ignored!
+                ignored = mout.array.unique(ignored);
+                ignored = ignored.filter(function (file) {
+                    return nonIgnored.indexOf(file) === -1;
+                });
 
-        // Delete all the ignored files
-        promises = ignored.map(function (file) {
-            return Q.nfcall(rimraf, file);
-        });
+                // Delete all the ignored files
+                promises = ignored.map(function (file) {
+                    return Q.nfcall(rimraf, file);
+                });
 
-        return Q.all(promises)
-        .then(deferred.resolve, deferred.reject);
-    });
+                return Q.all(promises)
+                        .then(deferred.resolve, deferred.reject);
+            });
 
     return deferred.promise;
 }

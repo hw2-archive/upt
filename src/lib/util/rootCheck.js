@@ -6,7 +6,7 @@ var cli = require('./cli');
 
 var renderer;
 
-function rootCheck(options, config) {
+function rootCheck (options, config) {
     var errorMsg;
 
     // Allow running the command as root
@@ -24,7 +24,7 @@ You can however run a command with sudo using --allow-root option';
 
     if (isRoot()) {
         renderer = cli.getRenderer('', false, config);
-        renderer.error(createError('Cannot be run with sudo', 'ESUDO', { details : errorMsg }));
+        renderer.error(createError('Cannot be run with sudo', 'ESUDO', {details: errorMsg}));
         process.exit(1);
     }
 }

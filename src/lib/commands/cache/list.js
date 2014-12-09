@@ -3,7 +3,7 @@ var PackageRepository = require('../../core/PackageRepository');
 var cli = require('../../util/cli');
 var defaultConfig = require('../../config');
 
-function list(logger, packages, options, config) {
+function list (logger, packages, options, config) {
     var repository;
 
     config = mout.object.deepFillIn(config || {}, defaultConfig);
@@ -15,18 +15,18 @@ function list(logger, packages, options, config) {
     }
 
     return repository.list()
-    .then(function (entries) {
-        if (packages) {
-            // Filter entries according to the specified packages
-            entries = entries.filter(function (entry) {
-                return !!mout.array.find(packages, function (pkg) {
-                    return pkg === entry.pkgMeta.name;
-                });
-            });
-        }
+            .then(function (entries) {
+                if (packages) {
+                    // Filter entries according to the specified packages
+                    entries = entries.filter(function (entry) {
+                        return !!mout.array.find(packages, function (pkg) {
+                            return pkg === entry.pkgMeta.name;
+                        });
+                    });
+                }
 
-        return entries;
-    });
+                return entries;
+            });
 }
 
 // -------------------

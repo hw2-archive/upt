@@ -55,7 +55,7 @@ var run = function (cmdString, action, logger, config) {
     logger.action(action, cmdString);
 
     //pass env + UPT_PID so callees can identify a preinstall+postinstall from the same upt instance
-    var env = mout.object.mixIn({ 'UPT_PID': process.pid }, process.env);
+    var env = mout.object.mixIn({'UPT_PID': process.pid}, process.env);
     var args = shellquote.parse(cmdString, env);
     var cmdName = args[0];
     mout.array.remove(args, cmdName); //no rest() in mout
@@ -87,35 +87,36 @@ var hook = function (action, ordered, config, logger, packages, installed, json)
 
     var that = this;
 
-    var hooks=[];
+    var hooks = [];
     // RUN hook scripts
-    orderedPackages.forEach(function(pkg){
+    orderedPackages.forEach(function (pkg) {
         // postresolved is not handled here
-        var curDir=( action=="preinstall" ? packages[pkg].canonicalDir : path.join(config.cwd,config.directory,pkg) );
-        var script = path.join(curDir,"_upt/installer_hook.js");
+        var curDir = (action == "preinstall" ? packages[pkg].canonicalDir : path.join(config.cwd, config.directory, pkg));
+        var script = path.join(curDir, "_upt/installer_hook.js");
 
         if (fs.existsSync(script)) {
             // maybe we should create a child fork for it instead requiring ?
             hooks.push(hookScript(script, action, config, pkg, curDir, packages[pkg], installed[pkg]));
-        };
+        }
+        ;
     });
 
     return Q.allSettled(hooks)
-    .then(function (results) {
-        results.forEach(function (result) {
-            if (result.state !== "fulfilled") {
-                console.log("Hook Rejected: ",result.reason);
-            }
-        });
+            .then(function (results) {
+                results.forEach(function (result) {
+                    if (result.state !== "fulfilled") {
+                        console.log("Hook Rejected: ", result.reason);
+                    }
+                });
 
-        if (!config.scripts || !config.scripts[action]) {
-            /*jshint newcap: false  */
-            return Q();
-        }
+                if (!config.scripts || !config.scripts[action]) {
+                    /*jshint newcap: false  */
+                    return Q();
+                }
 
-        var cmdString = mout.string.replace(config.scripts[action], '%', orderedPackages.join(' '));
-        return run(cmdString, action, logger, config);
-    });
+                var cmdString = mout.string.replace(config.scripts[action], '%', orderedPackages.join(' '));
+                return run(cmdString, action, logger, config);
+            });
 };
 
 /**

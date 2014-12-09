@@ -21,7 +21,7 @@ if (isWin) {
     winWhichCache = {};
 }
 
-function getWindowsCommand(command) {
+function getWindowsCommand (command) {
     var fullCommand;
     var extension;
 
@@ -51,7 +51,7 @@ function getWindowsCommand(command) {
 // If an error occurs, a meaningful error is generated
 // Returns a promise that gets fulfilled if the command succeeds
 // or rejected if it fails
-function executeCmd(command, args, options) {
+function executeCmd (command, args, options) {
     var process;
     var stderr = '';
     var stdout = '';
@@ -110,7 +110,7 @@ function executeCmd(command, args, options) {
     return deferred.promise;
 }
 
-function cmd(command, args, options) {
+function cmd (command, args, options) {
     return throttler.enqueue(executeCmd.bind(null, command, args, options));
 }
 

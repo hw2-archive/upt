@@ -6,7 +6,7 @@ var cli = require('../util/cli');
 var createError = require('../util/createError');
 var defaultConfig = require('../config');
 
-function home(logger, name, config) {
+function home (logger, name, config) {
     var project;
     var promise;
     var decEndpoint;
@@ -19,19 +19,19 @@ function home(logger, name, config) {
     // If a name is specified, fetch from the package repository
     if (!name) {
         promise = project.hasJson()
-        .then(function (json) {
-            if (!json) {
-                throw createError('You are not inside a package', 'ENOENT');
-            }
+                .then(function (json) {
+                    if (!json) {
+                        throw createError('You are not inside a package', 'ENOENT');
+                    }
 
-            return project.getJson();
-        });
+                    return project.getJson();
+                });
     } else {
         decEndpoint = endpointParser.decompose(name);
         promise = project.getPackageRepository().fetch(decEndpoint)
-        .spread(function (canonicalDir, pkgMeta) {
-            return pkgMeta;
-        });
+                .spread(function (canonicalDir, pkgMeta) {
+                    return pkgMeta;
+                });
     }
 
     // Get homepage and open it

@@ -6,7 +6,7 @@ var GitResolver = require('./GitResolver');
 var copy = require('../../util/copy');
 var cmd = require('../../util/cmd');
 
-function GitFsResolver(decEndpoint, config, logger) {
+function GitFsResolver (decEndpoint, config, logger) {
     GitResolver.call(this, decEndpoint, config, logger);
 
     // Ensure absolute path
@@ -31,9 +31,9 @@ GitFsResolver.prototype._checkout = function () {
 
     // Copy files to the temporary directory first
     return this._copy()
-    .then(cmd.bind(cmd, 'git', ['checkout', '-f', resolution.tag || resolution.branch || resolution.commit], { cwd: this._tempDir }))
-    // Cleanup unstaged files
-    .then(cmd.bind(cmd, 'git', ['clean', '-f', '-d'], { cwd: this._tempDir }));
+            .then(cmd.bind(cmd, 'git', ['checkout', '-f', resolution.tag || resolution.branch || resolution.commit], {cwd: this._tempDir}))
+            // Cleanup unstaged files
+            .then(cmd.bind(cmd, 'git', ['clean', '-f', '-d'], {cwd: this._tempDir}));
 };
 
 GitFsResolver.prototype._copy = function () {
@@ -52,20 +52,20 @@ GitFsResolver.refs = function (source) {
         return Q.resolve(value);
     }
 
-    value = cmd('git', ['show-ref', '--tags', '--heads'], { cwd : source })
-    .spread(function (stdout) {
-        var refs;
+    value = cmd('git', ['show-ref', '--tags', '--heads'], {cwd: source})
+            .spread(function (stdout) {
+                var refs;
 
-        refs = stdout.toString()
-        .trim()                         // Trim trailing and leading spaces
-        .replace(/[\t ]+/g, ' ')        // Standardize spaces (some git versions make tabs, other spaces)
-        .split(/[\r\n]+/);              // Split lines into an array
+                refs = stdout.toString()
+                        .trim()                         // Trim trailing and leading spaces
+                        .replace(/[\t ]+/g, ' ')        // Standardize spaces (some git versions make tabs, other spaces)
+                        .split(/[\r\n]+/);              // Split lines into an array
 
-        // Update the refs with the actual refs
-        this._cache.refs.set(source, refs);
+                // Update the refs with the actual refs
+                this._cache.refs.set(source, refs);
 
-        return refs;
-    }.bind(this));
+                return refs;
+            }.bind(this));
 
     // Store the promise to be reused until it resolves
     // to a specific value

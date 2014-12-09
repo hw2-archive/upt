@@ -5,7 +5,7 @@ var cli = require('../util/cli');
 var Tracker = require('../util/analytics').Tracker;
 var defaultConfig = require('../config');
 
-function search(logger, name, config) {
+function search (logger, name, config) {
     var registryClient;
     var tracker;
 
@@ -19,7 +19,7 @@ function search(logger, name, config) {
     // If no name was specified, list all packages
     if (!name) {
         return Q.nfcall(registryClient.list.bind(registryClient));
-    // Otherwise search it
+        // Otherwise search it
     } else {
         return Q.nfcall(registryClient.search.bind(registryClient), name);
     }

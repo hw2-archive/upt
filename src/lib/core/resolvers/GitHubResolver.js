@@ -6,7 +6,7 @@ var download = require('../../util/download');
 var extract = require('../../util/extract');
 var createError = require('../../util/createError');
 
-function GitHubResolver(decEndpoint, config, logger) {
+function GitHubResolver (decEndpoint, config, logger) {
     var pair;
 
     GitRemoteResolver.call(this, decEndpoint, config, logger);
@@ -71,52 +71,52 @@ GitHubResolver.prototype._checkout = function () {
         timeout: this._config.timeout,
         headers: reqHeaders
     })
-    .progress(function (state) {
-        // Retry?
-        if (state.retry) {
-            msg = 'Download of ' + tarballUrl + ' failed with ' + state.error.code + ', ';
-            msg += 'retrying in ' + (state.delay / 1000).toFixed(1) + 's';
-            that._logger.debug('error', state.error.message, { error: state.error });
-            return that._logger.warn('retry', msg);
-        }
+            .progress(function (state) {
+                // Retry?
+                if (state.retry) {
+                    msg = 'Download of ' + tarballUrl + ' failed with ' + state.error.code + ', ';
+                    msg += 'retrying in ' + (state.delay / 1000).toFixed(1) + 's';
+                    that._logger.debug('error', state.error.message, {error: state.error});
+                    return that._logger.warn('retry', msg);
+                }
 
-        // Progress
-        msg = 'received ' + (state.received / 1024 / 1024).toFixed(1) + 'MB';
-        if (state.total) {
-            msg += ' of ' + (state.total / 1024 / 1024).toFixed(1) + 'MB downloaded, ';
-            msg += state.percent + '%';
-        }
-        that._logger.info('progress', msg);
-    })
-    .then(function () {
-        // Extract archive
-        that._logger.action('extract', path.basename(file), {
-            archive: file,
-            to: that._tempDir
-        });
+                // Progress
+                msg = 'received ' + (state.received / 1024 / 1024).toFixed(1) + 'MB';
+                if (state.total) {
+                    msg += ' of ' + (state.total / 1024 / 1024).toFixed(1) + 'MB downloaded, ';
+                    msg += state.percent + '%';
+                }
+                that._logger.info('progress', msg);
+            })
+            .then(function () {
+                // Extract archive
+                that._logger.action('extract', path.basename(file), {
+                    archive: file,
+                    to: that._tempDir
+                });
 
-        return extract(file, that._tempDir)
-        // Fallback to standard git clone if extraction failed
-        .fail(function (err) {
-            msg =  'Decompression of ' + path.basename(file) + ' failed' + (err.code ? ' with ' + err.code : '') + ', ';
-            msg += 'trying with git..';
-            that._logger.debug('error', err.message, { error: err });
-            that._logger.warn('retry', msg);
+                return extract(file, that._tempDir)
+                        // Fallback to standard git clone if extraction failed
+                        .fail(function (err) {
+                            msg = 'Decompression of ' + path.basename(file) + ' failed' + (err.code ? ' with ' + err.code : '') + ', ';
+                            msg += 'trying with git..';
+                            that._logger.debug('error', err.message, {error: err});
+                            that._logger.warn('retry', msg);
 
-            return that._cleanTempDir()
-            .then(GitRemoteResolver.prototype._checkout.bind(that));
-        });
-    // Fallback to standard git clone if download failed
-    }, function (err) {
-        msg = 'Download of ' + tarballUrl + ' failed' + (err.code ? ' with ' + err.code : '') + ', ';
-        msg += 'trying with git..';
-        that._logger.debug('error', err.message, { error: err });
-        that._logger.warn('retry', msg);
+                            return that._cleanTempDir()
+                                    .then(GitRemoteResolver.prototype._checkout.bind(that));
+                        });
+                // Fallback to standard git clone if download failed
+            }, function (err) {
+                msg = 'Download of ' + tarballUrl + ' failed' + (err.code ? ' with ' + err.code : '') + ', ';
+                msg += 'trying with git..';
+                that._logger.debug('error', err.message, {error: err});
+                that._logger.warn('retry', msg);
 
-        return that._cleanTempDir()
-        .then(GitRemoteResolver.prototype._checkout.bind(that));
+                return that._cleanTempDir()
+                        .then(GitRemoteResolver.prototype._checkout.bind(that));
 
-    });
+            });
 };
 
 GitHubResolver.prototype._savePkgMeta = function (meta) {

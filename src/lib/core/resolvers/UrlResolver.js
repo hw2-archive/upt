@@ -12,7 +12,7 @@ var download = require('../../util/download');
 var extract = require('../../util/extract');
 var createError = require('../../util/createError');
 
-function UrlResolver(decEndpoint, config, logger) {
+function UrlResolver (decEndpoint, config, logger) {
     Resolver.call(this, decEndpoint, config, logger);
 
     // If target was specified, error out
@@ -61,31 +61,31 @@ UrlResolver.prototype._hasNew = function (canonicalDir, pkgMeta) {
         timeout: this._config.timeout,
         headers: reqHeaders
     })
-    // Compare new headers with the old ones
-    .spread(function (response) {
-        var cacheHeaders;
+            // Compare new headers with the old ones
+            .spread(function (response) {
+                var cacheHeaders;
 
-        // If the server responded with 303 then the resource
-        // still has the same ETag
-        if (response.statusCode === 304) {
-            return false;
-        }
+                // If the server responded with 303 then the resource
+                // still has the same ETag
+                if (response.statusCode === 304) {
+                    return false;
+                }
 
-        // If status code is not in the 2xx range,
-        // then just resolve to true
-        if (response.statusCode < 200 || response.statusCode >= 300) {
-            return true;
-        }
+                // If status code is not in the 2xx range,
+                // then just resolve to true
+                if (response.statusCode < 200 || response.statusCode >= 300) {
+                    return true;
+                }
 
-        // Fallback to comparing cache headers
-        cacheHeaders = this._collectCacheHeaders(response);
-        return !mout.object.equals(oldCacheHeaders, cacheHeaders);
-    }.bind(this), function () {
-        // Assume new contents if the request failed
-        // Note that we do not retry the request using the "request-replay" module
-        // because it would take too long
-        return true;
-    });
+                // Fallback to comparing cache headers
+                cacheHeaders = this._collectCacheHeaders(response);
+                return !mout.object.equals(oldCacheHeaders, cacheHeaders);
+            }.bind(this), function () {
+                // Assume new contents if the request failed
+                // Note that we do not retry the request using the "request-replay" module
+                // because it would take too long
+                return true;
+            });
 };
 
 // TODO: There's room for improvement by using streams if the URL
@@ -95,12 +95,12 @@ UrlResolver.prototype._hasNew = function (canonicalDir, pkgMeta) {
 UrlResolver.prototype._resolve = function () {
     // Download
     return this._download()
-    // Parse headers
-    .spread(this._parseHeaders.bind(this))
-    // Extract file
-    .spread(this._extract.bind(this))
-    // Rename file to index
-    .then(this._rename.bind(this));
+            // Parse headers
+            .spread(this._parseHeaders.bind(this))
+            // Extract file
+            .spread(this._extract.bind(this))
+            // Rename file to index
+            .then(this._rename.bind(this));
 };
 
 // -----------------
@@ -127,29 +127,29 @@ UrlResolver.prototype._download = function () {
         timeout: this._config.timeout,
         headers: reqHeaders
     })
-    .progress(function (state) {
-        var msg;
+            .progress(function (state) {
+                var msg;
 
-        // Retry?
-        if (state.retry) {
-            msg = 'Download of ' + that._source + ' failed' + (state.error.code ? ' with ' + state.error.code : '') + ', ';
-            msg += 'retrying in ' + (state.delay / 1000).toFixed(1) + 's';
-            that._logger.debug('error', state.error.message, { error: state.error });
-            return that._logger.warn('retry', msg);
-        }
+                // Retry?
+                if (state.retry) {
+                    msg = 'Download of ' + that._source + ' failed' + (state.error.code ? ' with ' + state.error.code : '') + ', ';
+                    msg += 'retrying in ' + (state.delay / 1000).toFixed(1) + 's';
+                    that._logger.debug('error', state.error.message, {error: state.error});
+                    return that._logger.warn('retry', msg);
+                }
 
-        // Progress
-        msg = 'received ' + (state.received / 1024 / 1024).toFixed(1) + 'MB';
-        if (state.total) {
-            msg += ' of ' + (state.total / 1024 / 1024).toFixed(1) + 'MB downloaded, ';
-            msg += state.percent + '%';
-        }
-        that._logger.info('progress', msg);
-    })
-    .then(function (response) {
-        that._response = response;
-        return [file, response];
-    });
+                // Progress
+                msg = 'received ' + (state.received / 1024 / 1024).toFixed(1) + 'MB';
+                if (state.total) {
+                    msg += ' of ' + (state.total / 1024 / 1024).toFixed(1) + 'MB downloaded, ';
+                    msg += state.percent + '%';
+                }
+                that._logger.info('progress', msg);
+            })
+            .then(function (response) {
+                that._response = response;
+                return [file, response];
+            });
 };
 
 UrlResolver.prototype._parseHeaders = function (file, response) {
@@ -188,9 +188,9 @@ UrlResolver.prototype._parseHeaders = function (file, response) {
     newFile = path.join(this._tempDir, newFile);
 
     return Q.nfcall(fs.rename, file, newFile)
-    .then(function () {
-        return [newFile, response];
-    });
+            .then(function () {
+                return [newFile, response];
+            });
 };
 
 UrlResolver.prototype._extract = function (file, response) {
@@ -233,7 +233,7 @@ UrlResolver.prototype._savePkgMeta = function (meta) {
         meta.main = this._singleFile;
     }
 
-    meta._res_type="Url";
+    meta._res_type = "Url";
 
     return Resolver.prototype._savePkgMeta.call(this, meta);
 };

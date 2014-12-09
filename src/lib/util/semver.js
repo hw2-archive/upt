@@ -1,7 +1,7 @@
 var semver = require('semver');
 var mout = require('mout');
 
-function maxSatisfying(versions, range, strictMatch) {
+function maxSatisfying (versions, range, strictMatch) {
     var version;
     var filteredVersions;
 
@@ -39,7 +39,7 @@ function maxSatisfying(versions, range, strictMatch) {
     return semver.maxSatisfying(versions, range);
 }
 
-function maxSatisfyingIndex(versions, range, strictMatch) {
+function maxSatisfyingIndex (versions, range, strictMatch) {
     var version = maxSatisfying(versions, range, strictMatch);
 
     if (!version) {
@@ -49,7 +49,7 @@ function maxSatisfyingIndex(versions, range, strictMatch) {
     return versions.indexOf(version);
 }
 
-function clean(version) {
+function clean (version) {
     var parsed = semver.parse(version);
 
     if (!parsed) {
@@ -60,7 +60,7 @@ function clean(version) {
     return parsed.version + (parsed.build.length ? '+' + parsed.build.join('.') : '');
 }
 
-function isPreRelease(version) {
+function isPreRelease (version) {
     var parsed = semver.parse(version);
     return parsed && parsed.prerelease && parsed.prerelease.length;
 }

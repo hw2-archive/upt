@@ -1,7 +1,7 @@
 var Q = require('q');
 var cli = require('../util/cli');
 
-function completion(config) {
+function completion (config) {
     return new Q();
 }
 

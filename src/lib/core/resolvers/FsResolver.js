@@ -10,7 +10,7 @@ var extract = require('../../util/extract');
 var createError = require('../../util/createError');
 var semver = require('../../util/semver');
 
-function FsResolver(decEndpoint, config, logger) {
+function FsResolver (decEndpoint, config, logger) {
     Resolver.call(this, decEndpoint, config, logger);
 
     // Ensure absolute path
@@ -45,8 +45,8 @@ FsResolver.isTargetable = function () {
 //       This will likely increase the complexity of code but might worth it
 FsResolver.prototype._resolve = function () {
     return this._copy()
-    .then(this._extract.bind(this))
-    .then(this._rename.bind(this));
+            .then(this._extract.bind(this))
+            .then(this._rename.bind(this));
 };
 
 // -----------------
@@ -55,45 +55,45 @@ FsResolver.prototype._copy = function () {
     var that = this;
 
     return Q.nfcall(fs.stat, this._source)
-    .then(function (stat) {
-        var dst;
-        var copyOpts;
-        var promise;
+            .then(function (stat) {
+                var dst;
+                var copyOpts;
+                var promise;
 
-        that._sourceStat = stat;
-        copyOpts = { mode: stat.mode };
+                that._sourceStat = stat;
+                copyOpts = {mode: stat.mode};
 
-        // If it's a folder
-        if (stat.isDirectory()) {
-            dst = that._tempDir;
+                // If it's a folder
+                if (stat.isDirectory()) {
+                    dst = that._tempDir;
 
-            // Read the upt.json inside the folder, so that we
-            // copy only the necessary files if it has ignore specified
-            promise = that._readJson(that._source)
-            .then(function (json) {
-                copyOpts.ignore = json.ignore;
-                return copy.copyDir(that._source, dst, copyOpts);
-            })
-            .then(function () {
-                // Resolve to null because it's a dir
-                return;
+                    // Read the upt.json inside the folder, so that we
+                    // copy only the necessary files if it has ignore specified
+                    promise = that._readJson(that._source)
+                            .then(function (json) {
+                                copyOpts.ignore = json.ignore;
+                                return copy.copyDir(that._source, dst, copyOpts);
+                            })
+                            .then(function () {
+                                // Resolve to null because it's a dir
+                                return;
+                            });
+                    // Else it's a file
+                } else {
+                    dst = path.join(that._tempDir, path.basename(that._source));
+                    promise = copy.copyFile(that._source, dst, copyOpts)
+                            .then(function () {
+                                return dst;
+                            });
+                }
+
+                that._logger.action('copy', that._source, {
+                    src: that._source,
+                    dst: dst
+                });
+
+                return promise;
             });
-        // Else it's a file
-        } else {
-            dst = path.join(that._tempDir, path.basename(that._source));
-            promise = copy.copyFile(that._source, dst, copyOpts)
-            .then(function () {
-                return dst;
-            });
-        }
-
-        that._logger.action('copy', that._source, {
-            src: that._source,
-            dst: dst
-        });
-
-        return promise;
-    });
 };
 
 FsResolver.prototype._extract = function (file) {
@@ -111,25 +111,25 @@ FsResolver.prototype._extract = function (file) {
 
 FsResolver.prototype._rename = function () {
     return Q.nfcall(fs.readdir, this._tempDir)
-    .then(function (files) {
-        var file;
-        var oldPath;
-        var newPath;
+            .then(function (files) {
+                var file;
+                var oldPath;
+                var newPath;
 
-        // Remove any OS specific files from the files array
-        // before checking its length
-        files = files.filter(junk.isnt);
+                // Remove any OS specific files from the files array
+                // before checking its length
+                files = files.filter(junk.isnt);
 
-        // Only rename in specific cases
-        if (files.length === 1 && path.extname(files[0])===".js") {
-            file = files[0];
-            this._singleFile = 'index' + path.extname(file);
-            oldPath = path.join(this._tempDir, file);
-            newPath = path.join(this._tempDir, this._singleFile);
+                // Only rename in specific cases
+                if (files.length === 1 && path.extname(files[0]) === ".js") {
+                    file = files[0];
+                    this._singleFile = 'index' + path.extname(file);
+                    oldPath = path.join(this._tempDir, file);
+                    newPath = path.join(this._tempDir, this._singleFile);
 
-            return Q.nfcall(fs.rename, oldPath, newPath);
-        }
-    }.bind(this));
+                    return Q.nfcall(fs.rename, oldPath, newPath);
+                }
+            }.bind(this));
 };
 
 FsResolver.prototype._savePkgMeta = function (meta) {
@@ -141,7 +141,7 @@ FsResolver.prototype._savePkgMeta = function (meta) {
     if (typeof meta.version !== "undefined")
         meta._release = meta.version;
 
-    meta._res_type="Fs";
+    meta._res_type = "Fs";
 
     return Resolver.prototype._savePkgMeta.call(this, meta);
 };

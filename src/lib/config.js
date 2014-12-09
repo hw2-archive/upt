@@ -11,10 +11,10 @@ delete config.json;
 // If interactive is auto (null), guess its value
 if (config.interactive == null) {
     config.interactive = (
-        process.bin === 'upt' &&
-        tty.isatty(1) &&
-        !process.env.CI
-    );
+            process.bin === 'upt' &&
+            tty.isatty(1) &&
+            !process.env.CI
+            );
 }
 
 // If `analytics` hasn't been explicitly set, we disable
@@ -26,15 +26,15 @@ if (config.analytics == null) {
 
 // Merge common CLI options into the config
 mout.object.mixIn(config, cli.readOptions({
-    force: { type: Boolean, shorthand: 'f' },
-    offline: { type: Boolean, shorthand: 'o' },
-    verbose: { type: Boolean, shorthand: 'V' },
-    quiet: { type: Boolean, shorthand: 'q' },
-    loglevel: { type: String, shorthand: 'l' },
-    json: { type: Boolean, shorthand: 'j' },
-    silent: { type: Boolean, shorthand: 's' }
+    force: {type: Boolean, shorthand: 'f'},
+    offline: {type: Boolean, shorthand: 'o'},
+    verbose: {type: Boolean, shorthand: 'V'},
+    quiet: {type: Boolean, shorthand: 'q'},
+    loglevel: {type: String, shorthand: 'l'},
+    json: {type: Boolean, shorthand: 'j'},
+    silent: {type: Boolean, shorthand: 's'}
 }));
 
-config.cmdOptions=shared.get("options");
+config.cmdOptions = shared.get("options");
 
 module.exports = config;

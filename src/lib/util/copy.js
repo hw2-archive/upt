@@ -3,7 +3,7 @@ var fstreamIgnore = require('fstream-ignore');
 var fs = require('graceful-fs');
 var Q = require('q');
 
-function copy(reader, writer) {
+function copy (reader, writer) {
     var deferred;
     var ignore;
 
@@ -26,27 +26,27 @@ function copy(reader, writer) {
     deferred = Q.defer();
 
     reader
-    .on('error', deferred.reject)
-    // Pipe to writer
-    .pipe(fstream.Writer(writer))
-    .on('error', deferred.reject)
-    .on('close', deferred.resolve);
+            .on('error', deferred.reject)
+            // Pipe to writer
+            .pipe(fstream.Writer(writer))
+            .on('error', deferred.reject)
+            .on('close', deferred.resolve);
 
     return deferred.promise;
 }
 
-function copyMode(src, dst) {
+function copyMode (src, dst) {
     return Q.nfcall(fs.stat, src)
-    .then(function (stat) {
-        return Q.nfcall(fs.chmod, dst, stat.mode);
-    });
+            .then(function (stat) {
+                return Q.nfcall(fs.chmod, dst, stat.mode);
+            });
 }
 
-function filterSymlinks(entry) {
+function filterSymlinks (entry) {
     return entry.type !== 'SymbolicLink';
 }
 
-function parseOptions(opts) {
+function parseOptions (opts) {
     opts = opts || {};
 
     if (opts.mode != null) {
@@ -63,7 +63,7 @@ function parseOptions(opts) {
 // Available options:
 // - mode: force final mode of dst (defaults to null)
 // - copyMode: copy mode of src to dst, only if mode is not specified (defaults to true)
-function copyFile(src, dst, opts) {
+function copyFile (src, dst, opts) {
     var promise;
 
     opts = parseOptions(opts);
@@ -88,7 +88,7 @@ function copyFile(src, dst, opts) {
 // - ignore: array of patterns to be ignored (defaults to null)
 // - mode: force final mode of dst (defaults to null)
 // - copyMode: copy mode of src to dst, only if mode is not specified (defaults to true)
-function copyDir(src, dst, opts) {
+function copyDir (src, dst, opts) {
     var promise;
 
     opts = parseOptions(opts);

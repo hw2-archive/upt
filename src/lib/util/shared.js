@@ -1,9 +1,9 @@
 // counter.js
 var Shared = module.exports = {
-    set: function(name, val) {
+    set: function (name, val) {
         return Shared[name] = val;
     },
-    get: function(name) {
+    get: function (name) {
         return Shared[name];
     }
 };

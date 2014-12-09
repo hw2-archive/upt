@@ -6,13 +6,13 @@ var semver = require('../util/semver');
 var cli = require('../util/cli');
 var defaultConfig = require('../config');
 
-function list(logger, options, config) {
+function list (logger, options, config) {
     var project;
 
     options = options || {};
 
     // Make relative option true by default when used with paths
-    if (options.paths && options.relative == null)  {
+    if (options.paths && options.relative == null) {
         options.relative = true;
     }
 
@@ -20,56 +20,56 @@ function list(logger, options, config) {
     project = new Project(config, logger);
 
     return project.getTree(options)
-    .spread(function (tree, flattened) {
-        // Relativize paths
-        // Also normalize paths on windows
-        project.walkTree(tree, function (node) {
-            if (node.missing) {
-                return;
-            }
+            .spread(function (tree, flattened) {
+                // Relativize paths
+                // Also normalize paths on windows
+                project.walkTree(tree, function (node) {
+                    if (node.missing) {
+                        return;
+                    }
 
-            if (options.relative) {
-                node.canonicalDir = path.relative(config.cwd, node.canonicalDir);
-            }
-            if (options.paths) {
-                node.canonicalDir = normalize(node.canonicalDir);
-            }
-        }, true);
+                    if (options.relative) {
+                        node.canonicalDir = path.relative(config.cwd, node.canonicalDir);
+                    }
+                    if (options.paths) {
+                        node.canonicalDir = normalize(node.canonicalDir);
+                    }
+                }, true);
 
-        // Note that we need to to parse the flattened tree because it might
-        // contain additional packages
-        mout.object.forOwn(flattened, function (node) {
-            if (node.missing) {
-                return;
-            }
+                // Note that we need to to parse the flattened tree because it might
+                // contain additional packages
+                mout.object.forOwn(flattened, function (node) {
+                    if (node.missing) {
+                        return;
+                    }
 
-            if (options.relative) {
-                node.canonicalDir = path.relative(config.cwd, node.canonicalDir);
-            }
-            if (options.paths) {
-                node.canonicalDir = normalize(node.canonicalDir);
-            }
-        });
+                    if (options.relative) {
+                        node.canonicalDir = path.relative(config.cwd, node.canonicalDir);
+                    }
+                    if (options.paths) {
+                        node.canonicalDir = normalize(node.canonicalDir);
+                    }
+                });
 
-        // Render paths?
-        if (options.paths) {
-            return paths(flattened);
-        }
+                // Render paths?
+                if (options.paths) {
+                    return paths(flattened);
+                }
 
-        // Do not check for new versions?
-        if (config.offline) {
-            return tree;
-        }
+                // Do not check for new versions?
+                if (config.offline) {
+                    return tree;
+                }
 
-        // Check for new versions
-        return checkVersions(project, tree, logger)
-        .then(function () {
-            return tree;
-        });
-    });
+                // Check for new versions
+                return checkVersions(project, tree, logger)
+                        .then(function () {
+                            return tree;
+                        });
+            });
 }
 
-function checkVersions(project, tree, logger) {
+function checkVersions (project, tree, logger) {
     var promises;
     var nodes = [];
     var repository = project.getPackageRepository();
@@ -90,17 +90,17 @@ function checkVersions(project, tree, logger) {
         var target = node.endpoint.target;
 
         return repository.versions(node.endpoint.source)
-        .then(function (versions) {
-            node.versions = versions;
+                .then(function (versions) {
+                    node.versions = versions;
 
-            // Do not check if node's target is not a valid semver one
-            if (versions.length && semver.validRange(target)) {
-                node.update = {
-                    target: semver.maxSatisfying(versions, target),
-                    latest: semver.maxSatisfying(versions, '*')
-                };
-            }
-        });
+                    // Do not check if node's target is not a valid semver one
+                    if (versions.length && semver.validRange(target)) {
+                        node.update = {
+                            target: semver.maxSatisfying(versions, target),
+                            latest: semver.maxSatisfying(versions, '*')
+                        };
+                    }
+                });
     });
 
     // Set the versions also for the root node
@@ -109,7 +109,7 @@ function checkVersions(project, tree, logger) {
     return Q.all(promises);
 }
 
-function paths(flattened) {
+function paths (flattened) {
     var ret = {};
 
     mout.object.forOwn(flattened, function (pkg, name) {
@@ -145,7 +145,7 @@ function paths(flattened) {
     return ret;
 }
 
-function normalize(src) {
+function normalize (src) {
     return src.replace(/\\/g, '/');
 }
 
@@ -158,8 +158,8 @@ list.line = function (logger, argv) {
 
 list.options = function (argv) {
     return cli.readOptions({
-        'paths': { type: Boolean, shorthand: 'p' },
-        'relative': { type: Boolean, shorthand: 'r' }
+        'paths': {type: Boolean, shorthand: 'p'},
+        'relative': {type: Boolean, shorthand: 'r'}
     }, argv);
 };
 
