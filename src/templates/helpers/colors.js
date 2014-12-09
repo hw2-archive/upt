@@ -9,7 +9,7 @@ var templateColors = [
     'magenta'
 ];
 
-function colors(Handlebars) {
+function colors (Handlebars) {
     templateColors.forEach(function (color) {
         Handlebars.registerHelper(color, function (context) {
             return chalk[color](context.fn(this));

@@ -18,7 +18,7 @@ describe('upt uninstall', function () {
 
     var uptJsonPath = path.join(tempDir, 'upt.json');
 
-    function uptJson() {
+    function uptJson () {
         return JSON.parse(fs.readFileSync(uptJsonPath));
     }
 
@@ -31,18 +31,18 @@ describe('upt uninstall', function () {
         var logger = upt.commands.uninstall(['underscore'], undefined, config);
 
         return helpers.expectEvent(logger, 'end')
-        .then(function () {
-            expect(uptJson().dependencies).to.eql({ 'underscore': '*' });
-        });
+                .then(function () {
+                    expect(uptJson().dependencies).to.eql({'underscore': '*'});
+                });
     });
 
     it('removes dependency from upt.json if --save flag is used', function () {
         var logger = upt.commands.uninstall(['underscore'], {save: true}, config);
 
         return helpers.expectEvent(logger, 'end')
-        .then(function () {
-            expect(uptJson().dependencies).to.eql({});
-        });
+                .then(function () {
+                    expect(uptJson().dependencies).to.eql({});
+                });
     });
 
 });

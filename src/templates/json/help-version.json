@@ -6,8 +6,8 @@
     ],
     "options": [
         {
-            "shorthand":   "-m",
-            "flag":        "--message",
+            "shorthand": "-m",
+            "flag": "--message",
             "description": "Custom git commit and tag message"
         }
     ]

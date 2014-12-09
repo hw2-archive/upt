@@ -33,9 +33,9 @@ describe('Resolver', function () {
         logger.removeAllListeners();
     });
 
-    function create(decEndpoint, config) {
+    function create (decEndpoint, config) {
         if (typeof decEndpoint === 'string') {
-            decEndpoint = { source: decEndpoint };
+            decEndpoint = {source: decEndpoint};
         }
 
         return new Resolver(decEndpoint, config || defaultConfig, logger);
@@ -51,7 +51,7 @@ describe('Resolver', function () {
 
     describe('.getName', function () {
         it('should return the resolver name', function () {
-            var resolver = create({ source: 'foo', name: 'bar' });
+            var resolver = create({source: 'foo', name: 'bar'});
 
             expect(resolver.getName()).to.equal('bar');
         });
@@ -65,7 +65,7 @@ describe('Resolver', function () {
 
     describe('.getTarget', function () {
         it('should return the resolver target', function () {
-            var resolver = create({ source: 'foo', target: '~2.1.0' });
+            var resolver = create({source: 'foo', target: '~2.1.0'});
 
             expect(resolver.getTarget()).to.equal('~2.1.0');
         });
@@ -102,26 +102,27 @@ describe('Resolver', function () {
             var resolver = create('foo');
             var succeeded;
 
-            resolver._resolve = function () {};
+            resolver._resolve = function () {
+            };
 
             resolver.resolve()
-            .then(function () {
-                // Test if resolve can be called again when done
-                resolver.resolve()
-                .then(function () {
-                    next(succeeded ? new Error('Should have failed') : null);
-                });
-            })
-            .done();
+                    .then(function () {
+                        // Test if resolve can be called again when done
+                        resolver.resolve()
+                                .then(function () {
+                                    next(succeeded ? new Error('Should have failed') : null);
+                                });
+                    })
+                    .done();
 
             resolver.hasNew(tempDir)
-            .then(function () {
-                succeeded = true;
-            }, function (err) {
-                expect(err).to.be.an(Error);
-                expect(err.code).to.equal('EWORKING');
-                expect(err.message).to.match(/already working/i);
-            });
+                    .then(function () {
+                        succeeded = true;
+                    }, function (err) {
+                        expect(err).to.be.an(Error);
+                        expect(err.code).to.equal('EWORKING');
+                        expect(err.message).to.match(/already working/i);
+                    });
         });
 
         it('should throw an error if already working (checking for newer version)', function (next) {
@@ -129,34 +130,34 @@ describe('Resolver', function () {
             var succeeded;
 
             resolver.hasNew(tempDir)
-            .then(function () {
-                // Test if hasNew can be called again when done
-                resolver.hasNew(tempDir)
-                .then(function () {
-                    next(succeeded ? new Error('Should have failed') : null);
-                });
-            })
-            .done();
+                    .then(function () {
+                        // Test if hasNew can be called again when done
+                        resolver.hasNew(tempDir)
+                                .then(function () {
+                                    next(succeeded ? new Error('Should have failed') : null);
+                                });
+                    })
+                    .done();
 
             resolver.hasNew(tempDir)
-            .then(function () {
-                succeeded = true;
-            }, function (err) {
-                expect(err).to.be.an(Error);
-                expect(err.code).to.equal('EWORKING');
-                expect(err.message).to.match(/already working/i);
-            });
+                    .then(function () {
+                        succeeded = true;
+                    }, function (err) {
+                        expect(err).to.be.an(Error);
+                        expect(err.code).to.equal('EWORKING');
+                        expect(err.message).to.match(/already working/i);
+                    });
         });
 
         it('should resolve to true by default', function (next) {
             var resolver = create('foo');
 
             resolver.hasNew(tempDir)
-            .then(function (hasNew) {
-                expect(hasNew).to.equal(true);
-                next();
-            })
-            .done();
+                    .then(function (hasNew) {
+                        expect(hasNew).to.equal(true);
+                        next();
+                    })
+                    .done();
         });
 
         it('should resolve to true if the there\'s an error reading the package meta', function (next) {
@@ -164,11 +165,11 @@ describe('Resolver', function () {
 
             rimraf.sync(path.join(tempDir, '.upt.json'));
             resolver.hasNew(tempDir)
-            .then(function (hasNew) {
-                expect(hasNew).to.equal(true);
-                next();
-            })
-            .done();
+                    .then(function (hasNew) {
+                        expect(hasNew).to.equal(true);
+                        next();
+                    })
+                    .done();
         });
 
         it('should call _hasNew with the canonical dir and the package meta', function (next) {
@@ -183,13 +184,13 @@ describe('Resolver', function () {
             };
 
             resolver.hasNew(tempDir)
-            .then(function () {
-                expect(canonical).to.equal(tempDir);
-                expect(meta).to.be.an('object');
-                expect(meta.name).to.equal('test');
-                next();
-            })
-            .done();
+                    .then(function () {
+                        expect(canonical).to.equal(tempDir);
+                        expect(meta).to.be.an('object');
+                        expect(meta.name).to.equal('test');
+                        next();
+                    })
+                    .done();
         });
 
         it('should not read the package meta if already passed', function (next) {
@@ -204,12 +205,12 @@ describe('Resolver', function () {
             resolver.hasNew(tempDir, {
                 name: 'foo'
             })
-            .then(function () {
-                expect(meta).to.be.an('object');
-                expect(meta.name).to.equal('foo');
-                next();
-            })
-            .done();
+                    .then(function () {
+                        expect(meta).to.be.an('object');
+                        expect(meta.name).to.equal('foo');
+                        next();
+                    })
+                    .done();
         });
     });
 
@@ -218,72 +219,74 @@ describe('Resolver', function () {
             var resolver = create('foo');
 
             resolver.resolve()
-            .then(function () {
-                next(new Error('Should have rejected the promise'));
-            }, function (err) {
-                expect(err).to.be.an(Error);
-                expect(err.message).to.contain('_resolve not implemented');
-                next();
-            })
-            .done();
+                    .then(function () {
+                        next(new Error('Should have rejected the promise'));
+                    }, function (err) {
+                        expect(err).to.be.an(Error);
+                        expect(err.message).to.contain('_resolve not implemented');
+                        next();
+                    })
+                    .done();
         });
 
         it('should throw an error if already working (resolving)', function (next) {
             var resolver = create('foo');
             var succeeded;
 
-            resolver._resolve = function () {};
+            resolver._resolve = function () {
+            };
 
             resolver.resolve()
-            .then(function () {
-                // Test if resolve can be called again when done
-                resolver.resolve()
-                .then(function () {
-                    next(succeeded ? new Error('Should have failed') : null);
-                });
-            })
-            .done();
+                    .then(function () {
+                        // Test if resolve can be called again when done
+                        resolver.resolve()
+                                .then(function () {
+                                    next(succeeded ? new Error('Should have failed') : null);
+                                });
+                    })
+                    .done();
 
             resolver.resolve()
-            .then(function () {
-                succeeded = true;
-            }, function (err) {
-                expect(err).to.be.an(Error);
-                expect(err.code).to.equal('EWORKING');
-                expect(err.message).to.match(/already working/i);
-            });
+                    .then(function () {
+                        succeeded = true;
+                    }, function (err) {
+                        expect(err).to.be.an(Error);
+                        expect(err.code).to.equal('EWORKING');
+                        expect(err.message).to.match(/already working/i);
+                    });
         });
 
         it('should throw an error if already working (checking newer version)', function (next) {
             var resolver = create('foo');
             var succeeded;
 
-            resolver._resolve = function () {};
+            resolver._resolve = function () {
+            };
 
             resolver.hasNew(tempDir)
-            .then(function () {
-                // Test if hasNew can be called again when done
-                resolver.hasNew(tempDir)
-                .then(function () {
-                    next(succeeded ? new Error('Should have failed') : null);
-                });
-            })
-            .done();
+                    .then(function () {
+                        // Test if hasNew can be called again when done
+                        resolver.hasNew(tempDir)
+                                .then(function () {
+                                    next(succeeded ? new Error('Should have failed') : null);
+                                });
+                    })
+                    .done();
 
             resolver.resolve()
-            .then(function () {
-                succeeded = true;
-            }, function (err) {
-                expect(err).to.be.an(Error);
-                expect(err.code).to.equal('EWORKING');
-                expect(err.message).to.match(/already working/i);
-            });
+                    .then(function () {
+                        succeeded = true;
+                    }, function (err) {
+                        expect(err).to.be.an(Error);
+                        expect(err.code).to.equal('EWORKING');
+                        expect(err.message).to.match(/already working/i);
+                    });
         });
 
         it('should call all the functions necessary to resolve by the correct order', function (next) {
             var resolver;
 
-            function DummyResolver() {
+            function DummyResolver () {
                 Resolver.apply(this, arguments);
                 this._stack = [];
             }
@@ -302,69 +305,71 @@ describe('Resolver', function () {
             DummyResolver.prototype._createTempDir = function () {
                 this._stack.push('before _createTempDir');
                 return Resolver.prototype._createTempDir.apply(this, arguments)
-                .then(function (val) {
-                    this._stack.push('after _createTempDir');
-                    return val;
-                }.bind(this));
+                        .then(function (val) {
+                            this._stack.push('after _createTempDir');
+                            return val;
+                        }.bind(this));
             };
-            DummyResolver.prototype._resolve = function () {};
+            DummyResolver.prototype._resolve = function () {
+            };
             DummyResolver.prototype._readJson = function () {
                 this._stack.push('before _readJson');
                 return Resolver.prototype._readJson.apply(this, arguments)
-                .then(function (val) {
-                    this._stack.push('after _readJson');
-                    return val;
-                }.bind(this));
+                        .then(function (val) {
+                            this._stack.push('after _readJson');
+                            return val;
+                        }.bind(this));
             };
             DummyResolver.prototype._applyPkgMeta = function () {
                 this._stack.push('before _applyPkgMeta');
                 return Resolver.prototype._applyPkgMeta.apply(this, arguments)
-                .then(function (val) {
-                    this._stack.push('after _applyPkgMeta');
-                    return val;
-                }.bind(this));
+                        .then(function (val) {
+                            this._stack.push('after _applyPkgMeta');
+                            return val;
+                        }.bind(this));
             };
             DummyResolver.prototype._savePkgMeta = function () {
                 this._stack.push('before _savePkgMeta');
                 return Resolver.prototype._savePkgMeta.apply(this, arguments)
-                .then(function (val) {
-                    this._stack.push('after _savePkgMeta');
-                    return val;
-                }.bind(this));
+                        .then(function (val) {
+                            this._stack.push('after _savePkgMeta');
+                            return val;
+                        }.bind(this));
             };
 
-            resolver = new DummyResolver({ source: 'foo'}, defaultConfig, logger);
+            resolver = new DummyResolver({source: 'foo'}, defaultConfig, logger);
 
             resolver.resolve()
-            .then(function () {
-                expect(resolver.getStack()).to.eql([
-                    'before _createTempDir',
-                    'after _createTempDir',
-                    'before _readJson',
-                    'after _readJson',
-                    // Both below are called in parallel
-                    'before _applyPkgMeta',
-                    'after _applyPkgMeta',
-                    'before _savePkgMeta',
-                    'after _savePkgMeta'
-                ]);
-                next();
-            })
-             .done();
+                    .then(function () {
+                        expect(resolver.getStack()).to.eql([
+                            'before _createTempDir',
+                            'after _createTempDir',
+                            'before _readJson',
+                            'after _readJson',
+                            // Both below are called in parallel
+                            'before _applyPkgMeta',
+                            'after _applyPkgMeta',
+                            'before _savePkgMeta',
+                            'after _savePkgMeta'
+                        ]);
+                        next();
+                    })
+                    .done();
         });
 
         it('should resolve with the canonical dir (folder)', function (next) {
             var resolver = create('foo');
 
-            resolver._resolve = function () {};
+            resolver._resolve = function () {
+            };
 
             resolver.resolve()
-            .then(function (folder) {
-                expect(folder).to.be.a('string');
-                expect(fs.existsSync(folder)).to.be(true);
-                next();
-            })
-            .done();
+                    .then(function (folder) {
+                        expect(folder).to.be.a('string');
+                        expect(fs.existsSync(folder)).to.be(true);
+                        next();
+                    })
+                    .done();
         });
     });
 
@@ -384,27 +389,28 @@ describe('Resolver', function () {
                 };
 
                 resolver.resolve()
-                .fail(function () {
-                    expect(resolver.getTempDir() == null).to.be(true);
-                    next();
-                });
+                        .fail(function () {
+                            expect(resolver.getTempDir() == null).to.be(true);
+                            next();
+                        });
             });
         });
 
         it('should return the canonical dir (folder) if resolve succeeded', function (next) {
             var resolver = create('foo');
 
-            resolver._resolve = function () {};
+            resolver._resolve = function () {
+            };
 
             resolver.resolve()
-            .then(function () {
-                var dir = resolver.getTempDir();
+                    .then(function () {
+                        var dir = resolver.getTempDir();
 
-                expect(dir).to.be.a('string');
-                expect(fs.existsSync(dir)).to.be(true);
-                next();
-            })
-            .done();
+                        expect(dir).to.be.a('string');
+                        expect(fs.existsSync(dir)).to.be(true);
+                        next();
+                    })
+                    .done();
         });
     });
 
@@ -424,24 +430,25 @@ describe('Resolver', function () {
                 };
 
                 resolver.resolve()
-                .fail(function () {
-                    expect(resolver.getPkgMeta() == null).to.be(true);
-                    next();
-                });
+                        .fail(function () {
+                            expect(resolver.getPkgMeta() == null).to.be(true);
+                            next();
+                        });
             });
         });
 
         it('should return the package meta if resolve succeeded', function (next) {
             var resolver = create('foo');
 
-            resolver._resolve = function () {};
+            resolver._resolve = function () {
+            };
 
             resolver.resolve()
-            .then(function () {
-                expect(resolver.getPkgMeta()).to.be.an('object');
-                next();
-            })
-            .done();
+                    .then(function () {
+                        expect(resolver.getPkgMeta()).to.be.an('object');
+                        next();
+                    })
+                    .done();
         });
     });
 
@@ -450,71 +457,73 @@ describe('Resolver', function () {
             var resolver = create('foo');
 
             resolver._createTempDir()
-            .then(function (dir) {
-                var dirname;
-                var osTempDir;
+                    .then(function (dir) {
+                        var dirname;
+                        var osTempDir;
 
-                expect(dir).to.be.a('string');
-                expect(fs.existsSync(dir)).to.be(true);
+                        expect(dir).to.be.a('string');
+                        expect(fs.existsSync(dir)).to.be(true);
 
-                dirname = path.dirname(dir);
-                osTempDir = path.resolve(tmp.tmpdir);
+                        dirname = path.dirname(dir);
+                        osTempDir = path.resolve(tmp.tmpdir);
 
-                expect(dir.indexOf(osTempDir)).to.be(0);
-                expect(dir.indexOf(defaultConfig.tmp)).to.be(0);
+                        expect(dir.indexOf(osTempDir)).to.be(0);
+                        expect(dir.indexOf(defaultConfig.tmp)).to.be(0);
 
-                expect(path.basename(dirname)).to.equal('upt');
-                expect(path.dirname(path.dirname(dirname))).to.equal(osTempDir);
-                next();
-            })
-            .done();
+                        expect(path.basename(dirname)).to.equal('upt');
+                        expect(path.dirname(path.dirname(dirname))).to.equal(osTempDir);
+                        next();
+                    })
+                    .done();
         });
 
         it('should set the dir mode the same as the process', function (next) {
             var resolver = create('foo');
 
             resolver._createTempDir()
-            .then(function (dir) {
-                var stat = fs.statSync(dir);
-                var expectedMode = dirMode0777 & ~process.umask();
+                    .then(function (dir) {
+                        var stat = fs.statSync(dir);
+                        var expectedMode = dirMode0777 & ~process.umask();
 
-                expect(stat.mode).to.equal(expectedMode);
-                next();
-            })
-            .done();
+                        expect(stat.mode).to.equal(expectedMode);
+                        next();
+                    })
+                    .done();
         });
 
         it('should remove the folder after execution', function (next) {
             this.timeout(15000);  // Give some time to execute
 
             rimraf(defaultConfig.tmp, function (err) {
-                if (err) return next(err);
+                if (err)
+                    return next(err);
 
-                cmd('node', ['test/assets/test-temp-dir/test.js'], { cwd: path.resolve(__dirname, '../../..') })
-                .then(function () {
-                    expect(fs.existsSync(defaultConfig.tmp)).to.be(true);
-                    expect(fs.readdirSync(defaultConfig.tmp)).to.eql([]);
-                    next();
-                }, function (err) {
-                    next(new Error(err.details));
-                })
-                .done();
+                cmd('node', ['test/assets/test-temp-dir/test.js'], {cwd: path.resolve(__dirname, '../../..')})
+                        .then(function () {
+                            expect(fs.existsSync(defaultConfig.tmp)).to.be(true);
+                            expect(fs.readdirSync(defaultConfig.tmp)).to.eql([]);
+                            next();
+                        }, function (err) {
+                            next(new Error(err.details));
+                        })
+                        .done();
             });
         });
 
         it('should remove the folder on an uncaught exception', function (next) {
             rimraf(defaultConfig.tmp, function (err) {
-                if (err) return next(err);
+                if (err)
+                    return next(err);
 
-                cmd('node', ['test/assets/test-temp-dir/test-exception.js'], { cwd: path.resolve(__dirname, '../../..') })
-                .then(function () {
-                    next(new Error('The command should have failed'));
-                }, function () {
-                    expect(fs.existsSync(defaultConfig.tmp)).to.be(true);
-                    expect(fs.readdirSync(defaultConfig.tmp)).to.eql([]);
-                    next();
-                })
-                .done();
+                cmd('node', ['test/assets/test-temp-dir/test-exception.js'], {cwd: path.resolve(__dirname, '../../..')})
+                        .then(function () {
+                            next(new Error('The command should have failed'));
+                        }, function () {
+                            expect(fs.existsSync(defaultConfig.tmp)).to.be(true);
+                            expect(fs.readdirSync(defaultConfig.tmp)).to.eql([]);
+                            next();
+                        })
+                        .done();
             });
         });
 
@@ -522,12 +531,12 @@ describe('Resolver', function () {
             var resolver = create('foo');
 
             resolver._createTempDir()
-            .then(function (dir) {
-                expect(resolver._tempDir).to.be.ok();
-                expect(resolver._tempDir).to.equal(dir);
-                next();
-            })
-            .done();
+                    .then(function (dir) {
+                        expect(resolver._tempDir).to.be.ok();
+                        expect(resolver._tempDir).to.equal(dir);
+                        next();
+                    })
+                    .done();
         });
     });
 
@@ -536,36 +545,36 @@ describe('Resolver', function () {
             var resolver = create('foo');
 
             resolver._cleanTempDir()
-            .then(next.bind(null))
-            .done();
+                    .then(next.bind(null))
+                    .done();
         });
 
         it('should delete the temporary folder contents', function (next) {
             var resolver = create('foo');
 
             resolver._createTempDir()
-            .then(resolver._cleanTempDir.bind(resolver))
-            .then(function (dir) {
-                expect(dir).to.equal(resolver.getTempDir());
-                expect(fs.readdirSync(dir).length).to.be(0);
-                next();
-            })
-            .done();
+                    .then(resolver._cleanTempDir.bind(resolver))
+                    .then(function (dir) {
+                        expect(dir).to.equal(resolver.getTempDir());
+                        expect(fs.readdirSync(dir).length).to.be(0);
+                        next();
+                    })
+                    .done();
         });
 
         it('should keep the mode', function (next) {
             var resolver = create('foo');
 
             resolver._createTempDir()
-            .then(resolver._cleanTempDir.bind(resolver))
-            .then(function (dir) {
-                var stat = fs.statSync(dir);
-                var expectedMode = dirMode0777 & ~process.umask();
+                    .then(resolver._cleanTempDir.bind(resolver))
+                    .then(function (dir) {
+                        var stat = fs.statSync(dir);
+                        var expectedMode = dirMode0777 & ~process.umask();
 
-                expect(stat.mode).to.equal(expectedMode);
-                next();
-            })
-            .done();
+                        expect(stat.mode).to.equal(expectedMode);
+                        next();
+                    })
+                    .done();
         });
 
         it('should keep the dir path', function (next) {
@@ -573,15 +582,15 @@ describe('Resolver', function () {
             var tempDir;
 
             resolver._createTempDir()
-            .then(function (dir) {
-                tempDir = dir;
-                return resolver._cleanTempDir();
-            })
-            .then(function (dir) {
-                expect(dir).to.equal(tempDir);
-                next();
-            })
-            .done();
+                    .then(function (dir) {
+                        tempDir = dir;
+                        return resolver._cleanTempDir();
+                    })
+                    .then(function (dir) {
+                        expect(dir).to.equal(tempDir);
+                        next();
+                    })
+                    .done();
         });
     });
 
@@ -594,17 +603,17 @@ describe('Resolver', function () {
             var resolver = create('foo');
 
             mkdirp.sync(tempDir);
-            fs.writeFileSync(path.join(tempDir, 'upt.json'), JSON.stringify({ name: 'foo', version: '0.0.0' }));
-            fs.writeFileSync(path.join(tempDir, 'component.json'), JSON.stringify({ name: 'bar', version: '0.0.0' }));
+            fs.writeFileSync(path.join(tempDir, 'upt.json'), JSON.stringify({name: 'foo', version: '0.0.0'}));
+            fs.writeFileSync(path.join(tempDir, 'component.json'), JSON.stringify({name: 'bar', version: '0.0.0'}));
 
             resolver._readJson(tempDir)
-            .then(function (meta) {
-                expect(meta).to.be.an('object');
-                expect(meta.name).to.equal('foo');
-                expect(meta.version).to.equal('0.0.0');
-                next();
-            })
-            .done();
+                    .then(function (meta) {
+                        expect(meta).to.be.an('object');
+                        expect(meta.name).to.equal('foo');
+                        expect(meta.version).to.equal('0.0.0');
+                        next();
+                    })
+                    .done();
         });
 
         it('should fallback to component.json (notifying a warn)', function (next) {
@@ -612,7 +621,7 @@ describe('Resolver', function () {
             var notified = false;
 
             mkdirp.sync(tempDir);
-            fs.writeFileSync(path.join(tempDir, 'component.json'), JSON.stringify({ name: 'bar', version: '0.0.0' }));
+            fs.writeFileSync(path.join(tempDir, 'component.json'), JSON.stringify({name: 'bar', version: '0.0.0'}));
 
             logger.on('log', function (log) {
                 expect(log).to.be.an('object');
@@ -623,26 +632,26 @@ describe('Resolver', function () {
             });
 
             resolver._readJson(tempDir)
-            .then(function (meta) {
-                expect(meta).to.be.an('object');
-                expect(meta.name).to.equal('bar');
-                expect(meta.version).to.equal('0.0.0');
-                expect(notified).to.be(true);
-                next();
-            })
-            .done();
+                    .then(function (meta) {
+                        expect(meta).to.be.an('object');
+                        expect(meta.name).to.equal('bar');
+                        expect(meta.version).to.equal('0.0.0');
+                        expect(notified).to.be(true);
+                        next();
+                    })
+                    .done();
         });
 
         it('should resolve to an inferred json if no json file was found', function (next) {
             var resolver = create('foo');
 
             resolver._readJson(tempDir)
-            .then(function (meta) {
-                expect(meta).to.be.an('object');
-                expect(meta.name).to.equal('foo');
-                next();
-            })
-            .done();
+                    .then(function (meta) {
+                        expect(meta).to.be.an('object');
+                        expect(meta.name).to.equal('foo');
+                        next();
+                    })
+                    .done();
         });
 
         it.skip('should apply normalisation, defaults and validation to the json object');
@@ -655,60 +664,60 @@ describe('Resolver', function () {
 
         it('should resolve with the same package meta', function (next) {
             var resolver = create('foo');
-            var meta = { name: 'foo' };
+            var meta = {name: 'foo'};
 
             mkdirp.sync(tempDir);
             resolver._tempDir = tempDir;
 
             resolver._applyPkgMeta(meta)
-            .then(function (retMeta) {
-                expect(retMeta).to.equal(meta);
+                    .then(function (retMeta) {
+                        expect(retMeta).to.equal(meta);
 
-                // Test also with the ignore property because the code is different
-                meta = { name: 'foo', ignore: ['somefile'] };
+                        // Test also with the ignore property because the code is different
+                        meta = {name: 'foo', ignore: ['somefile']};
 
-                return resolver._applyPkgMeta(meta)
-                .then(function (retMeta) {
-                    expect(retMeta).to.equal(meta);
-                    next();
-                });
-            })
-            .done();
+                        return resolver._applyPkgMeta(meta)
+                                .then(function (retMeta) {
+                                    expect(retMeta).to.equal(meta);
+                                    next();
+                                });
+                    })
+                    .done();
         });
 
         it('should remove files that match the ignore patterns excluding main files', function (next) {
-            var resolver = create({ source: 'foo', name: 'foo' });
+            var resolver = create({source: 'foo', name: 'foo'});
 
             mkdirp.sync(tempDir);
 
             // Checkout test package version 0.2.1 which has a upt.json
             // with ignores
-            cmd('git', ['checkout', '0.2.2'], { cwd: testPackage })
-            // Copy its contents to the temporary dir
-            .then(function () {
-                return copy.copyDir(testPackage, tempDir);
-            })
-            .then(function () {
-                var json;
+            cmd('git', ['checkout', '0.2.2'], {cwd: testPackage})
+                    // Copy its contents to the temporary dir
+                    .then(function () {
+                        return copy.copyDir(testPackage, tempDir);
+                    })
+                    .then(function () {
+                        var json;
 
-                // This is a very rudimentary check
-                // Complete checks are made in the 'describe' below
-                resolver._tempDir = tempDir;
-                json = JSON.parse(fs.readFileSync(path.join(tempDir, 'upt.json')).toString());
+                        // This is a very rudimentary check
+                        // Complete checks are made in the 'describe' below
+                        resolver._tempDir = tempDir;
+                        json = JSON.parse(fs.readFileSync(path.join(tempDir, 'upt.json')).toString());
 
-                return resolver._applyPkgMeta(json)
-                .then(function () {
-                    expect(fs.existsSync(path.join(tempDir, 'foo'))).to.be(true);
-                    expect(fs.existsSync(path.join(tempDir, 'baz'))).to.be(true);
-                    expect(fs.existsSync(path.join(tempDir, 'test'))).to.be(false);
-                    expect(fs.existsSync(path.join(tempDir, 'upt.json'))).to.be(true);
-                    expect(fs.existsSync(path.join(tempDir, 'main.js'))).to.be(true);
-                    expect(fs.existsSync(path.join(tempDir, 'more/docs'))).to.be(false);
-                    expect(fs.existsSync(path.join(tempDir, 'more/assets'))).to.be(false);
-                    next();
-                });
-            })
-            .done();
+                        return resolver._applyPkgMeta(json)
+                                .then(function () {
+                                    expect(fs.existsSync(path.join(tempDir, 'foo'))).to.be(true);
+                                    expect(fs.existsSync(path.join(tempDir, 'baz'))).to.be(true);
+                                    expect(fs.existsSync(path.join(tempDir, 'test'))).to.be(false);
+                                    expect(fs.existsSync(path.join(tempDir, 'upt.json'))).to.be(true);
+                                    expect(fs.existsSync(path.join(tempDir, 'main.js'))).to.be(true);
+                                    expect(fs.existsSync(path.join(tempDir, 'more/docs'))).to.be(false);
+                                    expect(fs.existsSync(path.join(tempDir, 'more/assets'))).to.be(false);
+                                    next();
+                                });
+                    })
+                    .done();
         });
 
         describe('handling of ignore property according to the .gitignore spec', function () {
@@ -742,31 +751,31 @@ describe('Resolver', function () {
 
         it('should resolve with the same package meta', function (next) {
             var resolver = create('foo');
-            var meta = { name: 'foo' };
+            var meta = {name: 'foo'};
 
             resolver._tempDir = tempDir;
 
             resolver._savePkgMeta(meta)
-            .then(function (retMeta) {
-                expect(retMeta).to.equal(meta);
-                next();
-            })
-            .done();
+                    .then(function (retMeta) {
+                        expect(retMeta).to.equal(meta);
+                        next();
+                    })
+                    .done();
         });
 
         it('should set the original source and target in package meta file', function (next) {
-            var resolver = create({ source: 'bar', target: '~2.0.0' });
-            var meta = { name: 'foo' };
+            var resolver = create({source: 'bar', target: '~2.0.0'});
+            var meta = {name: 'foo'};
 
             resolver._tempDir = tempDir;
 
             resolver._savePkgMeta(meta)
-            .then(function (retMeta) {
-                expect(retMeta._source).to.equal('bar');
-                expect(retMeta._target).to.equal('~2.0.0');
-                next();
-            })
-            .done();
+                    .then(function (retMeta) {
+                        expect(retMeta._source).to.equal('bar');
+                        expect(retMeta._target).to.equal('~2.0.0');
+                        next();
+                    })
+                    .done();
         });
 
         it('should save the package meta to the package meta file (.upt.json)', function (next) {
@@ -774,17 +783,18 @@ describe('Resolver', function () {
 
             resolver._tempDir = tempDir;
 
-            resolver._savePkgMeta({ name: 'bar' })
-            .then(function (retMeta) {
-                fs.readFile(path.join(tempDir, '.upt.json'), function (err, contents) {
-                    if (err) return next(err);
+            resolver._savePkgMeta({name: 'bar'})
+                    .then(function (retMeta) {
+                        fs.readFile(path.join(tempDir, '.upt.json'), function (err, contents) {
+                            if (err)
+                                return next(err);
 
-                    contents = contents.toString();
-                    expect(JSON.parse(contents)).to.eql(retMeta);
-                    next();
-                });
-            })
-            .done();
+                            contents = contents.toString();
+                            expect(JSON.parse(contents)).to.eql(retMeta);
+                            next();
+                        });
+                    })
+                    .done();
         });
 
         it('should warn user for missing attributes in upt.json', function (next) {
@@ -792,7 +802,7 @@ describe('Resolver', function () {
             resolver._tempDir = tempDir;
             var notifiedCount = 0;
             logger.on('log', function (log) {
-                notifiedCount ++;
+                notifiedCount++;
                 expect(log).to.be.an('object');
                 expect(log.level).to.be('warn');
                 if (notifiedCount === 1) {
@@ -801,14 +811,14 @@ describe('Resolver', function () {
                     expect(log.message).to.contain('bar is missing "ignore" entry in upt.json');
                 }
             });
-            resolver._savePkgMeta({ name: 'bar' });
+            resolver._savePkgMeta({name: 'bar'});
             expect(notifiedCount).to.be(2);
 
-            resolver._savePkgMeta({ name: 'bar', main: 'foo' });
+            resolver._savePkgMeta({name: 'bar', main: 'foo'});
             expect(notifiedCount).to.be(3);
 
             // should not warn again
-            resolver._savePkgMeta({ name: 'bar', main: 'flart', ignore: 'blat' });
+            resolver._savePkgMeta({name: 'bar', main: 'flart', ignore: 'blat'});
             expect(notifiedCount).to.be(3);
             next();
         });
@@ -823,13 +833,13 @@ describe('Resolver', function () {
     describe('#versions', function () {
         it('should resolve to an array by default', function (next) {
             Resolver.versions()
-            .then(function (versions) {
-                expect(versions).to.be.an('array');
-                expect(versions.length).to.be(0);
+                    .then(function (versions) {
+                        expect(versions).to.be.an('array');
+                        expect(versions.length).to.be(0);
 
-                next();
-            })
-            .done();
+                        next();
+                    })
+                    .done();
         });
     });
 });

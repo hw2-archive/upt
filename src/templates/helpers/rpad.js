@@ -1,6 +1,6 @@
 var mout = require('mout');
 
-function rpad(Handlebars) {
+function rpad (Handlebars) {
     Handlebars.registerHelper('rpad', function (context) {
         var hash = context.hash;
         var length = parseInt(hash.length, 10);

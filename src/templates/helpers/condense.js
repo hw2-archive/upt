@@ -2,7 +2,7 @@ var mout = require('mout');
 var leadLinesRegExp = /^\r?\n/;
 var multipleLinesRegExp = /\r?\n(\r?\n)+/mg;
 
-function condense(Handlebars) {
+function condense (Handlebars) {
     Handlebars.registerHelper('condense', function (context) {
         var str = context.fn(this);
 

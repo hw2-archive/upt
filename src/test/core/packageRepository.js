@@ -43,7 +43,7 @@ describe('PackageRepository', function () {
         });
 
         // Mock the resolver factory to always return a resolver for the test package
-        function resolverFactory(decEndpoint, _config, _logger, _registryClient) {
+        function resolverFactory (decEndpoint, _config, _logger, _registryClient) {
             expect(_config).to.eql(config);
             expect(_logger).to.be.an(Logger);
             expect(_registryClient).to.be.an(RegistryClient);
@@ -77,14 +77,15 @@ describe('PackageRepository', function () {
         packageRepository = new PackageRepository(config, logger);
 
         // Reset hooks
-        resolverFactoryHook = resolverFactoryClearHook = function () {};
+        resolverFactoryHook = resolverFactoryClearHook = function () {
+        };
 
         // Remove temp package
         rimraf.sync(tempPackage);
 
         // Clear the repository
         packageRepository.clear()
-        .then(next.bind(next, null), next);
+                .then(next.bind(next, null), next);
     });
 
     describe('.constructor', function () {
@@ -101,16 +102,16 @@ describe('PackageRepository', function () {
                 called = true;
             };
 
-            packageRepository.fetch({ name: '', source: 'foo', target: '~0.1.0' })
-            .spread(function (canonicalDir, pkgMeta) {
-                expect(called).to.be(true);
-                expect(fs.existsSync(canonicalDir)).to.be(true);
-                expect(pkgMeta).to.be.an('object');
-                expect(pkgMeta.name).to.be('package-a');
-                expect(pkgMeta.version).to.be('0.1.1');
-                next();
-            })
-            .done();
+            packageRepository.fetch({name: '', source: 'foo', target: '~0.1.0'})
+                    .spread(function (canonicalDir, pkgMeta) {
+                        expect(called).to.be(true);
+                        expect(fs.existsSync(canonicalDir)).to.be(true);
+                        expect(pkgMeta).to.be.an('object');
+                        expect(pkgMeta.name).to.be('package-a');
+                        expect(pkgMeta.version).to.be('0.1.1');
+                        next();
+                    })
+                    .done();
         });
 
         it('should just call the resolver resolve method if force was specified', function (next) {
@@ -136,16 +137,16 @@ describe('PackageRepository', function () {
             };
 
             packageRepository._config.force = true;
-            packageRepository.fetch({ name: '', source: 'foo', target: ' ~0.1.0' })
-            .spread(function (canonicalDir, pkgMeta) {
-                expect(called).to.eql(['resolve']);
-                expect(fs.existsSync(canonicalDir)).to.be(true);
-                expect(pkgMeta).to.be.an('object');
-                expect(pkgMeta.name).to.be('package-a');
-                expect(pkgMeta.version).to.be('0.1.1');
-                next();
-            })
-            .done();
+            packageRepository.fetch({name: '', source: 'foo', target: ' ~0.1.0'})
+                    .spread(function (canonicalDir, pkgMeta) {
+                        expect(called).to.eql(['resolve']);
+                        expect(fs.existsSync(canonicalDir)).to.be(true);
+                        expect(pkgMeta).to.be.an('object');
+                        expect(pkgMeta.name).to.be('package-a');
+                        expect(pkgMeta.version).to.be('0.1.1');
+                        next();
+                    })
+                    .done();
         });
 
         it('should attempt to retrieve a resolved package from the resolve package', function (next) {
@@ -158,16 +159,16 @@ describe('PackageRepository', function () {
                 return originalRetrieve.apply(this, arguments);
             };
 
-            packageRepository.fetch({ name: '', source: 'foo', target: '~0.1.0' })
-            .spread(function (canonicalDir, pkgMeta) {
-                expect(called).to.be(true);
-                expect(fs.existsSync(canonicalDir)).to.be(true);
-                expect(pkgMeta).to.be.an('object');
-                expect(pkgMeta.name).to.be('package-a');
-                expect(pkgMeta.version).to.be('0.1.1');
-                next();
-            })
-            .done();
+            packageRepository.fetch({name: '', source: 'foo', target: '~0.1.0'})
+                    .spread(function (canonicalDir, pkgMeta) {
+                        expect(called).to.be(true);
+                        expect(fs.existsSync(canonicalDir)).to.be(true);
+                        expect(pkgMeta).to.be.an('object');
+                        expect(pkgMeta.name).to.be('package-a');
+                        expect(pkgMeta.version).to.be('0.1.1');
+                        next();
+                    })
+                    .done();
         });
 
         it('should avoid using cache for local resources', function (next) {
@@ -182,17 +183,17 @@ describe('PackageRepository', function () {
                 return originalRetrieve.apply(this, arguments);
             };
 
-            packageRepository.fetch({ name: '', source: testPackage, target: '~0.1.0' })
-            .spread(function (canonicalDir, pkgMeta) {
-                expect(called).to.be(false);
-                expect(fs.existsSync(canonicalDir)).to.be(true);
-                expect(pkgMeta).to.be.an('object');
-                expect(pkgMeta.name).to.be('package-a');
-                expect(pkgMeta.version).to.be('0.1.1');
-                forceCaching = true;
-                next();
-            })
-            .done();
+            packageRepository.fetch({name: '', source: testPackage, target: '~0.1.0'})
+                    .spread(function (canonicalDir, pkgMeta) {
+                        expect(called).to.be(false);
+                        expect(fs.existsSync(canonicalDir)).to.be(true);
+                        expect(pkgMeta).to.be.an('object');
+                        expect(pkgMeta.name).to.be('package-a');
+                        expect(pkgMeta.version).to.be('0.1.1');
+                        forceCaching = true;
+                        next();
+                    })
+                    .done();
         });
 
         it('should just call the resolver resolve method if no appropriate package was found in the resolve cache', function (next) {
@@ -215,16 +216,16 @@ describe('PackageRepository', function () {
                 return Q.resolve([]);
             };
 
-            packageRepository.fetch({ name: '', source: 'foo', target: ' ~0.1.0' })
-            .spread(function (canonicalDir, pkgMeta) {
-                expect(called).to.eql(['resolve']);
-                expect(fs.existsSync(canonicalDir)).to.be(true);
-                expect(pkgMeta).to.be.an('object');
-                expect(pkgMeta.name).to.be('package-a');
-                expect(pkgMeta.version).to.be('0.1.1');
-                next();
-            })
-            .done();
+            packageRepository.fetch({name: '', source: 'foo', target: ' ~0.1.0'})
+                    .spread(function (canonicalDir, pkgMeta) {
+                        expect(called).to.eql(['resolve']);
+                        expect(fs.existsSync(canonicalDir)).to.be(true);
+                        expect(pkgMeta).to.be.an('object');
+                        expect(pkgMeta.name).to.be('package-a');
+                        expect(pkgMeta.version).to.be('0.1.1');
+                        next();
+                    })
+                    .done();
         });
 
         it('should call the resolver hasNew method if an appropriate package was found in the resolve cache', function (next) {
@@ -249,21 +250,21 @@ describe('PackageRepository', function () {
                 return Q.resolve([tempPackage, json]);
             };
 
-            copy.copyDir(testPackage, tempPackage, { ignore: ['.git'] })
-            .then(function () {
-                fs.writeFileSync(path.join(tempPackage, '.upt.json'), JSON.stringify(json));
+            copy.copyDir(testPackage, tempPackage, {ignore: ['.git']})
+                    .then(function () {
+                        fs.writeFileSync(path.join(tempPackage, '.upt.json'), JSON.stringify(json));
 
-                return packageRepository.fetch({ name: '', source: 'foo', target: '~0.1.0' })
-                .spread(function (canonicalDir, pkgMeta) {
-                    expect(called).to.be(true);
-                    expect(fs.existsSync(canonicalDir)).to.be(true);
-                    expect(pkgMeta).to.be.an('object');
-                    expect(pkgMeta.name).to.be('package-a');
-                    expect(pkgMeta.version).to.be('0.1.1');
-                    next();
-                });
-            })
-            .done();
+                        return packageRepository.fetch({name: '', source: 'foo', target: '~0.1.0'})
+                                .spread(function (canonicalDir, pkgMeta) {
+                                    expect(called).to.be(true);
+                                    expect(fs.existsSync(canonicalDir)).to.be(true);
+                                    expect(pkgMeta).to.be.an('object');
+                                    expect(pkgMeta.name).to.be('package-a');
+                                    expect(pkgMeta.version).to.be('0.1.1');
+                                    next();
+                                });
+                    })
+                    .done();
         });
 
         it('should call the resolver resolve method if hasNew resolved to true', function (next) {
@@ -293,21 +294,21 @@ describe('PackageRepository', function () {
                 return Q.resolve([tempPackage, json]);
             };
 
-            copy.copyDir(testPackage, tempPackage, { ignore: ['.git'] })
-            .then(function () {
-                fs.writeFileSync(path.join(tempPackage, '.upt.json'), JSON.stringify(json));
+            copy.copyDir(testPackage, tempPackage, {ignore: ['.git']})
+                    .then(function () {
+                        fs.writeFileSync(path.join(tempPackage, '.upt.json'), JSON.stringify(json));
 
-                return packageRepository.fetch({ name: '', source: 'foo', target: '~0.2.0' })
-                .spread(function (canonicalDir, pkgMeta) {
-                    expect(called).to.eql(['hasNew', 'resolve']);
-                    expect(fs.existsSync(canonicalDir)).to.be(true);
-                    expect(pkgMeta).to.be.an('object');
-                    expect(pkgMeta.name).to.be('a');
-                    expect(pkgMeta.version).to.be('0.2.2');
-                    next();
-                });
-            })
-            .done();
+                        return packageRepository.fetch({name: '', source: 'foo', target: '~0.2.0'})
+                                .spread(function (canonicalDir, pkgMeta) {
+                                    expect(called).to.eql(['hasNew', 'resolve']);
+                                    expect(fs.existsSync(canonicalDir)).to.be(true);
+                                    expect(pkgMeta).to.be.an('object');
+                                    expect(pkgMeta.name).to.be('a');
+                                    expect(pkgMeta.version).to.be('0.2.2');
+                                    next();
+                                });
+                    })
+                    .done();
         });
 
         it('should resolve to the cached package if hasNew resolve to false', function (next) {
@@ -337,19 +338,19 @@ describe('PackageRepository', function () {
                 return Q.resolve([tempPackage, json]);
             };
 
-            copy.copyDir(testPackage, tempPackage, { ignore: ['.git'] })
-            .then(function () {
-                fs.writeFileSync(path.join(tempPackage, '.upt.json'), JSON.stringify(json));
+            copy.copyDir(testPackage, tempPackage, {ignore: ['.git']})
+                    .then(function () {
+                        fs.writeFileSync(path.join(tempPackage, '.upt.json'), JSON.stringify(json));
 
-                return packageRepository.fetch({ name: '', source: 'foo', target: '~0.2.0' })
-                .spread(function (canonicalDir, pkgMeta) {
-                    expect(called).to.eql(['hasNew']);
-                    expect(canonicalDir).to.equal(tempPackage);
-                    expect(pkgMeta).to.eql(json);
-                    next();
-                });
-            })
-            .done();
+                        return packageRepository.fetch({name: '', source: 'foo', target: '~0.2.0'})
+                                .spread(function (canonicalDir, pkgMeta) {
+                                    expect(called).to.eql(['hasNew']);
+                                    expect(canonicalDir).to.equal(tempPackage);
+                                    expect(pkgMeta).to.eql(json);
+                                    next();
+                                });
+                    })
+                    .done();
         });
 
         it('should just use the cached package if offline was specified', function (next) {
@@ -379,34 +380,34 @@ describe('PackageRepository', function () {
                 return Q.resolve([tempPackage, json]);
             };
 
-            copy.copyDir(testPackage, tempPackage, { ignore: ['.git'] })
-            .then(function () {
-                fs.writeFileSync(path.join(tempPackage, '.upt.json'), JSON.stringify(json));
+            copy.copyDir(testPackage, tempPackage, {ignore: ['.git']})
+                    .then(function () {
+                        fs.writeFileSync(path.join(tempPackage, '.upt.json'), JSON.stringify(json));
 
-                packageRepository._config.offline = true;
-                return packageRepository.fetch({ name: '', source: 'foo', target: '~0.2.0' })
-                .spread(function (canonicalDir, pkgMeta) {
-                    expect(called.length).to.be(0);
-                    expect(canonicalDir).to.equal(tempPackage);
-                    expect(pkgMeta).to.eql(json);
-                    next();
-                });
-            })
-            .done();
+                        packageRepository._config.offline = true;
+                        return packageRepository.fetch({name: '', source: 'foo', target: '~0.2.0'})
+                                .spread(function (canonicalDir, pkgMeta) {
+                                    expect(called.length).to.be(0);
+                                    expect(canonicalDir).to.equal(tempPackage);
+                                    expect(pkgMeta).to.eql(json);
+                                    next();
+                                });
+                    })
+                    .done();
         });
 
         it('should error out if there is no appropriate package in the resolve cache and offline was specified', function (next) {
             packageRepository._config.offline = true;
-            packageRepository.fetch({ name: '', source: 'foo', target: '~0.2.0' })
-            .then(function () {
-                throw new Error('Should have failed');
-            }, function (err) {
-                expect(err).to.be.an(Error);
-                expect(err.code).to.equal('ENOCACHE');
+            packageRepository.fetch({name: '', source: 'foo', target: '~0.2.0'})
+                    .then(function () {
+                        throw new Error('Should have failed');
+                    }, function (err) {
+                        expect(err).to.be.an(Error);
+                        expect(err.code).to.equal('ENOCACHE');
 
-                next();
-            })
-            .done();
+                        next();
+                    })
+                    .done();
         });
     });
 
@@ -427,17 +428,17 @@ describe('PackageRepository', function () {
             };
 
             packageRepository.versions('foo')
-            .then(function (versions) {
-                expect(called).to.eql(['resolver']);
-                expect(versions).to.be.an('array');
-                expect(versions.length).to.be(0);
+                    .then(function (versions) {
+                        expect(called).to.eql(['resolver']);
+                        expect(versions).to.be.an('array');
+                        expect(versions.length).to.be(0);
 
-                next();
-            })
-            .fin(function () {
-                resolvers.GitRemote.versions = originalVersions;
-            })
-            .done();
+                        next();
+                    })
+                    .fin(function () {
+                        resolvers.GitRemote.versions = originalVersions;
+                    })
+                    .done();
         });
 
         it('should call the versions method on the resolve cache if offline was specified', function (next) {
@@ -457,17 +458,17 @@ describe('PackageRepository', function () {
 
             packageRepository._config.offline = true;
             packageRepository.versions('foo')
-            .then(function (versions) {
-                expect(called).to.eql(['resolve-cache']);
-                expect(versions).to.be.an('array');
-                expect(versions.length).to.be(0);
+                    .then(function (versions) {
+                        expect(called).to.eql(['resolve-cache']);
+                        expect(versions).to.be.an('array');
+                        expect(versions.length).to.be(0);
 
-                next();
-            })
-            .fin(function () {
-                resolvers.GitRemote.versions = originalVersions;
-            })
-            .done();
+                        next();
+                    })
+                    .fin(function () {
+                        resolvers.GitRemote.versions = originalVersions;
+                    })
+                    .done();
         });
     });
 
@@ -487,11 +488,11 @@ describe('PackageRepository', function () {
             };
 
             packageRepository.eliminate(json)
-            .then(function () {
-                expect(called).to.be(true);
-                next();
-            })
-            .done();
+                    .then(function () {
+                        expect(called).to.be(true);
+                        next();
+                    })
+                    .done();
         });
 
         it('should call the clearCache method with the name from the registry client', function (next) {
@@ -509,11 +510,11 @@ describe('PackageRepository', function () {
             };
 
             packageRepository.eliminate(json)
-            .then(function () {
-                expect(called).to.be(true);
-                next();
-            })
-            .done();
+                    .then(function () {
+                        expect(called).to.be(true);
+                        next();
+                    })
+                    .done();
         });
     });
 
@@ -528,12 +529,12 @@ describe('PackageRepository', function () {
             };
 
             packageRepository.list()
-            .then(function (entries) {
-                expect(called).to.be(true);
-                expect(entries).to.be.an('array');
-                next();
-            })
-            .done();
+                    .then(function (entries) {
+                        expect(called).to.be(true);
+                        expect(entries).to.be.an('array');
+                        next();
+                    })
+                    .done();
         });
     });
 
@@ -547,11 +548,11 @@ describe('PackageRepository', function () {
             };
 
             packageRepository.clear()
-            .then(function () {
-                expect(called).to.be(true);
-                next();
-            })
-            .done();
+                    .then(function () {
+                        expect(called).to.be(true);
+                        next();
+                    })
+                    .done();
         });
 
         it('should call the clearCache method without name from the registry client', function (next) {
@@ -563,11 +564,11 @@ describe('PackageRepository', function () {
             };
 
             packageRepository.clear()
-            .then(function () {
-                expect(called).to.be(true);
-                next();
-            })
-            .done();
+                    .then(function () {
+                        expect(called).to.be(true);
+                        next();
+                    })
+                    .done();
         });
     });
 

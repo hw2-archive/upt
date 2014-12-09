@@ -1,10 +1,10 @@
 {
-  "name": "a",
-  "version": "0.2.2",
-  "ignore": [
-    "test/",
-    "more/docs",
-    "more/assets/",
-    "baz/"
-  ]
+    "name": "a",
+    "version": "0.2.2",
+    "ignore": [
+        "test/",
+        "more/docs",
+        "more/assets/",
+        "baz/"
+    ]
 }

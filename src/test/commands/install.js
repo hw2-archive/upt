@@ -10,7 +10,7 @@ describe('upt install', function () {
     var tempDir = helpers.createTmpDir();
     var uptJsonPath = path.join(tempDir, 'upt_components', 'underscore', 'upt.json');
 
-    function uptJson() {
+    function uptJson () {
         return JSON.parse(fs.readFileSync(uptJsonPath));
     }
 
@@ -24,18 +24,18 @@ describe('upt install', function () {
         var logger = upt.commands.install(['underscore'], undefined, config);
 
         return helpers.expectEvent(logger, 'end')
-        .then(function () {
-            expect(uptJson()).to.have.key('name');
-        });
+                .then(function () {
+                    expect(uptJson()).to.have.key('name');
+                });
     });
 
     it.skip('installs package with --save flag', function () {
         var logger = upt.commands.install(['underscore'], {save: true}, config);
 
         return helpers.expectEvent(logger, 'end')
-        .then(function () {
-            expect(uptJson()).to.have.key('name');
-        });
+                .then(function () {
+                    expect(uptJson()).to.have.key('name');
+                });
     });
 
 });

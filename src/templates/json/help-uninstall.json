@@ -6,18 +6,18 @@
     ],
     "options": [
         {
-            "shorthand":   "-h",
-            "flag":        "--help",
+            "shorthand": "-h",
+            "flag": "--help",
             "description": "Show this help message"
         },
         {
-            "shorthand":   "-S",
-            "flag":        "--save",
+            "shorthand": "-S",
+            "flag": "--save",
             "description": "Save installed packages into the project's upt.json dependencies"
         },
         {
-            "shorthand":   "-D",
-            "flag":        "--save-dev",
+            "shorthand": "-D",
+            "flag": "--save-dev",
             "description": "Save installed packages into the project's upt.json devDependencies"
         }
     ]

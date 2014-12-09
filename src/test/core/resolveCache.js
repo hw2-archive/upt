@@ -30,8 +30,8 @@ describe('ResolveCache', function () {
         }));
 
         // Checkout test package version 0.2.0
-        cmd('git', ['checkout', '0.2.0'], { cwd: testPackage })
-        .then(next.bind(next, null), next);
+        cmd('git', ['checkout', '0.2.0'], {cwd: testPackage})
+                .then(next.bind(next, null), next);
     });
 
     beforeEach(function () {
@@ -54,7 +54,7 @@ describe('ResolveCache', function () {
             rimraf.sync(tempPackage);
         });
 
-        function initialize(cacheDir) {
+        function initialize (cacheDir) {
             return new ResolveCache(mout.object.deepMixIn(defaultConfig, {
                 storage: {
                     packages: cacheDir
@@ -82,8 +82,8 @@ describe('ResolveCache', function () {
 
             // Create a fresh copy of the test package into temp
             rimraf.sync(tempPackage);
-            copy.copyDir(testPackage, tempPackage, { ignore: ['.git'] })
-            .then(next.bind(next, null), next);
+            copy.copyDir(testPackage, tempPackage, {ignore: ['.git']})
+                    .then(next.bind(next, null), next);
         });
 
         it('should move the canonical dir to source-md5/version/ folder if package meta has a version', function (next) {
@@ -93,15 +93,15 @@ describe('ResolveCache', function () {
                 _source: 'foo',
                 _target: '*'
             })
-            .then(function (dir) {
-                expect(dir).to.equal(path.join(cacheDir, md5('foo'), '1.0.0'));
-                expect(fs.existsSync(dir)).to.be(true);
-                expect(fs.existsSync(path.join(dir, 'baz'))).to.be(true);
-                expect(fs.existsSync(tempPackage)).to.be(false);
+                    .then(function (dir) {
+                        expect(dir).to.equal(path.join(cacheDir, md5('foo'), '1.0.0'));
+                        expect(fs.existsSync(dir)).to.be(true);
+                        expect(fs.existsSync(path.join(dir, 'baz'))).to.be(true);
+                        expect(fs.existsSync(tempPackage)).to.be(false);
 
-                next();
-            })
-            .done();
+                        next();
+                    })
+                    .done();
         });
 
         it('should move the canonical dir to source-md5/target/ folder if package meta has no version', function (next) {
@@ -110,15 +110,15 @@ describe('ResolveCache', function () {
                 _source: 'foo',
                 _target: 'some-branch'
             })
-            .then(function (dir) {
-                expect(dir).to.equal(path.join(cacheDir, md5('foo'), 'some-branch'));
-                expect(fs.existsSync(dir)).to.be(true);
-                expect(fs.existsSync(path.join(dir, 'baz'))).to.be(true);
-                expect(fs.existsSync(tempPackage)).to.be(false);
+                    .then(function (dir) {
+                        expect(dir).to.equal(path.join(cacheDir, md5('foo'), 'some-branch'));
+                        expect(fs.existsSync(dir)).to.be(true);
+                        expect(fs.existsSync(path.join(dir, 'baz'))).to.be(true);
+                        expect(fs.existsSync(tempPackage)).to.be(false);
 
-                next();
-            })
-            .done();
+                        next();
+                    })
+                    .done();
         });
 
         it('should move the canonical dir to source-md5/_wildcard/ folder if package meta has no version and target is *', function (next) {
@@ -127,15 +127,15 @@ describe('ResolveCache', function () {
                 _source: 'foo',
                 _target: '*'
             })
-            .then(function (dir) {
-                expect(dir).to.equal(path.join(cacheDir, md5('foo'), '_wildcard'));
-                expect(fs.existsSync(dir)).to.be(true);
-                expect(fs.existsSync(path.join(dir, 'baz'))).to.be(true);
-                expect(fs.existsSync(tempPackage)).to.be(false);
+                    .then(function (dir) {
+                        expect(dir).to.equal(path.join(cacheDir, md5('foo'), '_wildcard'));
+                        expect(fs.existsSync(dir)).to.be(true);
+                        expect(fs.existsSync(path.join(dir, 'baz'))).to.be(true);
+                        expect(fs.existsSync(tempPackage)).to.be(false);
 
-                next();
-            })
-            .done();
+                        next();
+                    })
+                    .done();
         });
 
         it('should read the package meta if not present', function (next) {
@@ -143,63 +143,63 @@ describe('ResolveCache', function () {
 
             // Copy upt.json to .upt.json and add some props
             copy.copyFile(path.join(tempPackage, 'component.json'), pkgMeta)
-            .then(function () {
-                return Q.nfcall(fs.readFile, pkgMeta)
-                .then(function (contents) {
-                    var json = JSON.parse(contents.toString());
+                    .then(function () {
+                        return Q.nfcall(fs.readFile, pkgMeta)
+                                .then(function (contents) {
+                                    var json = JSON.parse(contents.toString());
 
-                    json._target = '~0.2.0';
-                    json._source = 'git://github.com/bower/test-package.git';
+                                    json._target = '~0.2.0';
+                                    json._source = 'git://github.com/bower/test-package.git';
 
-                    return Q.nfcall(fs.writeFile, pkgMeta, JSON.stringify(json, null, '  '));
-                });
-            })
-            // Store as usual
-            .then(function () {
-                return resolveCache.store(tempPackage);
-            })
-            .then(function (dir) {
-                expect(dir).to.equal(path.join(cacheDir, md5('git://github.com/bower/test-package.git'), '0.2.0'));
-                expect(fs.existsSync(dir)).to.be(true);
-                expect(fs.existsSync(path.join(dir, 'baz'))).to.be(true);
-                expect(fs.existsSync(tempPackage)).to.be(false);
+                                    return Q.nfcall(fs.writeFile, pkgMeta, JSON.stringify(json, null, '  '));
+                                });
+                    })
+                    // Store as usual
+                    .then(function () {
+                        return resolveCache.store(tempPackage);
+                    })
+                    .then(function (dir) {
+                        expect(dir).to.equal(path.join(cacheDir, md5('git://github.com/bower/test-package.git'), '0.2.0'));
+                        expect(fs.existsSync(dir)).to.be(true);
+                        expect(fs.existsSync(path.join(dir, 'baz'))).to.be(true);
+                        expect(fs.existsSync(tempPackage)).to.be(false);
 
-                next();
-            })
-            .done();
+                        next();
+                    })
+                    .done();
         });
 
         it('should error out when reading the package meta if the file does not exist', function (next) {
             resolveCache.store(tempPackage)
-            .then(function () {
-                next(new Error('Should have failed'));
-            }, function (err) {
-                expect(err).to.be.an(Error);
-                expect(err.code).to.equal('ENOENT');
-                expect(err.message).to.contain(path.join(tempPackage, '.upt.json'));
+                    .then(function () {
+                        next(new Error('Should have failed'));
+                    }, function (err) {
+                        expect(err).to.be.an(Error);
+                        expect(err.code).to.equal('ENOENT');
+                        expect(err.message).to.contain(path.join(tempPackage, '.upt.json'));
 
-                next();
-            })
-            .done();
+                        next();
+                    })
+                    .done();
         });
 
         it('should error out when reading an invalid package meta', function (next) {
             var pkgMeta = path.join(tempPackage, '.upt.json');
 
             return Q.nfcall(fs.writeFile, pkgMeta, 'w00t')
-            .then(function () {
-                return resolveCache.store(tempPackage)
-                .then(function () {
-                    next(new Error('Should have failed'));
-                }, function (err) {
-                    expect(err).to.be.an(Error);
-                    expect(err.code).to.equal('EMALFORMED');
-                    expect(err.message).to.contain(path.join(tempPackage, '.upt.json'));
+                    .then(function () {
+                        return resolveCache.store(tempPackage)
+                                .then(function () {
+                                    next(new Error('Should have failed'));
+                                }, function (err) {
+                                    expect(err).to.be.an(Error);
+                                    expect(err.code).to.equal('EMALFORMED');
+                                    expect(err.message).to.contain(path.join(tempPackage, '.upt.json'));
 
-                    next();
-                });
-            })
-            .done();
+                                    next();
+                                });
+                    })
+                    .done();
         });
 
         it('should move the canonical dir, even if it is in a different drive', function (next) {
@@ -220,54 +220,54 @@ describe('ResolveCache', function () {
                 _source: 'foobar',
                 _target: 'some-branch'
             })
-            .then(function (dir) {
-                // Ensure mock was called
-                expect(hittedMock).to.be(true);
+                    .then(function (dir) {
+                        // Ensure mock was called
+                        expect(hittedMock).to.be(true);
 
-                expect(dir).to.equal(path.join(cacheDir, md5('foobar'), 'some-branch'));
-                expect(fs.existsSync(dir)).to.be(true);
-                expect(fs.existsSync(path.join(dir, 'baz'))).to.be(true);
-                expect(fs.existsSync(tempPackage)).to.be(false);
+                        expect(dir).to.equal(path.join(cacheDir, md5('foobar'), 'some-branch'));
+                        expect(fs.existsSync(dir)).to.be(true);
+                        expect(fs.existsSync(path.join(dir, 'baz'))).to.be(true);
+                        expect(fs.existsSync(tempPackage)).to.be(false);
 
-                next();
-            })
-            .done();
+                        next();
+                    })
+                    .done();
         });
 
         it('should update the in-memory cache', function (next) {
             // Feed the cache
             resolveCache.versions('test-in-memory')
-            // Copy temp package to temp package  2
-            .then(function () {
-                return copy.copyDir(tempPackage, tempPackage2, { ignore: ['.git'] });
-            })
-            // Store the two packages
-            .then(function () {
-                return resolveCache.store(tempPackage, {
-                    name: 'foo',
-                    version: '1.0.0',
-                    _source: 'test-in-memory',
-                    _target: '*'
-                });
-            })
-            .then(function () {
-                return resolveCache.store(tempPackage2, {
-                    name: 'foo',
-                    version: '1.0.1',
-                    _source: 'test-in-memory',
-                    _target: '*'
-                });
-            })
-            // Cache should have been updated
-            .then(function () {
-                return resolveCache.versions('test-in-memory')
-                .then(function (versions) {
-                    expect(versions).to.eql(['1.0.1', '1.0.0']);
+                    // Copy temp package to temp package  2
+                    .then(function () {
+                        return copy.copyDir(tempPackage, tempPackage2, {ignore: ['.git']});
+                    })
+                    // Store the two packages
+                    .then(function () {
+                        return resolveCache.store(tempPackage, {
+                            name: 'foo',
+                            version: '1.0.0',
+                            _source: 'test-in-memory',
+                            _target: '*'
+                        });
+                    })
+                    .then(function () {
+                        return resolveCache.store(tempPackage2, {
+                            name: 'foo',
+                            version: '1.0.1',
+                            _source: 'test-in-memory',
+                            _target: '*'
+                        });
+                    })
+                    // Cache should have been updated
+                    .then(function () {
+                        return resolveCache.versions('test-in-memory')
+                                .then(function (versions) {
+                                    expect(versions).to.eql(['1.0.1', '1.0.0']);
 
-                    next();
-                });
-            })
-            .done();
+                                    next();
+                                });
+                    })
+                    .done();
         });
 
         it('should url encode target when storing to the fs', function (next) {
@@ -276,15 +276,15 @@ describe('ResolveCache', function () {
                 _source: 'foo',
                 _target: 'foo/bar'
             })
-            .then(function (dir) {
-                expect(dir).to.equal(path.join(cacheDir, md5('foo'), 'foo%2Fbar'));
-                expect(fs.existsSync(dir)).to.be(true);
-                expect(fs.existsSync(path.join(dir, 'baz'))).to.be(true);
-                expect(fs.existsSync(tempPackage)).to.be(false);
+                    .then(function (dir) {
+                        expect(dir).to.equal(path.join(cacheDir, md5('foo'), 'foo%2Fbar'));
+                        expect(fs.existsSync(dir)).to.be(true);
+                        expect(fs.existsSync(path.join(dir, 'baz'))).to.be(true);
+                        expect(fs.existsSync(tempPackage)).to.be(false);
 
-                next();
-            })
-            .done();
+                        next();
+                    })
+                    .done();
         });
 
         it('should be possible to store two package at same time', function (next) {
@@ -315,11 +315,11 @@ describe('ResolveCache', function () {
     describe('.versions', function () {
         it('should resolve to an array', function (next) {
             resolveCache.versions(String(Math.random()))
-            .then(function (versions) {
-                expect(versions).to.be.an('array');
-                next();
-            })
-            .done();
+                    .then(function (versions) {
+                        expect(versions).to.be.an('array');
+                        next();
+                    })
+                    .done();
         });
 
         it('should ignore non-semver folders of the source', function (next) {
@@ -334,13 +334,13 @@ describe('ResolveCache', function () {
             fs.mkdirSync(path.join(sourceDir, 'foo'));
 
             resolveCache.versions(source)
-            .then(function (versions) {
-                expect(versions).to.not.contain('foo');
-                expect(versions).to.contain('0.0.1');
-                expect(versions).to.contain('0.1.0');
-                next();
-            })
-            .done();
+                    .then(function (versions) {
+                        expect(versions).to.not.contain('foo');
+                        expect(versions).to.contain('0.0.1');
+                        expect(versions).to.contain('0.1.0');
+                        next();
+                    })
+                    .done();
         });
 
         it('should order the versions', function (next) {
@@ -355,11 +355,11 @@ describe('ResolveCache', function () {
             fs.mkdirSync(path.join(sourceDir, '0.1.0-rc.1'));
 
             resolveCache.versions(source)
-            .then(function (versions) {
-                expect(versions).to.eql(['0.1.0', '0.1.0-rc.1', '0.0.1']);
-                next();
-            })
-            .done();
+                    .then(function (versions) {
+                        expect(versions).to.eql(['0.1.0', '0.1.0-rc.1', '0.0.1']);
+                        next();
+                    })
+                    .done();
         });
 
         it('should cache versions to speed-up subsequent calls', function (next) {
@@ -372,28 +372,28 @@ describe('ResolveCache', function () {
             fs.mkdirSync(path.join(sourceDir, '0.0.1'));
 
             resolveCache.versions(source)
-            .then(function () {
-                // Remove folder
-                rimraf.sync(sourceDir);
+                    .then(function () {
+                        // Remove folder
+                        rimraf.sync(sourceDir);
 
-                return resolveCache.versions(source);
-            })
-            .then(function (versions) {
-                expect(versions).to.eql(['0.0.1']);
-                next();
-            })
-            .done();
+                        return resolveCache.versions(source);
+                    })
+                    .then(function (versions) {
+                        expect(versions).to.eql(['0.0.1']);
+                        next();
+                    })
+                    .done();
         });
     });
 
     describe('.retrieve', function () {
         it('should resolve to empty if there are no packages for the requested source', function (next) {
             resolveCache.retrieve(String(Math.random()))
-            .spread(function () {
-                expect(arguments.length).to.equal(0);
-                next();
-            })
-            .done();
+                    .spread(function () {
+                        expect(arguments.length).to.equal(0);
+                        next();
+                    })
+                    .done();
         });
 
         it('should resolve to empty if there are no suitable packages for the requested target', function (next) {
@@ -409,17 +409,17 @@ describe('ResolveCache', function () {
             fs.mkdirSync(path.join(sourceDir, '0.2.0'));
 
             resolveCache.retrieve(source, '~0.3.0')
-            .spread(function () {
-                expect(arguments.length).to.equal(0);
+                    .spread(function () {
+                        expect(arguments.length).to.equal(0);
 
-                return resolveCache.retrieve(source, 'some-branch');
-            })
-            .spread(function () {
-                expect(arguments.length).to.equal(0);
+                        return resolveCache.retrieve(source, 'some-branch');
+                    })
+                    .spread(function () {
+                        expect(arguments.length).to.equal(0);
 
-                next();
-            })
-            .done();
+                        next();
+                    })
+                    .done();
         });
 
         it('should remove invalid packages from the cache if their package meta is missing or invalid', function (next) {
@@ -438,22 +438,22 @@ describe('ResolveCache', function () {
             fs.writeFileSync(path.join(sourceDir, '0.2.0', '.upt.json'), 'w00t');
 
             resolveCache.retrieve(source, '~0.1.0')
-            .spread(function () {
-                var dirs = fs.readdirSync(sourceDir);
+                    .spread(function () {
+                        var dirs = fs.readdirSync(sourceDir);
 
-                expect(arguments.length).to.equal(0);
-                expect(dirs).to.contain('0.0.1');
-                expect(dirs).to.contain('0.2.0');
-                next();
-            })
-            .done();
+                        expect(arguments.length).to.equal(0);
+                        expect(dirs).to.contain('0.0.1');
+                        expect(dirs).to.contain('0.2.0');
+                        next();
+                    })
+                    .done();
         });
 
         it('should resolve to the highest package that matches a range target, ignoring pre-releases', function (next) {
             var source = String(Math.random());
             var sourceId = md5(source);
             var sourceDir = path.join(cacheDir, sourceId);
-            var json = { name: 'foo' };
+            var json = {name: 'foo'};
 
             // Create some versions
             fs.mkdirSync(sourceDir);
@@ -479,28 +479,28 @@ describe('ResolveCache', function () {
             fs.writeFileSync(path.join(sourceDir, '0.2.0', '.upt.json'), JSON.stringify(json, null, '  '));
 
             resolveCache.retrieve(source, '~0.1.0')
-            .spread(function (canonicalDir, pkgMeta) {
-                expect(pkgMeta).to.be.an('object');
-                expect(pkgMeta.version).to.equal('0.1.9');
-                expect(canonicalDir).to.equal(path.join(sourceDir, '0.1.9'));
+                    .spread(function (canonicalDir, pkgMeta) {
+                        expect(pkgMeta).to.be.an('object');
+                        expect(pkgMeta.version).to.equal('0.1.9');
+                        expect(canonicalDir).to.equal(path.join(sourceDir, '0.1.9'));
 
-                return resolveCache.retrieve(source, '*');
-            })
-            .spread(function (canonicalDir, pkgMeta) {
-                expect(pkgMeta).to.be.an('object');
-                expect(pkgMeta.version).to.equal('0.2.0');
-                expect(canonicalDir).to.equal(path.join(sourceDir, '0.2.0'));
+                        return resolveCache.retrieve(source, '*');
+                    })
+                    .spread(function (canonicalDir, pkgMeta) {
+                        expect(pkgMeta).to.be.an('object');
+                        expect(pkgMeta.version).to.equal('0.2.0');
+                        expect(canonicalDir).to.equal(path.join(sourceDir, '0.2.0'));
 
-                next();
-            })
-            .done();
+                        next();
+                    })
+                    .done();
         });
 
         it('should resolve to the highest package that matches a range target, not ignoring pre-releases if they are the only versions', function (next) {
             var source = String(Math.random());
             var sourceId = md5(source);
             var sourceDir = path.join(cacheDir, sourceId);
-            var json = { name: 'foo' };
+            var json = {name: 'foo'};
 
             // Create some versions
             fs.mkdirSync(sourceDir);
@@ -514,21 +514,21 @@ describe('ResolveCache', function () {
             fs.writeFileSync(path.join(sourceDir, '0.1.0-rc.2', '.upt.json'), JSON.stringify(json, null, '  '));
 
             resolveCache.retrieve(source, '~0.1.0')
-            .spread(function (canonicalDir, pkgMeta) {
-                expect(pkgMeta).to.be.an('object');
-                expect(pkgMeta.version).to.equal('0.1.0-rc.2');
-                expect(canonicalDir).to.equal(path.join(sourceDir, '0.1.0-rc.2'));
+                    .spread(function (canonicalDir, pkgMeta) {
+                        expect(pkgMeta).to.be.an('object');
+                        expect(pkgMeta.version).to.equal('0.1.0-rc.2');
+                        expect(canonicalDir).to.equal(path.join(sourceDir, '0.1.0-rc.2'));
 
-                next();
-            })
-            .done();
+                        next();
+                    })
+                    .done();
         });
 
         it('should resolve to exact match (including build metadata) if available', function (next) {
             var source = String(Math.random());
             var sourceId = md5(source);
             var sourceDir = path.join(cacheDir, sourceId);
-            var json = { name: 'foo' };
+            var json = {name: 'foo'};
             var encoded;
 
             // Create some versions
@@ -554,21 +554,21 @@ describe('ResolveCache', function () {
             fs.writeFileSync(path.join(sourceDir, encoded, '.upt.json'), JSON.stringify(json, null, '  '));
 
             resolveCache.retrieve(source, '0.1.0+build.5')
-            .spread(function (canonicalDir, pkgMeta) {
-                expect(pkgMeta).to.be.an('object');
-                expect(pkgMeta.version).to.equal('0.1.0+build.5');
-                expect(canonicalDir).to.equal(path.join(sourceDir, encodeURIComponent('0.1.0+build.5')));
+                    .spread(function (canonicalDir, pkgMeta) {
+                        expect(pkgMeta).to.be.an('object');
+                        expect(pkgMeta.version).to.equal('0.1.0+build.5');
+                        expect(canonicalDir).to.equal(path.join(sourceDir, encodeURIComponent('0.1.0+build.5')));
 
-                next();
-            })
-            .done();
+                        next();
+                    })
+                    .done();
         });
 
         it('should resolve to the _wildcard package if target is * and there are no semver versions', function (next) {
             var source = String(Math.random());
             var sourceId = md5(source);
             var sourceDir = path.join(cacheDir, sourceId);
-            var json = { name: 'foo' };
+            var json = {name: 'foo'};
 
             // Create some versions
             fs.mkdirSync(sourceDir);
@@ -577,20 +577,20 @@ describe('ResolveCache', function () {
             fs.writeFileSync(path.join(sourceDir, '_wildcard', '.upt.json'), JSON.stringify(json, null, '  '));
 
             resolveCache.retrieve(source, '*')
-            .spread(function (canonicalDir, pkgMeta) {
-                expect(pkgMeta).to.be.an('object');
-                expect(canonicalDir).to.equal(path.join(sourceDir, '_wildcard'));
+                    .spread(function (canonicalDir, pkgMeta) {
+                        expect(pkgMeta).to.be.an('object');
+                        expect(canonicalDir).to.equal(path.join(sourceDir, '_wildcard'));
 
-                next();
-            })
-            .done();
+                        next();
+                    })
+                    .done();
         });
 
         it('should resolve to the exact target it\'s not a semver range', function (next) {
             var source = String(Math.random());
             var sourceId = md5(source);
             var sourceDir = path.join(cacheDir, sourceId);
-            var json = { name: 'foo' };
+            var json = {name: 'foo'};
 
             // Create some versions
             fs.mkdirSync(sourceDir);
@@ -602,13 +602,13 @@ describe('ResolveCache', function () {
             fs.writeFileSync(path.join(sourceDir, 'other-branch', '.upt.json'), JSON.stringify(json, null, '  '));
 
             resolveCache.retrieve(source, 'some-branch')
-            .spread(function (canonicalDir, pkgMeta) {
-                expect(pkgMeta).to.be.an('object');
-                expect(pkgMeta).to.not.have.property('version');
+                    .spread(function (canonicalDir, pkgMeta) {
+                        expect(pkgMeta).to.be.an('object');
+                        expect(pkgMeta).to.not.have.property('version');
 
-                next();
-            })
-            .done();
+                        next();
+                    })
+                    .done();
         });
     });
 
@@ -633,13 +633,13 @@ describe('ResolveCache', function () {
                 _source: source,
                 _target: '*'
             })
-            .then(function () {
-                expect(fs.existsSync(path.join(sourceDir, '0.0.1'))).to.be(false);
-                expect(fs.existsSync(path.join(sourceDir, '0.1.0'))).to.be(true);
+                    .then(function () {
+                        expect(fs.existsSync(path.join(sourceDir, '0.0.1'))).to.be(false);
+                        expect(fs.existsSync(path.join(sourceDir, '0.1.0'))).to.be(true);
 
-                next();
-            })
-            .done();
+                        next();
+                    })
+                    .done();
         });
 
         it('should delete the source-md5/target folder', function (next) {
@@ -657,13 +657,13 @@ describe('ResolveCache', function () {
                 _source: source,
                 _target: 'some-branch'
             })
-            .then(function () {
-                expect(fs.existsSync(path.join(sourceDir, 'some-branch'))).to.be(false);
-                expect(fs.existsSync(path.join(sourceDir, '0.0.1'))).to.be(true);
+                    .then(function () {
+                        expect(fs.existsSync(path.join(sourceDir, 'some-branch'))).to.be(false);
+                        expect(fs.existsSync(path.join(sourceDir, '0.0.1'))).to.be(true);
 
-                next();
-            })
-            .done();
+                        next();
+                    })
+                    .done();
         });
 
         it('should delete the source-md5/_wildcard folder', function (next) {
@@ -681,13 +681,13 @@ describe('ResolveCache', function () {
                 _source: source,
                 _target: '*'
             })
-            .then(function () {
-                expect(fs.existsSync(path.join(sourceDir, '_wildcard'))).to.be(false);
-                expect(fs.existsSync(path.join(sourceDir, '0.0.1'))).to.be(true);
+                    .then(function () {
+                        expect(fs.existsSync(path.join(sourceDir, '_wildcard'))).to.be(false);
+                        expect(fs.existsSync(path.join(sourceDir, '0.0.1'))).to.be(true);
 
-                next();
-            })
-            .done();
+                        next();
+                    })
+                    .done();
         });
 
         it('should delete the source-md5 folder if empty', function (next) {
@@ -705,13 +705,13 @@ describe('ResolveCache', function () {
                 _source: source,
                 _target: '*'
             })
-            .then(function () {
-                expect(fs.existsSync(path.join(sourceDir, '0.0.1'))).to.be(false);
-                expect(fs.existsSync(path.join(sourceDir))).to.be(false);
+                    .then(function () {
+                        expect(fs.existsSync(path.join(sourceDir, '0.0.1'))).to.be(false);
+                        expect(fs.existsSync(path.join(sourceDir))).to.be(false);
 
-                next();
-            })
-            .done();
+                        next();
+                    })
+                    .done();
         });
 
         it('should remove entry from in memory cache if the source-md5 folder was deleted', function (next) {
@@ -725,29 +725,29 @@ describe('ResolveCache', function () {
 
             // Feed up the cache
             resolveCache.versions(source)
-            // Eliminate
-            .then(function () {
-                return resolveCache.eliminate({
-                    name: 'foo',
-                    version: '0.0.1',
-                    _source: source,
-                    _target: '*'
-                });
-            })
-            .then(function () {
-                // At this point the parent folder should be deleted
-                // To test against the in-memory cache, we create a folder
-                // manually and request the versions
-                mkdirp.sync(path.join(sourceDir, '0.0.2'));
+                    // Eliminate
+                    .then(function () {
+                        return resolveCache.eliminate({
+                            name: 'foo',
+                            version: '0.0.1',
+                            _source: source,
+                            _target: '*'
+                        });
+                    })
+                    .then(function () {
+                        // At this point the parent folder should be deleted
+                        // To test against the in-memory cache, we create a folder
+                        // manually and request the versions
+                        mkdirp.sync(path.join(sourceDir, '0.0.2'));
 
-                resolveCache.versions(source)
-                .then(function (versions) {
-                    expect(versions).to.eql(['0.0.2']);
+                        resolveCache.versions(source)
+                                .then(function (versions) {
+                                    expect(versions).to.eql(['0.0.2']);
 
-                    next();
-                });
-            })
-            .done();
+                                    next();
+                                });
+                    })
+                    .done();
         });
     });
 
@@ -758,17 +758,17 @@ describe('ResolveCache', function () {
 
         it('should empty the whole cache folder', function (next) {
             resolveCache.clear()
-            .then(function () {
-                var files;
+                    .then(function () {
+                        var files;
 
-                expect(fs.existsSync(cacheDir)).to.be(true);
+                        expect(fs.existsSync(cacheDir)).to.be(true);
 
-                files = fs.readdirSync(cacheDir);
-                expect(files.length).to.be(0);
+                        files = fs.readdirSync(cacheDir);
+                        expect(files.length).to.be(0);
 
-                next();
-            })
-            .done();
+                        next();
+                    })
+                    .done();
         });
 
         it('should erase the in-memory cache', function (next) {
@@ -782,23 +782,23 @@ describe('ResolveCache', function () {
 
             // Feed the in-memory cache
             resolveCache.versions(source)
-            // Clear
-            .then(function () {
-                return resolveCache.clear();
-            })
-            .then(function () {
-                // To test against the in-memory cache, we create a folder
-                // manually and request the versions
-                mkdirp.sync(path.join(sourceDir, '0.0.2'));
+                    // Clear
+                    .then(function () {
+                        return resolveCache.clear();
+                    })
+                    .then(function () {
+                        // To test against the in-memory cache, we create a folder
+                        // manually and request the versions
+                        mkdirp.sync(path.join(sourceDir, '0.0.2'));
 
-                resolveCache.versions(source)
-                .then(function (versions) {
-                    expect(versions).to.eql(['0.0.2']);
+                        resolveCache.versions(source)
+                                .then(function (versions) {
+                                    expect(versions).to.eql(['0.0.2']);
 
-                    next();
-                });
-            })
-            .done();
+                                    next();
+                                });
+                    })
+                    .done();
         });
     });
 
@@ -814,23 +814,23 @@ describe('ResolveCache', function () {
 
             // Feed the in-memory cache
             resolveCache.versions(source)
-            .then(function () {
-                // Delete 0.0.1 and create 0.0.2
-                fs.rmdirSync(path.join(sourceDir, '0.0.1'));
-                fs.mkdirSync(path.join(sourceDir, '0.0.2'));
+                    .then(function () {
+                        // Delete 0.0.1 and create 0.0.2
+                        fs.rmdirSync(path.join(sourceDir, '0.0.1'));
+                        fs.mkdirSync(path.join(sourceDir, '0.0.2'));
 
-                // Reset cache
-                resolveCache.reset();
+                        // Reset cache
+                        resolveCache.reset();
 
-                // Get versions
-                return resolveCache.versions(source);
-            })
-            .then(function (versions) {
-                expect(versions).to.eql(['0.0.2']);
+                        // Get versions
+                        return resolveCache.versions(source);
+                    })
+                    .then(function (versions) {
+                        expect(versions).to.eql(['0.0.2']);
 
-                next();
-            })
-            .done();
+                        next();
+                    })
+                    .done();
         });
     });
 
@@ -842,13 +842,13 @@ describe('ResolveCache', function () {
 
         it('should resolve to an empty array if the cache is empty', function (next) {
             resolveCache.list()
-            .then(function (entries) {
-                expect(entries).to.be.an('array');
-                expect(entries.length).to.be(0);
+                    .then(function (entries) {
+                        expect(entries).to.be.an('array');
+                        expect(entries.length).to.be(0);
 
-                next();
-            })
-            .done();
+                        next();
+                    })
+                    .done();
         });
 
         it('should resolve to an ordered array of entries (name ASC, release ASC)', function (next) {
@@ -901,28 +901,28 @@ describe('ResolveCache', function () {
             fs.writeFileSync(path.join(sourceDir2, '0.2.0', '.upt.json'), JSON.stringify(json, null, '  '));
 
             resolveCache.list()
-            .then(function (entries) {
-                var expectedJson;
-                var uptDir = path.join(__dirname, '../..');
+                    .then(function (entries) {
+                        var expectedJson;
+                        var uptDir = path.join(__dirname, '../..');
 
-                expect(entries).to.be.an('array');
+                        expect(entries).to.be.an('array');
 
-                expectedJson = fs.readFileSync(path.join(__dirname, '../assets/resolve-cache/list-json-1.json'));
-                expectedJson = expectedJson.toString().trim();
+                        expectedJson = fs.readFileSync(path.join(__dirname, '../assets/resolve-cache/list-json-1.json'));
+                        expectedJson = expectedJson.toString().trim();
 
-                mout.object.forOwn(entries, function (entry) {
-                    // Trim absolute upt path from json
-                    entry.canonicalDir = entry.canonicalDir.substr(uptDir.length);
-                    // Convert windows \ paths to /
-                    entry.canonicalDir = entry.canonicalDir.replace(/\\/g, '/');
-                });
+                        mout.object.forOwn(entries, function (entry) {
+                            // Trim absolute upt path from json
+                            entry.canonicalDir = entry.canonicalDir.substr(uptDir.length);
+                            // Convert windows \ paths to /
+                            entry.canonicalDir = entry.canonicalDir.replace(/\\/g, '/');
+                        });
 
-                json = JSON.stringify(entries, null, '  ');
-                expect(json).to.equal(expectedJson);
+                        json = JSON.stringify(entries, null, '  ');
+                        expect(json).to.equal(expectedJson);
 
-                next();
-            })
-            .done();
+                        next();
+                    })
+                    .done();
         });
 
         it('should ignore lurking files where dirs are expected', function (next) {
@@ -947,20 +947,20 @@ describe('ResolveCache', function () {
 
             // It should not error out
             resolveCache.list()
-            .then(function (entries) {
-                expect(entries).to.be.an('array');
-                expect(entries.length).to.be(1);
-                expect(entries[0].pkgMeta).to.eql(json);
+                    .then(function (entries) {
+                        expect(entries).to.be.an('array');
+                        expect(entries.length).to.be(1);
+                        expect(entries[0].pkgMeta).to.eql(json);
 
-                // Lurking file should have been removed
-                expect(fs.existsSync(path.join(cacheDir, 'foo'))).to.be(false);
-                expect(fs.existsSync(path.join(cacheDir, '.DS_Store'))).to.be(false);
-                expect(fs.existsSync(path.join(sourceDir, 'foo'))).to.be(false);
-                expect(fs.existsSync(path.join(sourceDir, '.DS_Store'))).to.be(false);
+                        // Lurking file should have been removed
+                        expect(fs.existsSync(path.join(cacheDir, 'foo'))).to.be(false);
+                        expect(fs.existsSync(path.join(cacheDir, '.DS_Store'))).to.be(false);
+                        expect(fs.existsSync(path.join(sourceDir, 'foo'))).to.be(false);
+                        expect(fs.existsSync(path.join(sourceDir, '.DS_Store'))).to.be(false);
 
-                next();
-            })
-            .done();
+                        next();
+                    })
+                    .done();
 
         });
 
@@ -986,18 +986,18 @@ describe('ResolveCache', function () {
 
             // It should not error out
             resolveCache.list()
-            .then(function (entries) {
-                expect(entries).to.be.an('array');
-                expect(entries.length).to.be(1);
-                expect(entries[0].pkgMeta).to.eql(json);
+                    .then(function (entries) {
+                        expect(entries).to.be.an('array');
+                        expect(entries.length).to.be(1);
+                        expect(entries[0].pkgMeta).to.eql(json);
 
-                // Packages with invalid metas should have been removed
-                expect(fs.existsSync(path.join(sourceDir, '0.0.1'))).to.be(false);
-                expect(fs.existsSync(path.join(sourceDir, '0.0.2'))).to.be(false);
+                        // Packages with invalid metas should have been removed
+                        expect(fs.existsSync(path.join(sourceDir, '0.0.1'))).to.be(false);
+                        expect(fs.existsSync(path.join(sourceDir, '0.0.2'))).to.be(false);
 
-                next();
-            })
-            .done();
+                        next();
+                    })
+                    .done();
         });
     });
 
@@ -1019,31 +1019,31 @@ describe('ResolveCache', function () {
 
             // Feed the cache
             resolveCache.versions(source)
-            .then(function () {
-                return resolveCache.versions(source2);
-            })
-            .then(function () {
-                // Create some more
-                fs.mkdirSync(path.join(sourceDir, '0.0.3'));
-                fs.mkdirSync(path.join(sourceDir2, '0.0.4'));
+                    .then(function () {
+                        return resolveCache.versions(source2);
+                    })
+                    .then(function () {
+                        // Create some more
+                        fs.mkdirSync(path.join(sourceDir, '0.0.3'));
+                        fs.mkdirSync(path.join(sourceDir2, '0.0.4'));
 
-                // Reset cache
-                ResolveCache.clearRuntimeCache();
-            })
-            .then(function () {
-                return resolveCache.versions(source)
-                .then(function (versions) {
-                    expect(versions).to.eql(['0.0.3', '0.0.1']);
+                        // Reset cache
+                        ResolveCache.clearRuntimeCache();
+                    })
+                    .then(function () {
+                        return resolveCache.versions(source)
+                                .then(function (versions) {
+                                    expect(versions).to.eql(['0.0.3', '0.0.1']);
 
-                    return resolveCache.versions(source2);
-                })
-                .then(function (versions) {
-                    expect(versions).to.eql(['0.0.4', '0.0.2']);
+                                    return resolveCache.versions(source2);
+                                })
+                                .then(function (versions) {
+                                    expect(versions).to.eql(['0.0.4', '0.0.2']);
 
-                    next();
-                });
-            })
-            .done();
+                                    next();
+                                });
+                    })
+                    .done();
         });
     });
 });

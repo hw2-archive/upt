@@ -33,7 +33,7 @@ describe('resolverFactory', function () {
         rimraf('dejavu', next);
     });
 
-    function callFactory(decEndpoint, config) {
+    function callFactory (decEndpoint, config) {
         return resolverFactory(decEndpoint, config || defaultConfig, logger, registryClient);
     }
 
@@ -47,13 +47,11 @@ describe('resolverFactory', function () {
             'git://hostname.com/user/project/': 'git://hostname.com/user/project',
             'git://hostname.com/user/project.git': 'git://hostname.com/user/project.git',
             'git://hostname.com/user/project.git/': 'git://hostname.com/user/project.git',
-
             // git@:
             'git@hostname.com:user/project': 'git@hostname.com:user/project',
             'git@hostname.com:user/project/': 'git@hostname.com:user/project',
             'git@hostname.com:user/project.git': 'git@hostname.com:user/project.git',
             'git@hostname.com:user/project.git/': 'git@hostname.com:user/project.git',
-
             // git+ssh:
             'git+ssh://user@hostname.com:project': 'ssh://user@hostname.com:project',
             'git+ssh://user@hostname.com:project/': 'ssh://user@hostname.com:project',
@@ -63,7 +61,6 @@ describe('resolverFactory', function () {
             'git+ssh://user@hostname.com/project/': 'ssh://user@hostname.com/project',
             'git+ssh://user@hostname.com/project.git': 'ssh://user@hostname.com/project.git',
             'git+ssh://user@hostname.com/project.git/': 'ssh://user@hostname.com/project.git',
-
             // git+http
             'git+http://hostname.com/project/blah': 'http://hostname.com/project/blah',
             'git+http://hostname.com/project/blah/': 'http://hostname.com/project/blah',
@@ -73,7 +70,6 @@ describe('resolverFactory', function () {
             'git+http://user@hostname.com/project/blah/': 'http://user@hostname.com/project/blah',
             'git+http://user@hostname.com/project/blah.git': 'http://user@hostname.com/project/blah.git',
             'git+http://user@hostname.com/project/blah.git/': 'http://user@hostname.com/project/blah.git',
-
             // git+https
             'git+https://hostname.com/project/blah': 'https://hostname.com/project/blah',
             'git+https://hostname.com/project/blah/': 'https://hostname.com/project/blah',
@@ -83,25 +79,21 @@ describe('resolverFactory', function () {
             'git+https://user@hostname.com/project/blah/': 'https://user@hostname.com/project/blah',
             'git+https://user@hostname.com/project/blah.git': 'https://user@hostname.com/project/blah.git',
             'git+https://user@hostname.com/project/blah.git/': 'https://user@hostname.com/project/blah.git',
-
             // ssh .git$
             'ssh://user@hostname.com:project.git': 'ssh://user@hostname.com:project.git',
             'ssh://user@hostname.com:project.git/': 'ssh://user@hostname.com:project.git',
             'ssh://user@hostname.com/project.git': 'ssh://user@hostname.com/project.git',
             'ssh://user@hostname.com/project.git/': 'ssh://user@hostname.com/project.git',
-
             // http .git$
             'http://hostname.com/project.git': 'http://hostname.com/project.git',
             'http://hostname.com/project.git/': 'http://hostname.com/project.git',
             'http://user@hostname.com/project.git': 'http://user@hostname.com/project.git',
             'http://user@hostname.com/project.git/': 'http://user@hostname.com/project.git',
-
             // https .git$
             'https://hostname.com/project.git': 'https://hostname.com/project.git',
             'https://hostname.com/project.git/': 'https://hostname.com/project.git',
             'https://user@hostname.com/project.git': 'https://user@hostname.com/project.git',
             'https://user@hostname.com/project.git/': 'https://user@hostname.com/project.git',
-
             // shorthand
             'bower/bower': 'git://github.com/bower/bower.git'
         };
@@ -109,42 +101,42 @@ describe('resolverFactory', function () {
         mout.object.forOwn(endpoints, function (value, key) {
             // Test without name and target
             promise = promise.then(function () {
-                return callFactory({ source: key });
+                return callFactory({source: key});
             })
-            .then(function (resolver) {
-                expect(resolver).to.be.a(resolvers.GitRemote);
-                expect(resolver).to.not.be(resolvers.GitHub);
-                expect(resolver.getSource()).to.equal(value);
-                expect(resolver.getTarget()).to.equal('*');
-            });
+                    .then(function (resolver) {
+                        expect(resolver).to.be.a(resolvers.GitRemote);
+                        expect(resolver).to.not.be(resolvers.GitHub);
+                        expect(resolver.getSource()).to.equal(value);
+                        expect(resolver.getTarget()).to.equal('*');
+                    });
 
             // Test with target
             promise = promise.then(function () {
-                return callFactory({ source: key, target: 'commit-ish' });
+                return callFactory({source: key, target: 'commit-ish'});
             })
-            .then(function (resolver) {
-                expect(resolver).to.be.a(resolvers.GitRemote);
-                expect(resolver).to.not.be(resolvers.GitHub);
-                expect(resolver.getSource()).to.equal(value);
-                expect(resolver.getTarget()).to.equal('commit-ish');
-            });
+                    .then(function (resolver) {
+                        expect(resolver).to.be.a(resolvers.GitRemote);
+                        expect(resolver).to.not.be(resolvers.GitHub);
+                        expect(resolver.getSource()).to.equal(value);
+                        expect(resolver.getTarget()).to.equal('commit-ish');
+                    });
 
             // Test with name
             promise = promise.then(function () {
-                return callFactory({ name: 'foo', source: key });
+                return callFactory({name: 'foo', source: key});
             })
-            .then(function (resolver) {
-                expect(resolver).to.be.a(resolvers.GitRemote);
-                expect(resolver).to.not.be(resolvers.GitHub);
-                expect(resolver.getSource()).to.equal(value);
-                expect(resolver.getName()).to.equal('foo');
-                expect(resolver.getTarget()).to.equal('*');
-            });
+                    .then(function (resolver) {
+                        expect(resolver).to.be.a(resolvers.GitRemote);
+                        expect(resolver).to.not.be(resolvers.GitHub);
+                        expect(resolver.getSource()).to.equal(value);
+                        expect(resolver.getName()).to.equal('foo');
+                        expect(resolver.getTarget()).to.equal('*');
+                    });
         });
 
         promise
-        .then(next.bind(next, null))
-        .done();
+                .then(next.bind(next, null))
+                .done();
     });
 
     it('should recognize GitHub endpoints correctly', function (next) {
@@ -158,13 +150,11 @@ describe('resolverFactory', function () {
             'git://github.com/user/project/': 'git://github.com/user/project.git',
             'git://github.com/user/project.git': 'git://github.com/user/project.git',
             'git://github.com/user/project.git/': 'git://github.com/user/project.git',
-
             // git@:
             'git@github.com:user/project': 'git@github.com:user/project.git',
             'git@github.com:user/project/': 'git@github.com:user/project.git',
             'git@github.com:user/project.git': 'git@github.com:user/project.git',
             'git@github.com:user/project.git/': 'git@github.com:user/project.git',
-
             // git+ssh:
             'git+ssh://git@github.com:project/blah': 'ssh://git@github.com:project/blah.git',
             'git+ssh://git@github.com:project/blah/': 'ssh://git@github.com:project/blah.git',
@@ -174,7 +164,6 @@ describe('resolverFactory', function () {
             'git+ssh://git@github.com/project/blah/': 'ssh://git@github.com/project/blah.git',
             'git+ssh://git@github.com/project/blah.git': 'ssh://git@github.com/project/blah.git',
             'git+ssh://git@github.com/project/blah.git/': 'ssh://git@github.com/project/blah.git',
-
             // git+http
             'git+http://github.com/project/blah': 'http://github.com/project/blah.git',
             'git+http://github.com/project/blah/': 'http://github.com/project/blah.git',
@@ -184,7 +173,6 @@ describe('resolverFactory', function () {
             'git+http://user@github.com/project/blah/': 'http://user@github.com/project/blah.git',
             'git+http://user@github.com/project/blah.git': 'http://user@github.com/project/blah.git',
             'git+http://user@github.com/project/blah.git/': 'http://user@github.com/project/blah.git',
-
             // git+https
             'git+https://github.com/project/blah': 'https://github.com/project/blah.git',
             'git+https://github.com/project/blah/': 'https://github.com/project/blah.git',
@@ -194,25 +182,21 @@ describe('resolverFactory', function () {
             'git+https://user@github.com/project/blah/': 'https://user@github.com/project/blah.git',
             'git+https://user@github.com/project/blah.git': 'https://user@github.com/project/blah.git',
             'git+https://user@github.com/project/blah.git/': 'https://user@github.com/project/blah.git',
-
             // ssh .git$
             'ssh://git@github.com:project/blah.git': 'ssh://git@github.com:project/blah.git',
             'ssh://git@github.com:project/blah.git/': 'ssh://git@github.com:project/blah.git',
             'ssh://git@github.com/project/blah.git': 'ssh://git@github.com/project/blah.git',
             'ssh://git@github.com/project/blah.git/': 'ssh://git@github.com/project/blah.git',
-
             // http .git$
             'http://github.com/project/blah.git': 'http://github.com/project/blah.git',
             'http://github.com/project/blah.git/': 'http://github.com/project/blah.git',
             'http://user@github.com/project/blah.git': 'http://user@github.com/project/blah.git',
             'http://user@github.com/project/blah.git/': 'http://user@github.com/project/blah.git',
-
             // https
             'https://github.com/project/blah.git': 'https://github.com/project/blah.git',
             'https://github.com/project/blah.git/': 'https://github.com/project/blah.git',
             'https://user@github.com/project/blah.git': 'https://user@github.com/project/blah.git',
             'https://user@github.com/project/blah.git/': 'https://user@github.com/project/blah.git',
-
             // shorthand
             'bower/bower': 'git://github.com/bower/bower.git'
         };
@@ -238,58 +222,58 @@ describe('resolverFactory', function () {
         mout.object.forOwn(gitHub, function (value, key) {
             // Test without name and target
             promise = promise.then(function () {
-                return callFactory({ source: key });
+                return callFactory({source: key});
             })
-            .then(function (resolver) {
-                expect(resolver).to.be.a(resolvers.GitHub);
-                expect(resolver.getSource()).to.equal(value);
-                expect(resolver.getTarget()).to.equal('*');
-            });
+                    .then(function (resolver) {
+                        expect(resolver).to.be.a(resolvers.GitHub);
+                        expect(resolver.getSource()).to.equal(value);
+                        expect(resolver.getTarget()).to.equal('*');
+                    });
 
             // Test with target
             promise = promise.then(function () {
-                return callFactory({ source: key, target: 'commit-ish' });
+                return callFactory({source: key, target: 'commit-ish'});
             })
-            .then(function (resolver) {
-                if (value) {
-                    expect(resolver).to.be.a(resolvers.GitHub);
-                    expect(resolver.getSource()).to.equal(value);
-                    expect(resolver.getTarget()).to.equal('commit-ish');
-                } else {
-                    expect(resolver).to.not.be.a(resolvers.GitHub);
-                }
-            });
+                    .then(function (resolver) {
+                        if (value) {
+                            expect(resolver).to.be.a(resolvers.GitHub);
+                            expect(resolver.getSource()).to.equal(value);
+                            expect(resolver.getTarget()).to.equal('commit-ish');
+                        } else {
+                            expect(resolver).to.not.be.a(resolvers.GitHub);
+                        }
+                    });
 
             // Test with name
             promise = promise.then(function () {
-                return callFactory({ name: 'foo', source: key });
+                return callFactory({name: 'foo', source: key});
             })
-            .then(function (resolver) {
-                if (value) {
-                    expect(resolver).to.be.a(resolvers.GitHub);
-                    expect(resolver.getSource()).to.equal(value);
-                    expect(resolver.getName()).to.equal('foo');
-                    expect(resolver.getTarget()).to.equal('*');
-                } else {
-                    expect(resolver).to.not.be.a(resolvers.GitHub);
-                }
-            });
+                    .then(function (resolver) {
+                        if (value) {
+                            expect(resolver).to.be.a(resolvers.GitHub);
+                            expect(resolver.getSource()).to.equal(value);
+                            expect(resolver.getName()).to.equal('foo');
+                            expect(resolver.getTarget()).to.equal('*');
+                        } else {
+                            expect(resolver).to.not.be.a(resolvers.GitHub);
+                        }
+                    });
         });
 
         // Test similar to GitHub but not real GitHub
         nonGitHub.forEach(function (value) {
             promise = promise.then(function () {
-                return callFactory({ source: value });
+                return callFactory({source: value});
             })
-            .then(function (resolver) {
-                expect(resolver).to.not.be.a(resolvers.GitHub);
-                expect(resolver).to.be.a(resolvers.GitRemote);
-            });
+                    .then(function (resolver) {
+                        expect(resolver).to.not.be.a(resolvers.GitHub);
+                        expect(resolver).to.be.a(resolvers.GitRemote);
+                    });
         });
 
         promise
-        .then(next.bind(next, null))
-        .done();
+                .then(next.bind(next, null))
+                .done();
     });
 
     it('should recognize local fs git endpoints correctly', function (next) {
@@ -316,27 +300,27 @@ describe('resolverFactory', function () {
         mout.object.forOwn(endpoints, function (value, key) {
             // Test without name
             promise = promise.then(function () {
-                return callFactory({ source: key });
+                return callFactory({source: key});
             })
-            .then(function (resolver) {
-                expect(resolver).to.be.a(resolvers.GitFs);
-                expect(resolver.getTarget()).to.equal('*');
-            });
+                    .then(function (resolver) {
+                        expect(resolver).to.be.a(resolvers.GitFs);
+                        expect(resolver.getTarget()).to.equal('*');
+                    });
 
             // Test with name
             promise = promise.then(function () {
-                return callFactory({ name: 'foo', source: key });
+                return callFactory({name: 'foo', source: key});
             })
-            .then(function (resolver) {
-                expect(resolver).to.be.a(resolvers.GitFs);
-                expect(resolver.getName()).to.equal('foo');
-                expect(resolver.getTarget()).to.equal('*');
-            });
+                    .then(function (resolver) {
+                        expect(resolver).to.be.a(resolvers.GitFs);
+                        expect(resolver.getName()).to.equal('foo');
+                        expect(resolver.getTarget()).to.equal('*');
+                    });
         });
 
         promise
-        .then(next.bind(next, null))
-        .done();
+                .then(next.bind(next, null))
+                .done();
     });
 
     it('should recognize svn remote endpoints correctly', function (next) {
@@ -347,29 +331,24 @@ describe('resolverFactory', function () {
             // svn:
             'svn://hostname.com/user/project': 'http://hostname.com/user/project',
             'svn://hostname.com/user/project/': 'http://hostname.com/user/project',
-
             // svn@:
             'svn://svn@hostname.com:user/project': 'http://svn@hostname.com:user/project',
             'svn://svn@hostname.com:user/project/': 'http://svn@hostname.com:user/project',
-
             // svn+http
             'svn+http://hostname.com/project/blah': 'http://hostname.com/project/blah',
             'svn+http://hostname.com/project/blah/': 'http://hostname.com/project/blah',
             'svn+http://user@hostname.com/project/blah': 'http://user@hostname.com/project/blah',
             'svn+http://user@hostname.com/project/blah/': 'http://user@hostname.com/project/blah',
-
             // svn+https
             'svn+https://hostname.com/project/blah': 'https://hostname.com/project/blah',
             'svn+https://hostname.com/project/blah/': 'https://hostname.com/project/blah',
             'svn+https://user@hostname.com/project/blah': 'https://user@hostname.com/project/blah',
             'svn+https://user@hostname.com/project/blah/': 'https://user@hostname.com/project/blah',
-
             // svn+ssh
             'svn+ssh://hostname.com/project/blah': 'svn+ssh://hostname.com/project/blah',
             'svn+ssh://hostname.com/project/blah/': 'svn+ssh://hostname.com/project/blah',
             'svn+ssh://user@hostname.com/project/blah': 'svn+ssh://user@hostname.com/project/blah',
             'svn+ssh://user@hostname.com/project/blah/': 'svn+ssh://user@hostname.com/project/blah',
-
             // svn+file
             'svn+file:///project/blah': 'file:///project/blah',
             'svn+file:///project/blah/': 'file:///project/blah'
@@ -378,42 +357,42 @@ describe('resolverFactory', function () {
         mout.object.forOwn(endpoints, function (value, key) {
             // Test without name and target
             promise = promise.then(function () {
-                return callFactory({ source: key });
+                return callFactory({source: key});
             })
-            .then(function (resolver) {
-                expect(resolver).to.be.a(resolvers.Svn);
-                expect(resolver).to.not.be(resolvers.GitHub);
-                expect(resolvers.Svn.getSource(resolver.getSource())).to.equal(value);
-                expect(resolver.getTarget()).to.equal('*');
-            });
+                    .then(function (resolver) {
+                        expect(resolver).to.be.a(resolvers.Svn);
+                        expect(resolver).to.not.be(resolvers.GitHub);
+                        expect(resolvers.Svn.getSource(resolver.getSource())).to.equal(value);
+                        expect(resolver.getTarget()).to.equal('*');
+                    });
 
             // Test with target
             promise = promise.then(function () {
-                return callFactory({ source: key, target: 'commit-ish' });
+                return callFactory({source: key, target: 'commit-ish'});
             })
-            .then(function (resolver) {
-                expect(resolver).to.be.a(resolvers.Svn);
-                expect(resolver).to.not.be(resolvers.GitHub);
-                expect(resolvers.Svn.getSource(resolver.getSource())).to.equal(value);
-                expect(resolver.getTarget()).to.equal('commit-ish');
-            });
+                    .then(function (resolver) {
+                        expect(resolver).to.be.a(resolvers.Svn);
+                        expect(resolver).to.not.be(resolvers.GitHub);
+                        expect(resolvers.Svn.getSource(resolver.getSource())).to.equal(value);
+                        expect(resolver.getTarget()).to.equal('commit-ish');
+                    });
 
             // Test with name
             promise = promise.then(function () {
-                return callFactory({ name: 'foo', source: key });
+                return callFactory({name: 'foo', source: key});
             })
-            .then(function (resolver) {
-                expect(resolver).to.be.a(resolvers.Svn);
-                expect(resolver).to.not.be(resolvers.GitHub);
-                expect(resolvers.Svn.getSource(resolver.getSource())).to.equal(value);
-                expect(resolver.getName()).to.equal('foo');
-                expect(resolver.getTarget()).to.equal('*');
-            });
+                    .then(function (resolver) {
+                        expect(resolver).to.be.a(resolvers.Svn);
+                        expect(resolver).to.not.be(resolvers.GitHub);
+                        expect(resolvers.Svn.getSource(resolver.getSource())).to.equal(value);
+                        expect(resolver.getName()).to.equal('foo');
+                        expect(resolver.getTarget()).to.equal('*');
+                    });
         });
 
         promise
-        .then(next.bind(next, null))
-        .done();
+                .then(next.bind(next, null))
+                .done();
     });
 
     it('should recognize local fs files/folder endpoints correctly', function (next) {
@@ -462,30 +441,30 @@ describe('resolverFactory', function () {
         mout.object.forOwn(endpoints, function (value, key) {
             // Test without name
             promise = promise.then(function () {
-                return callFactory({ source: key });
+                return callFactory({source: key});
             })
-            .then(function (resolver) {
-                expect(resolver.getSource()).to.equal(value);
-                expect(resolver).to.be.a(resolvers.Fs);
-                expect(resolver.getTarget()).to.equal('*');
-            });
+                    .then(function (resolver) {
+                        expect(resolver.getSource()).to.equal(value);
+                        expect(resolver).to.be.a(resolvers.Fs);
+                        expect(resolver.getTarget()).to.equal('*');
+                    });
 
             // Test with name
             promise = promise.then(function () {
-                return callFactory({ name: 'foo', source: key });
+                return callFactory({name: 'foo', source: key});
             })
-            .then(function (resolver) {
-                expect(resolver).to.be.a(resolvers.Fs);
-                expect(resolver.getName()).to.equal('foo');
-                expect(resolver.getTarget()).to.equal('*');
-                expect(resolver.getSource()).to.equal(value);
-            });
+                    .then(function (resolver) {
+                        expect(resolver).to.be.a(resolvers.Fs);
+                        expect(resolver.getName()).to.equal('foo');
+                        expect(resolver.getTarget()).to.equal('*');
+                        expect(resolver.getSource()).to.equal(value);
+                    });
         });
 
 
         promise
-        .then(next.bind(next, null))
-        .done();
+                .then(next.bind(next, null))
+                .done();
     });
 
     it('should recognize URL endpoints correctly', function (next) {
@@ -500,132 +479,132 @@ describe('resolverFactory', function () {
         endpoints.forEach(function (source) {
             // Test without name
             promise = promise.then(function () {
-                return callFactory({ source: source });
+                return callFactory({source: source});
             })
-            .then(function (resolver) {
-                expect(resolver).to.be.a(resolvers.Url);
-                expect(resolver.getSource()).to.equal(source);
-            });
+                    .then(function (resolver) {
+                        expect(resolver).to.be.a(resolvers.Url);
+                        expect(resolver.getSource()).to.equal(source);
+                    });
 
             // Test with name
             promise = promise.then(function () {
-                return callFactory({ name: 'foo', source: source });
+                return callFactory({name: 'foo', source: source});
             })
-            .then(function (resolver) {
-                expect(resolver).to.be.a(resolvers.Url);
-                expect(resolver.getName()).to.equal('foo');
-                expect(resolver.getSource()).to.equal(source);
-            });
+                    .then(function (resolver) {
+                        expect(resolver).to.be.a(resolvers.Url);
+                        expect(resolver.getName()).to.equal('foo');
+                        expect(resolver.getSource()).to.equal(source);
+                    });
         });
 
         promise
-        .then(next.bind(next, null))
-        .done();
+                .then(next.bind(next, null))
+                .done();
     });
 
     it('should recognize registry endpoints correctly', function (next) {
         // Create a 'dejavu' file at the root to prevent regressions of #666
         fs.writeFileSync('dejavu', 'foo');
 
-        callFactory({ source: 'dejavu' })
-        .then(function (resolver) {
-            expect(resolver).to.be.a(resolvers.GitRemote);
-            expect(resolver.getSource()).to.equal('git://github.com/IndigoUnited/dejavu.git');
-            expect(resolver.getTarget()).to.equal('*');
-        })
-        .then(function () {
-            // Test with name
-            return callFactory({ source: 'dejavu', name: 'foo' })
-            .then(function (resolver) {
-                expect(resolver).to.be.a(resolvers.GitRemote);
-                expect(resolver.getSource()).to.equal('git://github.com/IndigoUnited/dejavu.git');
-                expect(resolver.getName()).to.equal('foo');
-                expect(resolver.getTarget()).to.equal('*');
-            });
-        })
-        .then(function () {
-            // Test with target
-            return callFactory({ source: 'dejavu', target: '~2.0.0' })
-            .then(function (resolver) {
-                expect(resolver).to.be.a(resolvers.GitRemote);
-                expect(resolver.getTarget()).to.equal('~2.0.0');
+        callFactory({source: 'dejavu'})
+                .then(function (resolver) {
+                    expect(resolver).to.be.a(resolvers.GitRemote);
+                    expect(resolver.getSource()).to.equal('git://github.com/IndigoUnited/dejavu.git');
+                    expect(resolver.getTarget()).to.equal('*');
+                })
+                .then(function () {
+                    // Test with name
+                    return callFactory({source: 'dejavu', name: 'foo'})
+                            .then(function (resolver) {
+                                expect(resolver).to.be.a(resolvers.GitRemote);
+                                expect(resolver.getSource()).to.equal('git://github.com/IndigoUnited/dejavu.git');
+                                expect(resolver.getName()).to.equal('foo');
+                                expect(resolver.getTarget()).to.equal('*');
+                            });
+                })
+                .then(function () {
+                    // Test with target
+                    return callFactory({source: 'dejavu', target: '~2.0.0'})
+                            .then(function (resolver) {
+                                expect(resolver).to.be.a(resolvers.GitRemote);
+                                expect(resolver.getTarget()).to.equal('~2.0.0');
 
-                next();
-            });
-        })
-        .done();
+                                next();
+                            });
+                })
+                .done();
     });
 
     it('should error out if the package was not found in the registry', function (next) {
-        callFactory({ source: 'some-package-that-will-never-exist' })
-        .then(function () {
-            throw new Error('Should have failed');
-        }, function (err) {
-            expect(err).to.be.an(Error);
-            expect(err.code).to.equal('ENOTFOUND');
-            expect(err.message).to.contain('some-package-that-will-never-exist');
+        callFactory({source: 'some-package-that-will-never-exist'})
+                .then(function () {
+                    throw new Error('Should have failed');
+                }, function (err) {
+                    expect(err).to.be.an(Error);
+                    expect(err.code).to.equal('ENOTFOUND');
+                    expect(err.message).to.contain('some-package-that-will-never-exist');
 
-            next();
-        })
-        .done();
+                    next();
+                })
+                .done();
     });
 
     it('should set registry to true on the decomposed endpoint if fetched from the registry', function (next) {
-        var decEndpoint = { source: 'dejavu' };
+        var decEndpoint = {source: 'dejavu'};
 
         callFactory(decEndpoint)
-        .then(function () {
-            expect(decEndpoint.registry).to.be(true);
-            next();
-        })
-        .done();
+                .then(function () {
+                    expect(decEndpoint.registry).to.be(true);
+                    next();
+                })
+                .done();
     });
 
     it('should use the configured shorthand resolver', function (next) {
-        callFactory({ source: 'bower/bower' })
-        .then(function (resolver) {
-            var config;
+        callFactory({source: 'bower/bower'})
+                .then(function (resolver) {
+                    var config;
 
-            expect(resolver.getSource()).to.equal('git://github.com/bower/bower.git');
+                    expect(resolver.getSource()).to.equal('git://github.com/bower/bower.git');
 
-            config = mout.object.fillIn({
-                shorthandResolver: 'git://bower.io/{{owner}}/{{package}}/{{shorthand}}'
-            }, defaultConfig);
+                    config = mout.object.fillIn({
+                        shorthandResolver: 'git://bower.io/{{owner}}/{{package}}/{{shorthand}}'
+                    }, defaultConfig);
 
-            return callFactory({ source: 'IndigoUnited/promptly' }, config);
-        })
-        .then(function (resolver) {
-            expect(resolver.getSource()).to.equal('git://bower.io/IndigoUnited/promptly/IndigoUnited/promptly');
-            next();
-        })
-        .done();
+                    return callFactory({source: 'IndigoUnited/promptly'}, config);
+                })
+                .then(function (resolver) {
+                    expect(resolver.getSource()).to.equal('git://bower.io/IndigoUnited/promptly/IndigoUnited/promptly');
+                    next();
+                })
+                .done();
     });
 
     it('should not expand using the shorthand resolver if it looks like a SSH URL', function (next) {
-        callFactory({ source: 'bleh@xxx.com:foo/bar' })
-        .then(function (resolver) {
-            throw new Error('Should have failed');
-        }, function (err) {
-            expect(err).to.be.an(Error);
-            expect(err.code).to.equal('ENOTFOUND');
-            expect(err.message).to.contain('bleh@xxx.com:foo/bar');
-            next();
-        })
-        .done();
+        callFactory({source: 'bleh@xxx.com:foo/bar'})
+                .then(function (resolver) {
+                    throw new Error('Should have failed');
+                }, function (err) {
+                    expect(err).to.be.an(Error);
+                    expect(err.code).to.equal('ENOTFOUND');
+                    expect(err.message).to.contain('bleh@xxx.com:foo/bar');
+                    next();
+                })
+                .done();
     });
 
 
     it('should error out if there\'s no suitable resolver for a given source', function (next) {
-        resolverFactory({ source: 'some-package-that-will-never-exist' }, defaultConfig, logger)
-        .then(function () {
-            throw new Error('Should have failed');
-        }, function (err) {
-            expect(err).to.be.an(Error);
-            expect(err.code).to.be('ENORESOLVER');
-            expect(err.message).to.contain('appropriate resolver');
-            next();
-        })
-        .done();
+        resolverFactory({source: 'some-package-that-will-never-exist'}, defaultConfig, logger)
+                .then(function () {
+                    throw new Error('Should have failed');
+                }, function (err) {
+                    expect(err).to.be.an(Error);
+                    expect(err.code).to.be('ENORESOLVER');
+                    expect(err.message).to.contain('appropriate resolver');
+                    next();
+                })
+                .done();
     });
 
     it.skip('should use config.cwd when resolving relative paths');
@@ -642,20 +621,20 @@ describe('resolverFactory', function () {
 
         endpoints.forEach(function (source) {
             promise = promise.then(function () {
-                return callFactory({ source: source, target: 'bleh' });
+                return callFactory({source: source, target: 'bleh'});
             })
-            .then(function () {
-                throw new Error('Should have failed');
-            }, function (err) {
-                expect(err).to.be.an(Error);
-                expect(err.message).to.match(/can't resolve targets/i);
-                expect(err.code).to.equal('ENORESTARGET');
-            });
+                    .then(function () {
+                        throw new Error('Should have failed');
+                    }, function (err) {
+                        expect(err).to.be.an(Error);
+                        expect(err.message).to.match(/can't resolve targets/i);
+                        expect(err.code).to.equal('ENORESTARGET');
+                    });
         });
 
         promise
-        .then(next.bind(next, null))
-        .done();
+                .then(next.bind(next, null))
+                .done();
     });
 
     describe('.clearRuntimeCache', function () {

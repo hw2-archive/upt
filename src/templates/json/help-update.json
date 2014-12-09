@@ -6,18 +6,18 @@
     ],
     "options": [
         {
-            "shorthand":   "-F",
-            "flag":        "--force-latest",
+            "shorthand": "-F",
+            "flag": "--force-latest",
             "description": "Force latest version on conflict"
         },
         {
-            "shorthand":   "-h",
-            "flag":        "--help",
+            "shorthand": "-h",
+            "flag": "--help",
             "description": "Show this help message"
         },
         {
-            "shorthand":   "-p",
-            "flag":        "--production",
+            "shorthand": "-p",
+            "flag": "--production",
             "description": "Do not install project devDependencies"
         }
     ]

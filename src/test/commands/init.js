@@ -19,30 +19,30 @@ describe('upt init', function () {
         var logger = upt.commands.init(config);
 
         return helpers.expectEvent(logger, 'prompt')
-        .spread(function (prompt, answer) {
-            answer({
-                name: 'test-name',
-                version: 'test-version',
-                description: 'test-description',
-                moduleType: 'test-moduleType',
-                keywords: 'test-keyword',
-                authors: 'test-author',
-                license: 'test-license',
-                homepage: 'test-homepage',
-                private: true
-            });
+                .spread(function (prompt, answer) {
+                    answer({
+                        name: 'test-name',
+                        version: 'test-version',
+                        description: 'test-description',
+                        moduleType: 'test-moduleType',
+                        keywords: 'test-keyword',
+                        authors: 'test-author',
+                        license: 'test-license',
+                        homepage: 'test-homepage',
+                        private: true
+                    });
 
-            return helpers.expectEvent(logger, 'prompt');
-        })
-        .spread(function (prompt, answer) {
-            answer({
-                prompt: true
-            });
+                    return helpers.expectEvent(logger, 'prompt');
+                })
+                .spread(function (prompt, answer) {
+                    answer({
+                        prompt: true
+                    });
 
-            return helpers.expectEvent(logger, 'end');
-        })
-        .then(function () {
-            expect(fs.existsSync(uptJsonPath)).to.be(true);
-        });
+                    return helpers.expectEvent(logger, 'end');
+                })
+                .then(function () {
+                    expect(fs.existsSync(uptJsonPath)).to.be(true);
+                });
     });
 });

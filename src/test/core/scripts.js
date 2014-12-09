@@ -26,67 +26,67 @@ describe('scripts', function () {
     });
 
     after(function (next) {
-        rimraf(tempDir,  next);
+        rimraf(tempDir, next);
     });
 
     it('should run preinstall and postinstall hooks.', function (next) {
 
         upt.commands
-        .install([packageDir], undefined, config)
-        .on('end', function (installed) {
+                .install([packageDir], undefined, config)
+                .on('end', function (installed) {
 
-            expect(fs.existsSync(path.join(tempDir, 'preinstall_' + packageName))).to.be(true);
-            expect(fs.existsSync(path.join(tempDir, 'postinstall_' + packageName))).to.be(true);
+                    expect(fs.existsSync(path.join(tempDir, 'preinstall_' + packageName))).to.be(true);
+                    expect(fs.existsSync(path.join(tempDir, 'postinstall_' + packageName))).to.be(true);
 
-            next();
-        });
+                    next();
+                });
 
     });
 
     it('should run preuninstall hook.', function (next) {
 
         upt.commands
-        .uninstall([packageName], undefined, config)
-        .on('end', function (installed) {
+                .uninstall([packageName], undefined, config)
+                .on('end', function (installed) {
 
-            expect(fs.existsSync(path.join(tempDir, 'preuninstall_' + packageName))).to.be(true);
+                    expect(fs.existsSync(path.join(tempDir, 'preuninstall_' + packageName))).to.be(true);
 
-            next();
-        });
+                    next();
+                });
 
     });
 
     it('should not break anything when no hooks configured.', function (next) {
 
         upt.commands
-        .uninstall([packageName], undefined, { cwd: tempDir })
-        .on('end', function (installed) {
+                .uninstall([packageName], undefined, {cwd: tempDir})
+                .on('end', function (installed) {
 
-            //no exception then we're good
+                    //no exception then we're good
 
-            next();
-        });
+                    next();
+                });
 
     });
 
     it('should reorder packages by dependencies, while trying to maintain order from upt.json, correctly.', function () {
 
-        var mockAngularUI = { dependencies: {
-            'angular': '*'
-        }};
-        var mockJQuery = { dependencies: {
-        }};
-        var mockAngular = { dependencies: {
-            'jquery': '*'
-        }};
-        var mockMoment = { dependencies: {
-        }};
-        var mockSelect2 = { dependencies: {
-            'jquery': '*'
-        }};
-        var mockBadPackage = { dependencies: {
-            'something-not-installed': '*'
-        }};
+        var mockAngularUI = {dependencies: {
+                'angular': '*'
+            }};
+        var mockJQuery = {dependencies: {
+            }};
+        var mockAngular = {dependencies: {
+                'jquery': '*'
+            }};
+        var mockMoment = {dependencies: {
+            }};
+        var mockSelect2 = {dependencies: {
+                'jquery': '*'
+            }};
+        var mockBadPackage = {dependencies: {
+                'something-not-installed': '*'
+            }};
 
         var packages = {
             'select2': mockSelect2,
@@ -97,13 +97,13 @@ describe('scripts', function () {
             'moment': mockMoment
         };
         var installed = [];
-        var mockUptJson = { dependencies: {
-            'jquery': '*',
-            'select2': '*',
-            'angular-ui': '*',
-            'angular': '*',
-            'moment': '*'
-        } };
+        var mockUptJson = {dependencies: {
+                'jquery': '*',
+                'select2': '*',
+                'angular-ui': '*',
+                'angular': '*',
+                'moment': '*'
+            }};
 
         var ordered = scripts._orderByDependencies(packages, installed, mockUptJson);
         expect(ordered).to.eql(['jquery', 'select2', 'angular', 'angular-ui', 'moment', 'bad-package']);
@@ -115,13 +115,13 @@ describe('scripts', function () {
         config.scripts.preinstall = 'touch "$UPT_PID %"';
 
         upt.commands
-        .install([packageDir], undefined, config)
-        .on('end', function (installed) {
+                .install([packageDir], undefined, config)
+                .on('end', function (installed) {
 
-            expect(fs.existsSync(path.join(tempDir, process.pid + ' ' + packageName))).to.be(true);
+                    expect(fs.existsSync(path.join(tempDir, process.pid + ' ' + packageName))).to.be(true);
 
-            next();
-        });
+                    next();
+                });
 
     });
 

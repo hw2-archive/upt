@@ -7,8 +7,8 @@
     ],
     "options": [
         {
-            "shorthand":   "-h",
-            "flag":        "--help",
+            "shorthand": "-h",
+            "flag": "--help",
             "description": "Show this help message"
         }
     ]
