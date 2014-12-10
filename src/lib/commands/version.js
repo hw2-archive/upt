@@ -36,13 +36,13 @@ function version (logger, versionArg, options, config) {
 function bump (project, repoPath, versionArg, options) {
     var newVersion;
     var doGitCommit = false;
-
-    return checkGit(repoPath, project)
+    project._logger.info('start-working', 'Working on ' + repoPath);
+    return checkGit(repoPath, options, project)
             .then(function (hasGit) {
                 doGitCommit = hasGit;
             })
             .then(function () {
-                if (!options.skipJson) {
+                if (!options.skipJson && !options.dryRun) {
                     return getJson(repoPath).then(function (json) {
                         newVersion = getNewVersion(json.version || "0.0.0", versionArg);
                         project._logger.info('version-change', 'Changed version from '
@@ -56,7 +56,7 @@ function bump (project, repoPath, versionArg, options) {
                 if (!options.dryRun && doGitCommit) {
                     return gitCommitAndTag(repoPath, newVersion, options, project)
                             .then(function () {
-                                return options.push ? gitPush(repoPath) : true;
+                                return options.push ? gitPush(repoPath, project) : true;
                             });
                 }
             });
@@ -76,12 +76,12 @@ function getNewVersion (currentVersion, versionArg) {
     return newVersion;
 }
 
-function checkGit (checkPath, project) {
+function checkGit (checkPath, options, project) {
     var gitDir = path.join(checkPath, '.git');
     return Q.nfcall(fs.stat, gitDir)
             .then(function (stat) {
                 if (stat.isDirectory()) {
-                    return checkGitStatus(checkPath).then(function (res) {
+                    return checkGitStatus(checkPath, options).then(function (res) {
                         return /*options.push ?*/ checkGitPermissions(checkPath, project) /*: true;*/
                     });
                 }
@@ -96,13 +96,14 @@ function checkGitPermissions (checkPath, project) {
     return Q.nfcall(execFile, 'git', ['push', '--dry-run'], {env: process.env, cwd: checkPath}).then(function (res) {
         return true;
     }, function (res) { // fail case
-        project._logger.warn('gitpermissions', 'You don\'t have permissions to commit on "' + checkPath + '"');
+        project._logger.warn('gitpermissions', 'Seems You don\'t have permissions to commit on "' + checkPath + '"');
+        project._logger.error('giterror', res);
         return false;
     });
 }
 
 
-function checkGitStatus (checkPath) {
+function checkGitStatus (checkPath, options) {
     return Q.nfcall(which, 'git')
             .fail(function (err) {
                 err.code = 'ENOGIT';
@@ -114,7 +115,7 @@ function checkGitStatus (checkPath) {
             .then(function (value) {
                 var stdout = value[0];
                 var lines = filterModifiedStatusLines(stdout);
-                if (lines.length) {
+                if (lines.length && options.checkMod) {
                     throw createError('Git working directory not clean on path "' + checkPath + '" .\n' + lines.join('\n'), 'EWORKINGDIRECTORYDIRTY');
                 }
                 return true;
@@ -137,19 +138,21 @@ function gitCommitAndTag (repoPath, newVersion, options, project) {
     if (newVersion)
         tag = 'v' + newVersion;
 
-    message = options.message || tag;
-
-    if (!message) {
-        throw createError("Without version number in json you must specify a commit message!", ENOCOMMITMESSAGE);
+    // it means that you're just trying to push
+    // so skip next steps
+    if (!message && !tag && options.push) {
+        return Q.resolve();
     }
+
+    message = options.message || tag;
 
     message = message.replace(/%s/g, newVersion);
 
     project._logger.info('gitcommit', 'Committing changes to repository');
 
-    return Q.nfcall(execFile, 'git', ['add', 'upt.json'], {env: process.env, cwd: repoPath})
+    return Q.nfcall(execFile, 'git', ['add', '-A'], {env: process.env, cwd: repoPath})
             .then(function () {
-                return Q.nfcall(execFile, 'git', ['commit', '-m', message], {env: process.env, cwd: repoPath});
+                return Q.nfcall(execFile, 'git', ['commit', '-am', message], {env: process.env, cwd: repoPath});
             })
             .then(function () {
                 if (tag) {
@@ -159,9 +162,9 @@ function gitCommitAndTag (repoPath, newVersion, options, project) {
 }
 
 function gitPush (repoPath, project) {
-    project._logger.info('gitcommit', 'Pushing changes on ' + repoPath);
+    project._logger.info('gitpush', 'Pushing changes on ' + repoPath);
 
-    return Q.nfcall(execFile, 'git', ['push'], {env: process.env, cwd: repoPath})
+    return Q.nfcall(execFile, 'git', ['push', 'origin', 'HEAD'], {env: process.env, cwd: repoPath})
             .then(function (res) {
                 return true;
             }, function (res) { // fail case
@@ -213,7 +216,8 @@ version.options = function (argv) {
         'recursive': {type: Boolean, shorthand: 'R'},
         'push': {type: Boolean, shorthand: 'P'},
         'skip-json': {type: Boolean},
-        'dry-run': {type: Boolean, shorthand: 'd'}
+        'dry-run': {type: Boolean, shorthand: 'd'},
+        'check-mod': {type: Boolean, shorthand: 'c'}
     }, argv);
 };
 

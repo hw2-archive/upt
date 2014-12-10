@@ -28,6 +28,11 @@
             "shorthand": "-d",
             "flag": "--dry-run",
             "description": "Do everything except commit/push and do not update the json"
+        },
+        {
+            "shorthand": "-c",
+            "flag": "--check-mod",
+            "description": "Throws an error if a repository is not clean"
         }
     ]
 }
