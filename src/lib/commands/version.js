@@ -10,6 +10,7 @@ var cli = require('../util/cli');
 var defaultConfig = require('../config');
 var createError = require('../util/createError');
 var readJson = require('../util/readJson');
+var glob = require('glob');
 
 function version (logger, versionArg, options, config) {
     var project;
@@ -18,7 +19,8 @@ function version (logger, versionArg, options, config) {
     project = new Project(config, logger);
 
     if (options.recursive) {
-        return getInstalled(options, config, logger).then(function (list) {
+        return searchFolders(process.cwd(), options).then(function (list) {
+
             var promises = [];
             list.forEach(function (p) {
                 promises.push(bump(project, p, versionArg, options));
@@ -35,7 +37,7 @@ function bump (project, repoPath, versionArg, options) {
     var newVersion;
     var doGitCommit = false;
 
-    return checkGit(repoPath, options, project)
+    return checkGit(repoPath, project)
             .then(function (hasGit) {
                 doGitCommit = hasGit;
             })
@@ -44,7 +46,7 @@ function bump (project, repoPath, versionArg, options) {
                     return getJson(repoPath).then(function (json) {
                         newVersion = getNewVersion(json.version || "0.0.0", versionArg);
                         project._logger.info('version-change', 'Changed version from '
-                                + json.version+' to '+newVersion+ ' and saving to json file');
+                                + json.version + ' to ' + newVersion + ' and saving to json file');
                         json.version = newVersion;
                         return saveJson(json, repoPath);
                     });
@@ -74,7 +76,7 @@ function getNewVersion (currentVersion, versionArg) {
     return newVersion;
 }
 
-function checkGit (checkPath, options, project) {
+function checkGit (checkPath, project) {
     var gitDir = path.join(checkPath, '.git');
     return Q.nfcall(fs.stat, gitDir)
             .then(function (stat) {
@@ -182,54 +184,19 @@ function getJson (rPath) {
             });
 }
 
-function getInstalled (options, config, logger) {
-    var project;
+function searchFolders (dir, options) {
+    var pattern = "*/**/+(" + (options.skipJson ? ".git" : ".git|upt.json") + ")";
 
-    options = options || {};
-
-    // Make relative option true by default when used with paths
-    if (options.paths && options.relative == null) {
-        options.relative = true;
-    }
-
-    config = mout.object.deepFillIn(config || {}, defaultConfig);
-    project = new Project(config, logger);
-
-    return project.getTree(options).spread(function (tree, flattened) {
-        var installed = [];
-        // Relativize paths
-        // Also normalize paths on windows
-        project.walkTree(tree, function (node) {
-            if (node.missing) {
-                return;
-            }
-
-            if (options.relative) {
-                node.canonicalDir = path.relative(config.cwd, node.canonicalDir);
-            }
-            if (options.paths) {
-                node.canonicalDir = normalize(node.canonicalDir);
-            }
-        }, true);
-
-        // Note that we need to to parse the flattened tree because it might
-        // contain additional packages
-        mout.object.forOwn(flattened, function (node) {
-            if (node.missing) {
-                return;
-            }
-
-            if (options.relative) {
-                node.canonicalDir = path.relative(config.cwd, node.canonicalDir);
-            }
-            if (options.paths) {
-                node.canonicalDir = normalize(node.canonicalDir);
-            }
-
-            installed.push(node.canonicalDir);
+    return Q.nfcall(glob, pattern, {
+        cwd: dir,
+        dot: true
+    }).then(function (list) {
+        var folders = [];
+        list.forEach(function (f) {
+            folders.push(path.dirname(f));
         });
 
-        return installed;
+        return folders;
     });
 }
 
