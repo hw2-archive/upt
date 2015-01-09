@@ -104,7 +104,7 @@ function checkGitPermissions (checkPath, project, branch) {
     return Q.nfcall(execFile, 'git', ['push', '--dry-run', 'origin', 'HEAD'], {env: process.env, cwd: checkPath, maxBuffer: maxBuffer}).then(function (res) {
         return branch;
     }, function (res) { // fail case
-        project._logger.warn('gitpermissions', 'Seems You don\'t have permissions to commit on "' + checkPath + '"');
+        project._logger.warn('gitpermissions', 'Seems You don\'t have permissions to commit on "' + checkPath + '" or there is an error with remote repository');
         project._logger.error('giterror', res);
         return false;
     });
