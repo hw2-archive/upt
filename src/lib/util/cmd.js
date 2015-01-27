@@ -111,7 +111,9 @@ function executeCmd (command, args, options) {
 }
 
 function cmd (command, args, options) {
-    return throttler.enqueue(executeCmd.bind(null, command, args, options));
+    // [TODO] fix throttler
+    // return throttler.enqueue(executeCmd.bind(null, command, args, options));
+    return executeCmd(command, args, options);
 }
 
 module.exports = cmd;
