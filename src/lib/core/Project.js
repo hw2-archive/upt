@@ -44,8 +44,10 @@ Project.prototype.install = function (decEndpoints, options, config) {
     }
 
     this._options = options || {};
-
     this._config = config || {};
+
+    this._config.options = this._options;
+
     this._working = true;
 
     // Analyse the project
@@ -125,6 +127,13 @@ Project.prototype.update = function (names, options) {
     }
 
     this._options = options || {};
+
+    // set correct value for directUpdate
+    this._options.directUpdate = !this._options.production && (this._options.directUpdate || this._options.directUpdate === undefined);
+
+    this._config.options = this._options;
+
+
     this._working = true;
 
     // Analyse the project

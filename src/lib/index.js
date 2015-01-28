@@ -5,8 +5,6 @@ Hw2Core(function () {
     var abbrev = require('abbrev');
     var mout = require('mout');
     var commands = require('./commands');
-    var Shared = require('./util/Shared');
-    var cli = require('./util/cli');
 
     var abbreviations = abbrev(expandNames(commands));
     abbreviations.i = 'install';
@@ -14,12 +12,6 @@ Hw2Core(function () {
     abbreviations.unlink = 'uninstall';
     abbreviations.ls = 'list';
     require('../../package.json');
-    Shared.set("options", cli.readOptions({
-        'force-latest': {type: Boolean, shorthand: 'F'},
-        'production': {type: Boolean, shorthand: 'p'},
-        'save': {type: Boolean, shorthand: 'S'},
-        'save-dev': {type: Boolean, shorthand: 'D'}
-    }, process.argv));
 
     function expandNames (obj, prefix, stack) {
         prefix = prefix || '';

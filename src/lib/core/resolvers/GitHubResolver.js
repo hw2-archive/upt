@@ -45,13 +45,13 @@ mout.object.mixIn(GitHubResolver, GitRemoteResolver);
 GitHubResolver.prototype._checkout = function () {
     // Only fully works with public repositories and tags
     // Could work with https/ssh protocol but not with 100% certainty
-    if (!this._public || !this._resolution.tag || !this._config.cmdOptions.production) {
+    if (!this._public || !this._resolution.tag || !this._config.options.production) {
         return GitRemoteResolver.prototype._checkout.call(this);
     }
 
     var msg;
     var tarballUrl = 'https://github.com/' + this._org + '/' + this._repo + '/archive/' + this._resolution.tag + '.tar.gz';
-    var file = path.join(this._tempDir, 'archive.tar.gz');
+    var file = path.join(this._workingDir, 'archive.tar.gz');
     var reqHeaders = {};
     var that = this;
 
@@ -92,10 +92,10 @@ GitHubResolver.prototype._checkout = function () {
                 // Extract archive
                 that._logger.action('extract', path.basename(file), {
                     archive: file,
-                    to: that._tempDir
+                    to: that._workingDir
                 });
 
-                return extract(file, that._tempDir)
+                return extract(file, that._workingDir)
                         // Fallback to standard git clone if extraction failed
                         .fail(function (err) {
                             msg = 'Decompression of ' + path.basename(file) + ' failed' + (err.code ? ' with ' + err.code : '') + ', ';

@@ -37,7 +37,7 @@ Resolver.prototype.getTarget = function () {
 };
 
 Resolver.prototype.getTempDir = function () {
-    return this._tempDir;
+    return this._workingDir;
 };
 
 Resolver.prototype.getPkgMeta = function () {
@@ -94,10 +94,8 @@ Resolver.prototype.resolve = function () {
 
     this._working = true;
 
-    // Create temporary dir
-    return this._createTempDir()
-            // Resolve self
-            .then(this._resolve.bind(this))
+    // Resolve self
+    return this._resolve()
             // Read json, generating the package meta
             .then(this._readJson.bind(this, null))
             // Apply and save package meta
@@ -105,14 +103,14 @@ Resolver.prototype.resolve = function () {
                 return that._applyPkgMeta(meta)
                         .then(that._savePkgMeta.bind(that, meta))
                         // calling postresolved script
-                        .then(scripts.postresolved(that._config, that._name, that._tempDir, meta));
+                        .then(scripts.postresolved(that._config, that._name, that._workingDir, meta));
             })
             .then(function () {
                 // Resolve with the folder
-                return that._tempDir;
+                return that._workingDir;
             }, function (err) {
                 // If something went wrong, unset the temporary dir
-                that._tempDir = null;
+                that._workingDir = null;
                 throw err;
             })
             .fin(function () {
@@ -177,13 +175,13 @@ Resolver.prototype._createTempDir = function () {
                 });
             }.bind(this))
             .then(function (dir) {
-                this._tempDir = dir;
+                this._workingDir = dir;
                 return dir;
             }.bind(this));
 };
 
 Resolver.prototype._cleanTempDir = function () {
-    var tempDir = this._tempDir;
+    var tempDir = this._workingDir;
 
     if (!tempDir) {
         return Q.resolve();
@@ -202,7 +200,7 @@ Resolver.prototype._cleanTempDir = function () {
 Resolver.prototype._readJson = function (dir) {
     var that = this;
 
-    dir = dir || this._tempDir;
+    dir = dir || this._workingDir;
     return readJson(dir, {
         assume: {name: this._name},
         config: this._config,
@@ -232,15 +230,17 @@ Resolver.prototype._applyPkgMeta = function (meta) {
     }
 
     // Otherwise remove them from the temp dir
-    return removeIgnores(this._tempDir, meta)
+    return removeIgnores(this._workingDir, meta)
             .then(function () {
                 return meta;
             });
 };
 
-Resolver.prototype._savePkgMeta = function (meta) {
+Resolver.prototype._savePkgMeta = function (meta, dir) {
     var that = this;
     var contents;
+
+    dir = dir || this._workingDir;
 
     // Store original source & target
     meta._source = this._source;
@@ -259,7 +259,7 @@ Resolver.prototype._savePkgMeta = function (meta) {
     // Stringify contents
     contents = JSON.stringify(meta, null, 2);
 
-    return Q.nfcall(fs.writeFile, path.join(this._tempDir, '.upt.json'), contents)
+    return Q.nfcall(fs.writeFile, path.join(dir, '.upt.json'), contents)
             .then(function () {
                 return that._pkgMeta = meta;
             });

@@ -3,7 +3,9 @@ var url = require('url');
 var Q = require('q');
 var mout = require('mout');
 var LRU = require('lru-cache');
+var path = require('path');
 var GitResolver = require('./GitResolver');
+var fs = require('graceful-fs');
 var cmd = require('../../util/cmd');
 
 function GitRemoteResolver (decEndpoint, config, logger) {
@@ -25,6 +27,10 @@ function GitRemoteResolver (decEndpoint, config, logger) {
     } else {
         this._host = url.parse(this._source).host;
     }
+
+    this._directUpdate = this._config.options.directUpdate;
+
+    this._workingDir = path.join(this._config.cwd, this._config.directory, this._name);
 }
 
 util.inherits(GitRemoteResolver, GitResolver);
@@ -41,48 +47,65 @@ GitRemoteResolver.prototype._checkout = function () {
 
     this._logger.action('checkout', resolution.tag || resolution.branch || resolution.commit, {
         resolution: resolution,
-        to: this._tempDir
+        to: this._workingDir
     });
 
-    // If resolution is a commit, we need to clone the entire repo and check it out
-    // Because a commit is not a named ref, there's no better solution
-    if (resolution.type === 'commit' || (!this._config.cmdOptions.production && this._config.argv.remain[0] !== "info")) {
-        promise = this._slowClone(resolution);
-        // Otherwise we are checking out a named ref so we can optimize it
+    if (this._directUpdate) {
+        return cmd('git', ['status', '--untracked-files=no', '--porcelain'], {cwd: this._workingDir})
+                .then(function (res) {
+                    if (!res[0]) {
+                        return cmd('git', ['fetch', 'origin'], {cwd: that._workingDir})
+                                .then(function () {
+                                    return cmd('git', ['reset', '--hard', 'origin/' + resolution.branch], {cwd: that._workingDir})
+                                            .then(function () {
+                                                that._logger.action('updated', that._workingDir);
+                                            });
+                                });
+                    }
+                });
     } else {
-        promise = this._fastClone(resolution);
-    }
-
-    // Throttle the progress reporter to 1 time each sec
-    reporter = mout.fn.throttle(function (data) {
-        var lines;
-
-        lines = data.split(/[\r\n]+/);
-        lines.forEach(function (line) {
-            if (/\d{1,3}\%/.test(line)) {
-                // TODO: There are some strange chars that appear once in a while (\u001b[K)
-                //       Trim also those?
-                that._logger.info('progress', line.trim());
+        return this._createTempDir().then(function () {
+            // If resolution is a commit, we need to clone the entire repo and check it out
+            // Because a commit is not a named ref, there's no better solution
+            // [TODO] add a parameter to force the slowClone
+            if (resolution.type === 'commit' /*|| (!this._config.options.production && this._config.argv.remain[0] !== "info")*/) {
+                promise = this._slowClone(resolution);
+                // Otherwise we are checking out a named ref so we can optimize it
+            } else {
+                promise = this._fastClone(resolution);
             }
-        });
-    }, 1000);
 
-    // Start reporting progress after a few seconds
-    timer = setTimeout(function () {
-        promise.progress(reporter);
-    }, 8000);
+            // Throttle the progress reporter to 1 time each sec
+            reporter = mout.fn.throttle(function (data) {
+                var lines;
+                lines = data.split(/[\r\n]+/);
+                lines.forEach(function (line) {
+                    if (/\d{1,3}\%/.test(line)) {
+                        // TODO: There are some strange chars that appear once in a while (\u001b[K)
+                        //       Trim also those?
+                        that._logger.info('progress', line.trim());
+                    }
+                });
+            }, 1000);
 
-    return promise
-            // Add additional proxy information to the error if necessary
-            .fail(function (err) {
-                that._suggestProxyWorkaround(err);
-                throw err;
-            })
-            // Clear timer at the end
-            .fin(function () {
-                clearTimeout(timer);
-                reporter.cancel();
-            });
+            // Start reporting progress after a few seconds
+            timer = setTimeout(function () {
+                promise.progress(reporter);
+            }, 8000);
+
+            return promise
+                    // Add additional proxy information to the error if necessary
+                    .fail(function (err) {
+                        that._suggestProxyWorkaround(err);
+                        throw err;
+                    })
+                    // Clear timer at the end
+                    .fin(function () {
+                        clearTimeout(timer);
+                        reporter.cancel();
+                    });
+        }.bind(this));
+    }
 };
 
 GitRemoteResolver.prototype._findResolution = function (target) {
@@ -100,7 +123,7 @@ GitRemoteResolver.prototype._findResolution = function (target) {
 // ------------------------------
 
 GitRemoteResolver.prototype._slowClone = function (resolution) {
-    var args = ['clone', this._source, this._tempDir, '--progress'];
+    var args = ['clone', this._source, this._workingDir, '--progress'];
 
     // point to specified branch
     if (resolution.branch)
@@ -108,7 +131,7 @@ GitRemoteResolver.prototype._slowClone = function (resolution) {
 
     return cmd('git', args)
             // reset repository to requested commit
-            .then(cmd.bind(cmd, 'git', ['reset', resolution.commit, '--hard'], {cwd: this._tempDir}));
+            .then(cmd.bind(cmd, 'git', ['reset', resolution.commit, '--hard'], {cwd: this._workingDir}));
 };
 
 GitRemoteResolver.prototype._fastClone = function (resolution) {
@@ -124,7 +147,7 @@ GitRemoteResolver.prototype._fastClone = function (resolution) {
         args.push('--depth', 1);
     }
 
-    return cmd('git', args, {cwd: this._tempDir})
+    return cmd('git', args, {cwd: this._workingDir})
             .spread(function (stdout, stderr) {
                 // Only after 1.7.10 --branch accepts tags
                 // Detect those cases and inform the user to update git otherwise it's
@@ -134,7 +157,7 @@ GitRemoteResolver.prototype._fastClone = function (resolution) {
                 }
 
                 that._logger.warn('old-git', 'It seems you are using an old version of git, it will be slower and propitious to errors!');
-                return cmd('git', ['checkout', resolution.commit], {cwd: that._tempDir});
+                return cmd('git', ['checkout', resolution.commit], {cwd: that._workingDir});
             }, function (err) {
                 // Some git servers do not support shallow clones
                 // When that happens, we mark this host and try again

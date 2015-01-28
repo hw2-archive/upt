@@ -161,6 +161,9 @@ Manager.prototype.install = function (json) {
                 }
 
                 mout.object.forOwn(that._dissected, function (decEndpoint, name) {
+                    if (decEndpoint.pkgMeta._res_type === "Git" && that._config.options.directUpdate)
+                        return;
+
                     var promise;
                     var dst;
                     var release = decEndpoint.pkgMeta._release;
@@ -377,6 +380,8 @@ Manager.prototype._fetch = function (decEndpoint) {
         return;
     }
 
+    this._logger.action('fetching', name, this.toData(decEndpoint));
+
     // Mark as being fetched
     this._fetching[name] = this._fetching[name] || [];
     this._fetching[name].push(decEndpoint);
@@ -442,7 +447,7 @@ Manager.prototype._onFetchSuccess = function (decEndpoint, canonicalDir, pkgMeta
     // Parse dependencies
     this._parseDependencies(decEndpoint, pkgMeta, 'dependencies');
     // Parse devDependencies only when not in production
-    if (!this._config.cmdOptions.production)
+    if (!this._config.options.production)
         this._parseDependencies(decEndpoint, pkgMeta, 'devDependencies');
 
     // Check if there are incompatibilities for this package name
@@ -564,7 +569,8 @@ Manager.prototype._checkDyn = function (pkgMeta, jsonKey, name, source, decEndpo
 
         // create dynamicDep 
         this._dynamicDep[source] = {"source": source, "dynName": name};
-        // if empty name, try to find it by fetching later
+        // search for an already resolved name
+        // if empty result, try to find it by fetching later
         decEndpoint.name = Utils.findDyn(jsonKey, name, source, path.join(this.componentsDir, parentEndpoint.name));
 
         decEndpoint._parent = parentEndpoint;

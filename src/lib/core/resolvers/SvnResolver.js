@@ -63,7 +63,8 @@ SvnResolver.prototype._hasNew = function (canonicalDir, pkgMeta) {
 SvnResolver.prototype._resolve = function () {
     var that = this;
 
-    return this._findResolution()
+    return  this._createTempDir()
+            .then(this._findResolution().bind(this))
             .then(function () {
                 return that._export();
             });
@@ -82,17 +83,17 @@ SvnResolver.prototype._export = function () {
 
     this._logger.action('export', resolution.tag || resolution.branch || resolution.commit, {
         resolution: resolution,
-        to: this._tempDir
+        to: this._workingDir
     });
 
     if (resolution.type === 'commit') {
-        promise = cmd('svn', ['export', '--force', this._source + '/trunk', '-r' + resolution.commit, this._tempDir]);
+        promise = cmd('svn', ['export', '--force', this._source + '/trunk', '-r' + resolution.commit, this._workingDir]);
     } else if (resolution.type === 'branch' && resolution.branch === 'trunk') {
-        promise = cmd('svn', ['export', '--force', this._source + '/trunk', this._tempDir]);
+        promise = cmd('svn', ['export', '--force', this._source + '/trunk', this._workingDir]);
     } else if (resolution.type === 'branch') {
-        promise = cmd('svn', ['export', '--force', this._source + '/branches/' + resolution.branch, this._tempDir]);
+        promise = cmd('svn', ['export', '--force', this._source + '/branches/' + resolution.branch, this._workingDir]);
     } else {
-        promise = cmd('svn', ['export', '--force', this._source + '/tags/' + resolution.tag, this._tempDir]);
+        promise = cmd('svn', ['export', '--force', this._source + '/tags/' + resolution.tag, this._workingDir]);
     }
 
     // Throttle the progress reporter to 1 time each sec

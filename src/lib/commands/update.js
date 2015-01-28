@@ -29,7 +29,8 @@ update.line = function (logger, argv) {
 update.options = function (argv) {
     return cli.readOptions({
         'force-latest': {type: Boolean, shorthand: 'F'},
-        'production': {type: Boolean, shorthand: 'p'}
+        'production': {type: Boolean, shorthand: 'p'},
+        'direct-update': {type: Boolean, shorthand: 'd'}
     }, argv);
 };
 

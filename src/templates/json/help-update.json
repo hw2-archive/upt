@@ -18,7 +18,12 @@
         {
             "shorthand": "-p",
             "flag": "--production",
-            "description": "Do not install project devDependencies"
+            "description": "Do not install project devDependencies and don't keep repository folders"
+        },
+        {
+            "shorthand": "-d",
+            "flag": "--direct-update",
+            "description": "(default: true) When using repository as source, it allows to update the package directly without use temporary directory. This only works when not in --production mode"
         }
     ]
 }

@@ -93,8 +93,9 @@ UrlResolver.prototype._hasNew = function (canonicalDir, pkgMeta) {
 //       This will likely increase the complexity of code but might worth it
 
 UrlResolver.prototype._resolve = function () {
-    // Download
-    return this._download()
+    return this._createTempDir()
+            // Download
+            .then(this._download().bind(this))
             // Parse headers
             .spread(this._parseHeaders.bind(this))
             // Extract file
@@ -107,7 +108,7 @@ UrlResolver.prototype._resolve = function () {
 
 UrlResolver.prototype._download = function () {
     var fileName = url.parse(path.basename(this._source)).pathname;
-    var file = path.join(this._tempDir, fileName);
+    var file = path.join(this._workingDir, fileName);
     var reqHeaders = {};
     var that = this;
 
@@ -185,7 +186,7 @@ UrlResolver.prototype._parseHeaders = function (file, response) {
         return Q.resolve([file, response]);
     }
 
-    newFile = path.join(this._tempDir, newFile);
+    newFile = path.join(this._workingDir, newFile);
 
     return Q.nfcall(fs.rename, file, newFile)
             .then(function () {
@@ -209,10 +210,10 @@ UrlResolver.prototype._extract = function (file, response) {
 
     this._logger.action('extract', path.basename(this._source), {
         archive: file,
-        to: this._tempDir
+        to: this._workingDir
     });
 
-    return extract(file, this._tempDir, {
+    return extract(file, this._workingDir, {
         mimeType: mimeType
     });
 };

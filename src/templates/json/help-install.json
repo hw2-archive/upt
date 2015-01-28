@@ -19,7 +19,7 @@
         {
             "shorthand": "-p",
             "flag": "--production",
-            "description": "Do not install project devDependencies"
+            "description": "Do not install project devDependencies and don't keep repository folders"
         },
         {
             "shorthand": "-S",

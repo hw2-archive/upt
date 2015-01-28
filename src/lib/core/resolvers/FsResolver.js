@@ -65,7 +65,7 @@ FsResolver.prototype._copy = function () {
 
                 // If it's a folder
                 if (stat.isDirectory()) {
-                    dst = that._tempDir;
+                    dst = that._workingDir;
 
                     // Read the upt.json inside the folder, so that we
                     // copy only the necessary files if it has ignore specified
@@ -80,7 +80,7 @@ FsResolver.prototype._copy = function () {
                             });
                     // Else it's a file
                 } else {
-                    dst = path.join(that._tempDir, path.basename(that._source));
+                    dst = path.join(that._workingDir, path.basename(that._source));
                     promise = copy.copyFile(that._source, dst, copyOpts)
                             .then(function () {
                                 return dst;
@@ -103,14 +103,14 @@ FsResolver.prototype._extract = function (file) {
 
     this._logger.action('extract', path.basename(this._source), {
         archive: file,
-        to: this._tempDir
+        to: this._workingDir
     });
 
-    return extract(file, this._tempDir);
+    return extract(file, this._workingDir);
 };
 
 FsResolver.prototype._rename = function () {
-    return Q.nfcall(fs.readdir, this._tempDir)
+    return Q.nfcall(fs.readdir, this._workingDir)
             .then(function (files) {
                 var file;
                 var oldPath;
@@ -124,8 +124,8 @@ FsResolver.prototype._rename = function () {
                 if (files.length === 1 && path.extname(files[0]) === ".js") {
                     file = files[0];
                     this._singleFile = 'index' + path.extname(file);
-                    oldPath = path.join(this._tempDir, file);
-                    newPath = path.join(this._tempDir, this._singleFile);
+                    oldPath = path.join(this._workingDir, file);
+                    newPath = path.join(this._workingDir, this._singleFile);
 
                     return Q.nfcall(fs.rename, oldPath, newPath);
                 }

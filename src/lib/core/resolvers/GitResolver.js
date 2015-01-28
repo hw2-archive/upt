@@ -12,7 +12,7 @@ var semver = require('../../util/semver');
 var createError = require('../../util/createError');
 var defaultConfig = require('../../config');
 var cli = require('../../util/cli');
-var Hw2Core = require("hw2/modules/js/src/kernel");
+var Hw2Core = require("hw2/modules/js/src/kernel")().inst;
 
 var hasGit;
 
@@ -46,14 +46,14 @@ mout.object.mixIn(GitResolver, Resolver);
 GitResolver.prototype._checkGitCommit = function (resolution) {
     var deferred = Q.defer();
     var that = this;
-    Hw2Core(function () {
-        var $ = this;
-        $.Loader.load("PATH_JS_LIB:nodejs/git/index.js", function () {
-            var p = path.join(that._config.cwd, that._config.directory, that._name);
-            $.NodeJs.Git.getCommitHash(p, function (hash) {
-                // TODO: maybe we need to update the json file too
-                deferred.resolve(hash === resolution.commit);
-            });
+    var $ = Hw2Core;
+    $.Loader.load("PATH_JS_LIB:nodejs/git/index.js", function () {
+        var p = path.join(that._config.cwd, that._config.directory, that._name);
+        $.NodeJs.Git.getCommitHash(p, function (hash) {
+            // TODO: maybe we need to update the json file too
+            // with commit hash package has been updated
+            // manually using git
+            deferred.resolve(hash === resolution.commit);
         });
     });
 
@@ -230,10 +230,10 @@ GitResolver.prototype._findResolution = function (target) {
 
 GitResolver.prototype._cleanup = function () {
     // if we are not in production, we can keep .git folder
-    if (!this._config.cmdOptions.production)
+    if (!this._config.options.production)
         return;
 
-    var gitFolder = path.join(this._tempDir, '.git');
+    var gitFolder = path.join(this._workingDir, '.git');
 
     // Remove the .git folder
     // Note that on windows, we need to chmod to 0777 before due to a bug in git
@@ -254,7 +254,7 @@ GitResolver.prototype._cleanup = function () {
     }
 };
 
-GitResolver.prototype._savePkgMeta = function (meta) {
+GitResolver.prototype._savePkgMeta = function (meta, dir) {
     var version;
 
     if (this._resolution.type === 'version') {
@@ -288,7 +288,7 @@ GitResolver.prototype._savePkgMeta = function (meta) {
 
     meta._res_type = "Git";
 
-    return Resolver.prototype._savePkgMeta.call(this, meta);
+    return Resolver.prototype._savePkgMeta.call(this, meta, dir);
 };
 
 // ------------------------------
