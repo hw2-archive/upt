@@ -4,6 +4,7 @@ var fs = require('graceful-fs');
 var Q = require('q');
 var mout = require('mout');
 var rimraf = require('rimraf');
+var pathIsInside = require("path-is-inside");
 var endpointParser = require('upt-endpoint-parser');
 var Logger = require('bower-logger');
 var Manager = require('./Manager');
@@ -618,16 +619,24 @@ Project.prototype._readInstalled = function () {
             var name = path.dirname(filename);
             var metaFile = path.join(componentsDir, filename);
 
-            // Read package metadata
-            return readJson(metaFile)
-                    .spread(function (pkgMeta) {
-                        decEndpoints[name] = {
-                            name: name,
-                            source: pkgMeta._originalSource || pkgMeta._source,
-                            target: pkgMeta._target,
-                            canonicalDir: path.dirname(metaFile),
-                            pkgMeta: pkgMeta
-                        };
+            // linked packages must be processed by readLinks
+            var pkgDir = path.dirname(metaFile);
+            return validLink(pkgDir)
+                    .spread(function (valid, err) {
+                        if (valid)
+                            return null;
+
+                        // Read package metadata
+                        return readJson(metaFile)
+                                .spread(function (pkgMeta) {
+                                    decEndpoints[name] = {
+                                        name: name,
+                                        source: pkgMeta._originalSource || pkgMeta._source,
+                                        target: pkgMeta._target,
+                                        canonicalDir: pkgDir,
+                                        pkgMeta: pkgMeta
+                                    };
+                                });
                     });
         });
 
@@ -646,70 +655,78 @@ Project.prototype._readLinks = function () {
 
     // Read directory, looking for links
     componentsDir = path.join(this._config.cwd, this._config.directory);
-    return Q.nfcall(fs.readdir, componentsDir)
-            .then(function (filenames) {
-                var promises;
-                var decEndpoints = {};
+    return Q.nfcall(glob, '**', {
+        cwd: componentsDir,
+        dot: true,
+        cache: 'file'
+    }).then(function (filenames) {
+        var promises;
+        var decEndpoints = {};
 
-                promises = filenames.map(function (filename) {
-                    var dir = path.join(componentsDir, filename);
+        promises = filenames.map(function (filename) {
+            var dir = path.join(componentsDir, filename);
 
-                    // Filter only those that are valid links
-                    return validLink(dir)
-                            .spread(function (valid, err) {
-                                var name;
+            // Filter only those that are valid links
+            return validLink(dir)
+                    .spread(function (valid, err) {
+                        var name;
 
-                                if (!valid) {
-                                    if (err) {
-                                        that._logger.debug('read-link', 'Link ' + dir + ' is invalid', {
-                                            filename: dir,
-                                            error: err
-                                        });
+                        if (!valid) {
+                            if (err) {
+                                that._logger.debug('read-link', 'Link ' + dir + ' is invalid', {
+                                    filename: dir,
+                                    error: err
+                                });
+                            }
+                            return;
+                        }
+
+                        // Skip links to files (see #783)
+                        if (!valid.isDirectory()) {
+                            return;
+                        }
+
+                        var realPath = fs.realpathSync(dir);
+                        if (pathIsInside(realPath, fs.realpathSync(componentsDir))) {
+                            return;
+                        }
+
+                        name = path.basename(dir);
+                        return readJson(dir, {
+                            assume: {name: name}
+                        })
+                                .spread(function (json, deprecated) {
+                                    if (deprecated) {
+                                        that._logger.warn('deprecated', 'Package ' + name + ' is using the deprecated ' + deprecated);
                                     }
-                                    return;
-                                }
 
-                                // Skip links to files (see #783)
-                                if (!valid.isDirectory()) {
-                                    return;
-                                }
+                                    json._direct = true;  // Mark as a direct dep of root
+                                    decEndpoints[name] = {
+                                        name: name,
+                                        source: dir,
+                                        target: '*',
+                                        canonicalDir: dir,
+                                        pkgMeta: json,
+                                        linked: true
+                                    };
+                                });
+                    });
+        });
 
-                                name = path.basename(dir);
-                                return readJson(dir, {
-                                    assume: {name: name}
-                                })
-                                        .spread(function (json, deprecated) {
-                                            if (deprecated) {
-                                                that._logger.warn('deprecated', 'Package ' + name + ' is using the deprecated ' + deprecated);
-                                            }
-
-                                            json._direct = true;  // Mark as a direct dep of root
-                                            decEndpoints[name] = {
-                                                name: name,
-                                                source: dir,
-                                                target: '*',
-                                                canonicalDir: dir,
-                                                pkgMeta: json,
-                                                linked: true
-                                            };
-                                        });
-                            });
+        // Wait until all links have been read
+        // and resolve with the decomposed endpoints
+        return Q.all(promises)
+                .then(function () {
+                    return decEndpoints;
                 });
+        // Ignore if folder does not exist
+    }, function (err) {
+        if (err.code !== 'ENOENT') {
+            throw err;
+        }
 
-                // Wait until all links have been read
-                // and resolve with the decomposed endpoints
-                return Q.all(promises)
-                        .then(function () {
-                            return decEndpoints;
-                        });
-                // Ignore if folder does not exist
-            }, function (err) {
-                if (err.code !== 'ENOENT') {
-                    throw err;
-                }
-
-                return {};
-            });
+        return {};
+    });
 };
 
 Project.prototype._removePackages = function (packages) {

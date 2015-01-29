@@ -95,27 +95,38 @@ Resolver.prototype.resolve = function () {
     this._working = true;
 
     // Resolve self
-    return this._resolve()
-            // Read json, generating the package meta
-            .then(this._readJson.bind(this, null))
-            // Apply and save package meta
-            .then(function (meta) {
-                return that._applyPkgMeta(meta)
-                        .then(that._savePkgMeta.bind(that, meta))
-                        // calling postresolved script
-                        .then(scripts.postresolved(that._config, that._name, that._workingDir, meta));
-            })
-            .then(function () {
-                // Resolve with the folder
-                return that._workingDir;
-            }, function (err) {
-                // If something went wrong, unset the temporary dir
-                that._workingDir = null;
-                throw err;
-            })
-            .fin(function () {
-                that._working = false;
-            });
+    return this._resolve().then(function (res) {
+        // Read json, generating the package meta
+        return that._readJson(null)
+                // Apply and save package meta
+                .then(function (meta) {
+                    return that._applyPkgMeta(meta)
+                            .then(function () {
+                                // it means that nothing has been resolved
+                                // could happen also when the package is not cached but updated
+                                if (res === null) {
+                                    that._pkgMeta = that._prepareMeta(meta);
+                                    that._working = false;
+                                    return that._workingDir;
+                                }
+
+                                return that._savePkgMeta(meta)
+                                        // calling postresolved script
+                                        .then(scripts.postresolved(that._config, that._name, that._workingDir, meta));
+                            });
+                })
+                .then(function () {
+                    // Resolve with the folder
+                    return that._workingDir;
+                }, function (err) {
+                    // If something went wrong, unset the temporary dir
+                    that._workingDir = null;
+                    throw err;
+                })
+                .fin(function () {
+                    that._working = false;
+                });
+    });
 };
 
 Resolver.prototype.isNotCacheable = function () {
@@ -205,15 +216,13 @@ Resolver.prototype._readJson = function (dir) {
         assume: {name: this._name},
         config: this._config,
         name: this._guessedName ? "" : this._name
-    }
-    )
-            .spread(function (json, deprecated) {
-                if (deprecated) {
-                    that._logger.warn('deprecated', 'Package ' + that._name + ' is using the deprecated ' + deprecated);
-                }
+    }).spread(function (json, deprecated) {
+        if (deprecated) {
+            that._logger.warn('deprecated', 'Package ' + that._name + ' is using the deprecated ' + deprecated);
+        }
 
-                return json;
-            });
+        return json;
+    });
 };
 
 Resolver.prototype._applyPkgMeta = function (meta) {
@@ -236,11 +245,8 @@ Resolver.prototype._applyPkgMeta = function (meta) {
             });
 };
 
-Resolver.prototype._savePkgMeta = function (meta, dir) {
+Resolver.prototype._prepareMeta = function (meta) {
     var that = this;
-    var contents;
-
-    dir = dir || this._workingDir;
 
     // Store original source & target
     meta._source = this._source;
@@ -256,10 +262,19 @@ Resolver.prototype._savePkgMeta = function (meta, dir) {
                 );
     });
 
+    return meta;
+};
+
+Resolver.prototype._savePkgMeta = function (meta, dir, uptName) {
+    var that = this;
+    var contents;
+    dir = dir || this._workingDir;
+
+    meta = this._prepareMeta(meta);
     // Stringify contents
     contents = JSON.stringify(meta, null, 2);
 
-    return Q.nfcall(fs.writeFile, path.join(dir, '.upt.json'), contents)
+    return Q.nfcall(fs.writeFile, path.join(dir, uptName || '.upt.json'), contents)
             .then(function () {
                 return that._pkgMeta = meta;
             });

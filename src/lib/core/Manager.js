@@ -1,5 +1,6 @@
 var Q = require('q');
 var mout = require('mout');
+var mv = require('mv');
 var path = require('path');
 var mkdirp = require('mkdirp');
 var rmrf = require('../util/rmrf');
@@ -11,6 +12,7 @@ var copy = require('../util/copy');
 var createError = require('../util/createError');
 var scripts = require('./scripts');
 var cli = require('../util/cli');
+var validLink = require('../util/validLink');
 var fstreamIgnore = require('fstream-ignore');
 var Utils = require('../util/Utils');
 var Shared = require('../util/Shared');
@@ -44,7 +46,7 @@ Manager.prototype.configure = function (setup) {
         if (decEndpoint.dependants) {
             for (var id in decEndpoint.dependants) {
                 var dep = decEndpoint.dependants[id];
-                // TODO: maybe split the checkDyn in 2 parts since it could be redudant in this case
+                // [TODO]: maybe split the checkDyn in 2 parts since it could be redudant in this case
                 that._checkDyn(dep.pkgMeta, dep.jsonKey, decEndpoint.name, decEndpoint.source, decEndpoint, dep);
             }
         } else {
@@ -161,18 +163,26 @@ Manager.prototype.install = function (json) {
                 }
 
                 mout.object.forOwn(that._dissected, function (decEndpoint, name) {
-                    if (decEndpoint.pkgMeta._res_type === "Git" && that._config.options.directUpdate)
-                        return;
-
                     var promise;
                     var dst;
                     var release = decEndpoint.pkgMeta._release;
 
+                    dst = path.join(that.componentsDir, name);
+                    var metaFile = path.join(dst, '.upt.json');
+
+                    // if updated directly, just move new .upt.json and store extra info
+                    var newUpt = path.join(dst, ".upt.json.new");
+                    if (that._isDtUpdated(dst)) {
+                        promises.push(
+                                Q.nfcall(mv, newUpt, path.join(dst, ".upt.json"))
+                                .then(that._storeUptExtra.bind(null, decEndpoint, dst))
+                                );
+
+                        return true;
+                    }
+
                     that._logger.action('install', name + (release ? '#' + release : ''), that.toData(decEndpoint));
 
-                    dst = path.join(that.componentsDir, name);
-
-                    var metaFile = path.join(dst, '.upt.json');
                     var tmpMetaFile = path.join(decEndpoint.canonicalDir, 'upt.json');
 
                     var filters = [];
@@ -213,21 +223,7 @@ Manager.prototype.install = function (json) {
                         return Q.nfcall(rmrf.purgeDeploy, dst, filters)
                                 .then(copy.copyDir.bind(copy, decEndpoint.canonicalDir, dst, {"ignore": ignore || []}))
                                 .then(function () {
-                                    decEndpoint.canonicalDir = dst;
-                                    // Store additional metadata in upt.json
-                                    return Q.nfcall(fs.readFile, metaFile)
-                                            .then(function (contents) {
-                                                var json = JSON.parse(contents.toString());
-
-                                                json._target = decEndpoint.target;
-                                                json._originalSource = decEndpoint.source;
-                                                if (decEndpoint.newly) {
-                                                    json._direct = true;
-                                                }
-
-                                                json = JSON.stringify(json, null, '  ');
-                                                return Q.nfcall(fs.writeFile, metaFile, json);
-                                            });
+                                    return that._storeUptExtra.call(null, decEndpoint, dst);
                                 });
                     }
 
@@ -296,6 +292,36 @@ Manager.prototype.install = function (json) {
                 // Sync up dissected dependencies and dependants
                 // See: https://github.com/bower/bower/issues/879
                 mout.object.forOwn(that._dissected, function (pkg) {
+
+                    if (pkg._parent && pkg._dynSrc && pkg._dynName[0] === ":") {
+                        /* [TODO] remove link with old name
+                         if (oldPath) {
+                         fs.unlinkSync(??);
+                         }*/
+
+                        var linkPath = pkg._dynName.substring(1);
+                        var linkAbsPath = path.join(pkg._parent.canonicalDir, linkPath);
+
+                        // if the path for the link is under subdir
+                        // first make sure that the path exists
+                        // trying to create it
+                        var dirname = path.dirname(linkPath);
+                        if (dirname && dirname !== ".") {
+                            Q.nfcall(mkdirp, path.join(pkg._parent.canonicalDir, dirname))
+                                    .then(function () {
+                                        Q.nfcall(fs.lstat, linkAbsPath)
+                                                .then(function (lstat) {
+                                                    if (lstat.isSymbolicLink()) {
+                                                        fs.unlinkSync(linkAbsPath);
+                                                    }
+                                                })
+                                                .fin(fs.symlinkSync.bind(null,pkg.canonicalDir, linkAbsPath, 'dir'));
+                                    });
+                        }
+                    }
+
+
+
                     // Sync dependencies
                     mout.object.forOwn(pkg.dependencies, function (dependency, name) {
                         var dissected = this._dissected[name] || (this._resolved[name] ? this._resolved[name][0] : dependency);
@@ -414,80 +440,108 @@ Manager.prototype._onFetchSuccess = function (decEndpoint, canonicalDir, pkgMeta
     decEndpoint.pkgMeta = pkgMeta;
     delete decEndpoint.promise;
 
+    var pkgPath = path.join(this.componentsDir, pkgMeta.name);
 
-    // if we are fetching a dynamic dependance not already resolved
-    // we store it and change the parent json info
-    if (decEndpoint._parent && decEndpoint._dynSrc) {
-        this._dynamicDep[decEndpoint._dynSrc].realName = decEndpoint.name;
+    // if package name has been changed, then move to new location
+    if (decEndpoint.name !== pkgMeta.name) {
+        var oldPath = path.join(this.componentsDir, decEndpoint.name);
 
-        var newMeta = decEndpoint._parent;
-        newMeta.dynInfo = {};
-        newMeta.dynInfo.dynName = decEndpoint._dynName;
-        newMeta.dynInfo.realName = decEndpoint.name;
+        decEndpoint._oldName = decEndpoint.name;
+        decEndpoint.name = name = pkgMeta.name;
 
-        this._changeDep(newMeta, "dependencies")
-                || this._changeDep(newMeta, "devDependencies");
+        mv(oldPath, pkgPath, {mkdirp: true}, function (err) {
+            if (!err) {
+                // clean old path
+                function rmDirBack (p, callback) {
+                    p = path.dirname(p);
+                    // remove directory only if empty
+                    fs.rmdir(p, function (err) {
+                        !err && rmDirBack(p, callback) || callback();
+                    });
+                }
+
+                rmDirBack(oldPath, nextStep.bind(this, oldPath));
+            }
+        }.bind(this));
+    } else {
+        nextStep.call(this, null);
     }
 
-    // Add to the resolved list
-    // If there's an exact equal endpoint, replace instead of adding
-    // This can happen because the name might not be known from the start
-    resolved = this._resolved[name] = this._resolved[name] || [];
-    index = mout.array.findIndex(resolved, function (resolved) {
-        return resolved.target === decEndpoint.target;
-    });
-    if (index !== -1) {
-        // Merge dependants
-        decEndpoint.dependants.push.apply(decEndpoint.dependants, resolved[index.dependants]);
-        decEndpoint.dependants = this._uniquify(decEndpoint.dependants);
-        resolved.splice(index, 1);
-    }
-    resolved.push(decEndpoint);
+    function nextStep (oldPath) {
+        // if we are fetching a dynamic dependance not already resolved
+        // we store it and change the parent json info
+        if (decEndpoint._parent && decEndpoint._dynSrc) {
+            this._dynamicDep[decEndpoint._dynSrc].realName = decEndpoint.name;
 
-    // Parse dependencies
-    this._parseDependencies(decEndpoint, pkgMeta, 'dependencies');
-    // Parse devDependencies only when not in production
-    if (!this._config.options.production)
-        this._parseDependencies(decEndpoint, pkgMeta, 'devDependencies');
+            var newMeta = decEndpoint._parent;
+            newMeta.dynInfo = {};
+            newMeta.dynInfo.dynName = decEndpoint._dynName;
+            newMeta.dynInfo.realName = decEndpoint.name;
 
-    // Check if there are incompatibilities for this package name
-    // If there are, we need to fetch them
-    incompatibles = this._incompatibles[name];
-    if (incompatibles) {
-        // Filter already resolved
-        incompatibles = incompatibles.filter(function (incompatible) {
-            return !resolved.some(function (decEndpoint) {
-                return incompatible.target === decEndpoint.target;
-            });
-        }, this);
-        // Filter being resolved
-        incompatibles = incompatibles.filter(function (incompatible) {
-            return !fetching.some(function (decEndpoint) {
-                return incompatible.target === decEndpoint.target;
-            });
-        }, this);
-
-        incompatibles.forEach(this._fetch.bind(this));
-        delete this._incompatibles[name];
-    }
-
-    // If the package is not targetable, flag it
-    // It will be needed later so that untargetable endpoints
-    // will not get * converted to ~version
-    if (!isTargetable) {
-        decEndpoint.untargetable = true;
-    }
-
-    // If there are no more packages being fetched,
-    // finish the resolve process by dissecting all resolved packages
-    if (this._nrFetching <= 0) {
-        // remove specials
-        for (var key in this._resolved) {
-            if (key[0] === "%")
-                delete this._resolved[key];
+            this._changeDep(newMeta, "dependencies")
+                    || this._changeDep(newMeta, "devDependencies");
         }
 
-        process.nextTick(this._dissect.bind(this));
+        // Add to the resolved list
+        // If there's an exact equal endpoint, replace instead of adding
+        // This can happen because the name might not be known from the start
+        resolved = this._resolved[name] = this._resolved[name] || [];
+        index = mout.array.findIndex(resolved, function (resolved) {
+            return resolved.target === decEndpoint.target;
+        });
+        if (index !== -1) {
+            // Merge dependants
+            decEndpoint.dependants.push.apply(decEndpoint.dependants, resolved[index.dependants]);
+            decEndpoint.dependants = this._uniquify(decEndpoint.dependants);
+            resolved.splice(index, 1);
+        }
+        resolved.push(decEndpoint);
+
+        // Parse dependencies
+        this._parseDependencies(decEndpoint, pkgMeta, 'dependencies');
+        // Parse devDependencies only when not in production
+        if (!this._config.options.production)
+            this._parseDependencies(decEndpoint, pkgMeta, 'devDependencies');
+
+        // Check if there are incompatibilities for this package name
+        // If there are, we need to fetch them
+        incompatibles = this._incompatibles[name];
+        if (incompatibles) {
+            // Filter already resolved
+            incompatibles = incompatibles.filter(function (incompatible) {
+                return !resolved.some(function (decEndpoint) {
+                    return incompatible.target === decEndpoint.target;
+                });
+            }, this);
+            // Filter being resolved
+            incompatibles = incompatibles.filter(function (incompatible) {
+                return !fetching.some(function (decEndpoint) {
+                    return incompatible.target === decEndpoint.target;
+                });
+            }, this);
+
+            incompatibles.forEach(this._fetch.bind(this));
+            delete this._incompatibles[name];
+        }
+
+        // If the package is not targetable, flag it
+        // It will be needed later so that untargetable endpoints
+        // will not get * converted to ~version
+        if (!isTargetable) {
+            decEndpoint.untargetable = true;
+        }
+
+        // If there are no more packages being fetched,
+        // finish the resolve process by dissecting all resolved packages
+        if (this._nrFetching <= 0) {
+            // remove specials
+            for (var key in this._resolved) {
+                if (key[0] === "%" || key[0] === ":")
+                    delete this._resolved[key];
+            }
+
+            process.nextTick(this._dissect.bind(this));
+        }
     }
 };
 
@@ -542,7 +596,7 @@ Manager.prototype._failFast = function () {
  * @returns {undefined}
  */
 Manager.prototype._checkDyn = function (pkgMeta, jsonKey, name, source, decEndpoint, parentEndpoint) {
-    if (name[0] === "%") {
+    if (name[0] === "%" || name[0] === ":") {
         // search for a compatible dynamic dependance
         // resolved before otherwise continue to fetch process
         for (var dynKey in this._dynamicDep) {
@@ -756,8 +810,9 @@ Manager.prototype._dissect = function () {
                     }
 
                     // Skip if source is the same as dest
+                    // and hasn't been updated directly
                     dst = path.join(this.componentsDir, name);
-                    if (dst === decEndpoint.canonicalDir) {
+                    if (dst === decEndpoint.canonicalDir && !this._isDtUpdated(dst)) {
                         return false;
                     }
 
@@ -1176,6 +1231,25 @@ Manager.prototype._uniquify = function (decEndpoints) {
     });
 };
 
+Manager.prototype._storeUptExtra = function (decEndpoint, canonicalDir) {
+    decEndpoint.canonicalDir = canonicalDir;
+    // Store additional metadata in upt.json
+    var metaFile = path.join(canonicalDir, ".upt.json");
+    return Q.nfcall(fs.readFile, metaFile)
+            .then(function (contents) {
+                var json = JSON.parse(contents.toString());
+
+                json._target = decEndpoint.target;
+                json._originalSource = decEndpoint.source;
+                if (decEndpoint.newly) {
+                    json._direct = true;
+                }
+
+                json = JSON.stringify(json, null, '  ');
+                return Q.nfcall(fs.writeFile, metaFile, json);
+            });
+};
+
 /**
  * This method is ( and must be ) invoked  after Resolver _savePkgMeta
  * @param {type} info
@@ -1209,6 +1283,11 @@ Manager.prototype._changeDep = function (info, jsonKey) {
     fs.writeFileSync(path.join(info.canonicalDir, ".upt.json"), json);
 
     return true;
+};
+
+Manager.prototype._isDtUpdated = function (canonicalDir) {
+    var newUpt = path.join(canonicalDir, ".upt.json.new");
+    return fs.existsSync(newUpt);
 };
 
 module.exports = Manager;

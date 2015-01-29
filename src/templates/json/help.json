@@ -33,7 +33,7 @@
         {
             "shorthand": "-l",
             "flag": "--log-level",
-            "description": "What level of logs to report"
+            "description": "What level of logs to report (error, conflict, warn, action, info, debug)"
         },
         {
             "shorthand": "-o",

@@ -169,7 +169,7 @@ function gitCommitAndTag (repoPath, newVersion, options, project) {
 
     message = message.replace(/%s/g, newVersion);
 
-    project._logger.info('gitcommit', 'Committing changes to repository');
+    project._logger.info('gitcommit', 'Committing changes to repository '+repoPath);
 
     return Q.nfcall(execFile, 'git', ['add', '-A'], {env: process.env, cwd: repoPath, maxBuffer: maxBuffer})
             .then(Q.nfcall(execFile, 'git', ['commit', '-am ' + message], {env: process.env, cwd: repoPath, maxBuffer: maxBuffer}))

@@ -49,41 +49,39 @@ function register (logger, name, url, config) {
         // everything is ok before registering
         repository = new PackageRepository(config, logger);
         return repository.fetch({name: name, source: url, target: '*'});
-    })
-            .spread(function (canonicalDir, pkgMeta) {
-                if (pkgMeta.private) {
-                    throw createError('The package you are trying to register is marked as private', 'EPRIV');
-                }
+    }).spread(function (canonicalDir, pkgMeta) {
+        if (pkgMeta.private) {
+            throw createError('The package you are trying to register is marked as private', 'EPRIV');
+        }
 
-                // If non interactive or user forced, bypass confirmation
-                if (!config.interactive || force) {
-                    return true;
-                }
+        // If non interactive or user forced, bypass confirmation
+        if (!config.interactive || force) {
+            return true;
+        }
 
-                // Confirm if the user really wants to register
-                return Q.nfcall(logger.prompt.bind(logger), {
-                    type: 'confirm',
-                    message: 'Registering a package will make it installable via the registry (' +
-                            chalk.cyan.underline(config.registry.register) + '), continue?',
-                    default: true
-                });
-            })
-            .then(function (result) {
-                // If user response was negative, abort
-                if (!result) {
-                    return;
-                }
+        // Confirm if the user really wants to register
+        return Q.nfcall(logger.prompt.bind(logger), {
+            type: 'confirm',
+            message: 'Registering a package will make it installable via the registry (' +
+                    chalk.cyan.underline(config.registry.register) + '), continue?',
+            default: true
+        });
+    }).then(function (result) {
+        // If user response was negative, abort
+        if (!result) {
+            return;
+        }
 
-                // Register
-                registryClient = repository.getRegistryClient();
+        // Register
+        registryClient = repository.getRegistryClient();
 
-                logger.action('register', url, {
-                    name: name,
-                    url: url
-                });
+        logger.action('register', url, {
+            name: name,
+            url: url
+        });
 
-                return Q.nfcall(registryClient.register.bind(registryClient), name, url);
-            });
+        return Q.nfcall(registryClient.register.bind(registryClient), name, url);
+    });
 }
 
 function convertUrl (url, logger) {

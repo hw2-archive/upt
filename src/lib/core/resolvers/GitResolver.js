@@ -43,12 +43,12 @@ mout.object.mixIn(GitResolver, Resolver);
 
 // -----------------
 
-GitResolver.prototype._checkGitCommit = function (resolution) {
+GitResolver.prototype._checkGitCommit = function (resolution, dir) {
     var deferred = Q.defer();
     var that = this;
     var $ = Hw2Core;
     $.Loader.load("PATH_JS_LIB:nodejs/git/index.js", function () {
-        var p = path.join(that._config.cwd, that._config.directory, that._name);
+        var p = dir || path.join(that._config.cwd, that._config.directory, that._name);
         $.NodeJs.Git.getCommitHash(p, function (hash) {
             // TODO: maybe we need to update the json file too
             // with commit hash package has been updated
@@ -66,9 +66,9 @@ GitResolver.prototype._hasNew = function (canonicalDir, pkgMeta) {
 
     return this._findResolution()
             .then(function (resolution) {
-                return that._checkGitCommit(resolution).then(function (gitUpdated) {
+                return that._checkGitCommit(resolution, canonicalDir).then(function (gitUpdated) {
                     if (gitUpdated) {
-                        return true;
+                        return false;
                     }
 
                     // Check if resolution types are different
@@ -95,13 +95,12 @@ GitResolver.prototype._resolve = function () {
                 return that._checkGitCommit(resolution);
             })
             .then(function (gitUpdated) {
-                return gitUpdated || that._checkout()
-                        // Always run cleanup after checkout to ensure that .git is removed!
-                        // If it's not removed, problems might arise when the "tmp" module attempts
-                        // to delete the temporary folder
-                        .fin(function () {
-                            return that._cleanup();
-                        });
+                if (gitUpdated)
+                    return null;
+
+                return that._checkout().fin(function () {
+                    return that._cleanup();
+                });
             });
 };
 
@@ -254,7 +253,7 @@ GitResolver.prototype._cleanup = function () {
     }
 };
 
-GitResolver.prototype._savePkgMeta = function (meta, dir) {
+GitResolver.prototype._savePkgMeta = function (meta, dir, uptName) {
     var version;
 
     if (this._resolution.type === 'version') {
@@ -288,7 +287,7 @@ GitResolver.prototype._savePkgMeta = function (meta, dir) {
 
     meta._res_type = "Git";
 
-    return Resolver.prototype._savePkgMeta.call(this, meta, dir);
+    return Resolver.prototype._savePkgMeta.call(this, meta, dir, uptName);
 };
 
 // ------------------------------

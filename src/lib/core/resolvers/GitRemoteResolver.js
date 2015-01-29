@@ -28,8 +28,7 @@ function GitRemoteResolver (decEndpoint, config, logger) {
         this._host = url.parse(this._source).host;
     }
 
-    this._directUpdate = this._config.options.directUpdate;
-
+    this._updatedDirectly=false;
     this._workingDir = path.join(this._config.cwd, this._config.directory, this._name);
 }
 
@@ -50,7 +49,8 @@ GitRemoteResolver.prototype._checkout = function () {
         to: this._workingDir
     });
 
-    if (this._directUpdate) {
+    if (this._config.options.directUpdate) {
+        this._updatedDirectly=true;
         return cmd('git', ['status', '--untracked-files=no', '--porcelain'], {cwd: this._workingDir})
                 .then(function (res) {
                     if (!res[0]) {
@@ -185,6 +185,10 @@ GitRemoteResolver.prototype._suggestProxyWorkaround = function (err) {
         err.details += '\ngit config --global url."https://' + this._host + '".insteadOf git://' + this._host;
         err.details += 'Ignore this suggestion if you already have this configured.';
     }
+};
+
+GitRemoteResolver.prototype._savePkgMeta = function (meta, dir, uptName) {
+    return GitResolver.prototype._savePkgMeta.call(this, meta, dir, this._updatedDirectly ? ".upt.json.new" : uptName);
 };
 
 // ------------------------------
