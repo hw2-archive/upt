@@ -303,13 +303,17 @@ Manager.prototype.install = function (json) {
                         var linkAbsPath = path.join(pkg._parent.canonicalDir, linkPath);
 
                         function createLink (p) {
+                            // use a relative path to symlink instead absolute
+                            // allowing root folder moving without break links
+                            var relSource = path.relative(path.dirname(p), pkg.canonicalDir);
+                            console.log(relSource);
                             Q.nfcall(fs.lstat, p)
                                     .then(function (lstat) {
                                         if (lstat.isSymbolicLink()) {
                                             fs.unlinkSync(p);
                                         }
                                     })
-                                    .fin(fs.symlinkSync.bind(null, pkg.canonicalDir, p, 'dir'));
+                                    .fin(fs.symlinkSync.bind(null, relSource, p, 'dir'));
                         }
 
                         // if the path for the link is under subdir
