@@ -19,12 +19,6 @@ Would you try upt now? just run this command:
 
 > upt install hw2-core/js-kernel
 
-Note:
-
-1. All packages created with features of original UPT are compatible with our system ( but not vice versa )
-
-2. The commands are the same of original UPT but the binary is called "upt" to avoid collisions
-
 ## Actually upt supports:
 
 ### CUSTOM PATHS: 
