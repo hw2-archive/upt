@@ -4,6 +4,7 @@ var RegistryClient = require('upt-registry-client');
 var ResolveCache = require('./ResolveCache');
 var resolverFactory = require('./resolverFactory');
 var createError = require('../util/createError');
+
 function PackageRepository (config, logger) {
     var registryOptions;
     this._config = config;
@@ -103,6 +104,7 @@ PackageRepository.prototype.fetch = function (decEndpoint) {
                 throw err;
             });
 };
+
 PackageRepository.prototype.versions = function (source) {
     // Resolve the source using the factory because the
     // source can actually be a registry name
@@ -117,31 +119,38 @@ PackageRepository.prototype.versions = function (source) {
                 return ConcreteResolver.versions(source);
             }.bind(this));
 };
+
 PackageRepository.prototype.eliminate = function (pkgMeta) {
     return Q.all([
         this._resolveCache.eliminate(pkgMeta),
         Q.nfcall(this._registryClient.clearCache.bind(this._registryClient), pkgMeta.name)
     ]);
 };
+
 PackageRepository.prototype.clear = function () {
     return Q.all([
         this._resolveCache.clear(),
         Q.nfcall(this._registryClient.clearCache.bind(this._registryClient))
     ]);
 };
+
 PackageRepository.prototype.reset = function () {
     this._resolveCache.reset();
     this._registryClient.resetCache();
 };
+
 PackageRepository.prototype.list = function () {
     return this._resolveCache.list();
 };
+
 PackageRepository.prototype.getRegistryClient = function () {
     return this._registryClient;
 };
+
 PackageRepository.prototype.getResolveCache = function () {
     return this._resolveCache;
 };
+
 PackageRepository.clearRuntimeCache = function () {
     ResolveCache.clearRuntimeCache();
     RegistryClient.clearRuntimeCache();
@@ -168,6 +177,7 @@ PackageRepository.prototype._resolve = function (resolver, logger) {
                 return [dir, pkgMeta, resolver.constructor.isTargetable()];
             });
 };
+
 PackageRepository.prototype._extendLog = function (log, info) {
     log.data = log.data || {};
     // Store endpoint info in each log
@@ -192,4 +202,5 @@ PackageRepository.prototype._extendLog = function (log, info) {
 
     return log;
 };
+
 module.exports = PackageRepository;

@@ -636,6 +636,7 @@ Manager.prototype._checkDyn = function (pkgMeta, jsonKey, name, source, decEndpo
         // search for an already resolved name
         // if empty result, try to find it by fetching later
         decEndpoint.name = Utils.findDyn(jsonKey, name, source, path.join(this.componentsDir, parentEndpoint.name));
+
         decEndpoint._parent = parentEndpoint;
         decEndpoint._dynName = name;
         decEndpoint._dynSrc = source;
