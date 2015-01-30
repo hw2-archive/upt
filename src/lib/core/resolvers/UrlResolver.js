@@ -95,7 +95,7 @@ UrlResolver.prototype._hasNew = function (canonicalDir, pkgMeta) {
 UrlResolver.prototype._resolve = function () {
     return this._createTempDir()
             // Download
-            .then(this._download().bind(this))
+            .then(this._download.bind(this))
             // Parse headers
             .spread(this._parseHeaders.bind(this))
             // Extract file
