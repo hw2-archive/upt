@@ -132,7 +132,7 @@ FsResolver.prototype._rename = function () {
             }.bind(this));
 };
 
-FsResolver.prototype._savePkgMeta = function (meta) {
+FsResolver.prototype._savePkgMeta = function (meta, dir, uptName, skipWrite) {
     // Store main if is a single file
     if (this._singleFile) {
         meta.main = this._singleFile;
@@ -143,7 +143,7 @@ FsResolver.prototype._savePkgMeta = function (meta) {
 
     meta._res_type = "Fs";
 
-    return Resolver.prototype._savePkgMeta.call(this, meta);
+    return Resolver.prototype._savePkgMeta.call(this, meta, dir, uptName, skipWrite);
 };
 
 module.exports = FsResolver;

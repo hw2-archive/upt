@@ -119,13 +119,13 @@ GitHubResolver.prototype._checkout = function () {
             });
 };
 
-GitHubResolver.prototype._savePkgMeta = function (meta) {
+GitHubResolver.prototype._savePkgMeta = function (meta, dir, uptName, skipWrite) {
     // Set homepage if not defined
     if (!meta.homepage) {
         meta.homepage = 'https://github.com/' + this._org + '/' + this._repo;
     }
 
-    return GitRemoteResolver.prototype._savePkgMeta.call(this, meta);
+    return GitRemoteResolver.prototype._savePkgMeta.call(this, meta, dir, uptName, skipWrite);
 };
 
 // ----------------

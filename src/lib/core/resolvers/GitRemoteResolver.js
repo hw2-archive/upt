@@ -28,8 +28,13 @@ function GitRemoteResolver (decEndpoint, config, logger) {
         this._host = url.parse(this._source).host;
     }
 
-    this._updatedDirectly=false;
-    this._workingDir = path.join(this._config.cwd, this._config.directory, this._name);
+    this._updatedDirectly = false;
+    this._canDtUpdate = false;
+
+    if (decEndpoint.name) {
+        this._workingDir = path.join(this._config.cwd, this._config.directory, decEndpoint.name);
+        this._canDtUpdate = true;
+    }
 }
 
 util.inherits(GitRemoteResolver, GitResolver);
@@ -49,8 +54,8 @@ GitRemoteResolver.prototype._checkout = function () {
         to: this._workingDir
     });
 
-    if (this._config.options.directUpdate) {
-        this._updatedDirectly=true;
+    if (this._config.options.directUpdate && this.canDtUpdate) {
+        this._updatedDirectly = true;
         return cmd('git', ['status', '--untracked-files=no', '--porcelain'], {cwd: this._workingDir})
                 .then(function (res) {
                     if (!res[0]) {
@@ -187,8 +192,8 @@ GitRemoteResolver.prototype._suggestProxyWorkaround = function (err) {
     }
 };
 
-GitRemoteResolver.prototype._savePkgMeta = function (meta, dir, uptName) {
-    return GitResolver.prototype._savePkgMeta.call(this, meta, dir, this._updatedDirectly ? ".upt.json.new" : uptName);
+GitRemoteResolver.prototype._savePkgMeta = function (meta, dir, uptName, skipWrite) {
+    return GitResolver.prototype._savePkgMeta.call(this, meta, dir, this._updatedDirectly ? ".upt.json.new" : uptName, skipWrite);
 };
 
 // ------------------------------

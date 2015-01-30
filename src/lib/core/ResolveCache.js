@@ -181,14 +181,12 @@ ResolveCache.prototype.eliminate = function (pkgMeta) {
                 // if this was really the last package
                 if (!versions.length) {
                     that._cache.del(sourceId);
-
                     return that._getVersions(sourceId)
                             .spread(function (versions) {
                                 if (!versions.length) {
                                     // Do not keep in-memory cache if it's completely
                                     // empty
                                     that._cache.del(sourceId);
-
                                     return Q.nfcall(rimraf, path.dirname(dir));
                                 }
                             });

@@ -302,21 +302,27 @@ Manager.prototype.install = function (json) {
                         var linkPath = pkg._dynName.substring(1);
                         var linkAbsPath = path.join(pkg._parent.canonicalDir, linkPath);
 
+                        function createLink (p) {
+                            Q.nfcall(fs.lstat, p)
+                                    .then(function (lstat) {
+                                        if (lstat.isSymbolicLink()) {
+                                            fs.unlinkSync(p);
+                                        }
+                                    })
+                                    .fin(fs.symlinkSync.bind(null, pkg.canonicalDir, p, 'dir'));
+                        }
+
                         // if the path for the link is under subdir
                         // first make sure that the path exists
                         // trying to create it
                         var dirname = path.dirname(linkPath);
                         if (dirname && dirname !== ".") {
                             Q.nfcall(mkdirp, path.join(pkg._parent.canonicalDir, dirname))
-                                    .then(function () {
-                                        Q.nfcall(fs.lstat, linkAbsPath)
-                                                .then(function (lstat) {
-                                                    if (lstat.isSymbolicLink()) {
-                                                        fs.unlinkSync(linkAbsPath);
-                                                    }
-                                                })
-                                                .fin(fs.symlinkSync.bind(null,pkg.canonicalDir, linkAbsPath, 'dir'));
+                                    .fin(function () {
+                                        createLink(linkAbsPath);
                                     });
+                        } else {
+                            createLink(linkAbsPath);
                         }
                     }
 
@@ -626,7 +632,6 @@ Manager.prototype._checkDyn = function (pkgMeta, jsonKey, name, source, decEndpo
         // search for an already resolved name
         // if empty result, try to find it by fetching later
         decEndpoint.name = Utils.findDyn(jsonKey, name, source, path.join(this.componentsDir, parentEndpoint.name));
-
         decEndpoint._parent = parentEndpoint;
         decEndpoint._dynName = name;
         decEndpoint._dynSrc = source;

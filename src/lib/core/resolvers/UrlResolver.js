@@ -220,7 +220,7 @@ UrlResolver.prototype._extract = function (file, response) {
 
 UrlResolver.prototype._rename = FsResolver.prototype._rename;
 
-UrlResolver.prototype._savePkgMeta = function (meta) {
+UrlResolver.prototype._savePkgMeta = function (meta, dir, uptName, skipWrite) {
     // Store collected headers in the package meta
     meta._cacheHeaders = this._collectCacheHeaders(this._response);
 
@@ -236,7 +236,7 @@ UrlResolver.prototype._savePkgMeta = function (meta) {
 
     meta._res_type = "Url";
 
-    return Resolver.prototype._savePkgMeta.call(this, meta);
+    return Resolver.prototype._savePkgMeta.call(this, meta, dir, uptName, skipWrite);
 };
 
 UrlResolver.prototype._collectCacheHeaders = function (res) {

@@ -105,9 +105,7 @@ Resolver.prototype.resolve = function () {
                                 // it means that nothing has been resolved
                                 // could happen also when the package is not cached but updated
                                 if (res === null) {
-                                    that._pkgMeta = that._prepareMeta(meta);
-                                    that._working = false;
-                                    return that._workingDir;
+                                    return that._savePkgMeta(meta, null, null, true);
                                 }
 
                                 return that._savePkgMeta(meta)
@@ -245,8 +243,10 @@ Resolver.prototype._applyPkgMeta = function (meta) {
             });
 };
 
-Resolver.prototype._prepareMeta = function (meta) {
+Resolver.prototype._savePkgMeta = function (meta, dir, uptName, skipWrite) {
     var that = this;
+    var contents;
+    dir = dir || this._workingDir;
 
     // Store original source & target
     meta._source = this._source;
@@ -262,22 +262,17 @@ Resolver.prototype._prepareMeta = function (meta) {
                 );
     });
 
-    return meta;
-};
+    if (!skipWrite) {
+        // Stringify contents
+        contents = JSON.stringify(meta, null, 2);
 
-Resolver.prototype._savePkgMeta = function (meta, dir, uptName) {
-    var that = this;
-    var contents;
-    dir = dir || this._workingDir;
-
-    meta = this._prepareMeta(meta);
-    // Stringify contents
-    contents = JSON.stringify(meta, null, 2);
-
-    return Q.nfcall(fs.writeFile, path.join(dir, uptName || '.upt.json'), contents)
-            .then(function () {
-                return that._pkgMeta = meta;
-            });
+        return Q.nfcall(fs.writeFile, path.join(dir, uptName || '.upt.json'), contents)
+                .then(function () {
+                    return that._pkgMeta = meta;
+                });
+    } else {
+        return that._pkgMeta = meta;
+    }
 };
 
 module.exports = Resolver;

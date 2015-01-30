@@ -253,7 +253,7 @@ GitResolver.prototype._cleanup = function () {
     }
 };
 
-GitResolver.prototype._savePkgMeta = function (meta, dir, uptName) {
+GitResolver.prototype._savePkgMeta = function (meta, dir, uptName, skipWrite) {
     var version;
 
     if (this._resolution.type === 'version') {
@@ -287,7 +287,7 @@ GitResolver.prototype._savePkgMeta = function (meta, dir, uptName) {
 
     meta._res_type = "Git";
 
-    return Resolver.prototype._savePkgMeta.call(this, meta, dir, uptName);
+    return Resolver.prototype._savePkgMeta.call(this, meta, dir, uptName, skipWrite);
 };
 
 // ------------------------------

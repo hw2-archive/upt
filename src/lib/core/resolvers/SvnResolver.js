@@ -231,7 +231,7 @@ SvnResolver.prototype._findResolution = function (target) {
             });
 };
 
-SvnResolver.prototype._savePkgMeta = function (meta) {
+SvnResolver.prototype._savePkgMeta = function (meta, dir, uptName, skipWrite) {
     var version;
 
     if (this._resolution.type === 'version') {
@@ -265,7 +265,7 @@ SvnResolver.prototype._savePkgMeta = function (meta) {
 
     meta._res_type = "Svn";
 
-    return Resolver.prototype._savePkgMeta.call(this, meta);
+    return Resolver.prototype._savePkgMeta.call(this, meta, dir, uptName, skipWrite);
 };
 
 // ------------------------------
