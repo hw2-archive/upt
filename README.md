@@ -37,7 +37,10 @@ ______
 ### GIT FOR DEVS: 
   you can keep .git folder when not in **--production** mode. This allow you to work with your repository.
 
-NOTE: you **MUST** know that after an update/install --force 
+  moreover, the default enabled flag --direct-update allows to update packages directly using repositories commands, 
+  speeding up the whole updating process.
+
+NOTE: you **MUST** know that after an install --force , or an update using flag --no-direct-update
 the .git folder will be **replaced with new one** from the repository. If you want avoid it atm, you need to add ".git" or ".git/config" entry in
 "keep" upt.json array ( read below )
 
@@ -46,8 +49,8 @@ So if the commit hash of new version from repository source is equal to current 
 the update will be skipped.
 ______
 
-### AUTO DEP. NAME: 
-   you can use the special character "%" for name of dependencies to use original package name as directory
+### DYNAMIC DEPENDENCIES: 
+   you can use the special character "%" as prefix of dependency name to use original package name as directory
     instead of specifying it. However the dependency name must be defined and be unique for json consistency.  Ex:
 
 ```json
@@ -55,6 +58,18 @@ ______
    "%js-library" : "git://github.com/hw2-core/js-library.git"
  }
 ```
+
+   if you want that dependencies are installed in their original path, but at the same moment you need a "link" inside
+   your package folder, you can use the special character ":" as prefix of your dependency name. This name will be used
+   as the path to create a symbolic link to original dependecy folder. 
+
+```json
+ "dependencies" : {
+   ":/my/custom/path" : "hw2-core/js-kernel"
+ }
+```
+
+   in this case the package "js-kernel" will be installed in its original path, but will be also linked in "/my/custom/path".
 
 ______
 
