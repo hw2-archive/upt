@@ -44,7 +44,8 @@ FsResolver.isTargetable = function () {
 //       is an archive file, by piping read stream to the zip extractor
 //       This will likely increase the complexity of code but might worth it
 FsResolver.prototype._resolve = function () {
-    return this._copy()
+    return this._createTempDir()
+            .then(this._copy.bind(this))
             .then(this._extract.bind(this))
             .then(this._rename.bind(this));
 };
