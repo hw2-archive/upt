@@ -7,6 +7,7 @@ var path = require('path');
 var GitResolver = require('./GitResolver');
 var fs = require('graceful-fs');
 var cmd = require('../../util/cmd');
+var Utils = require('../../util/Utils');
 
 function GitRemoteResolver (decEndpoint, config, logger) {
     GitResolver.call(this, decEndpoint, config, logger);
@@ -31,7 +32,7 @@ function GitRemoteResolver (decEndpoint, config, logger) {
     this._updatedDirectly = false;
     this._canDtUpdate = false;
 
-    if (decEndpoint.name) {
+    if (decEndpoint.name && !Utils.isDynName(decEndpoint.name)) {
         this._workingDir = path.join(this._config.cwd, this._config.directory, decEndpoint.name);
         this._canDtUpdate = true;
     }
@@ -49,16 +50,17 @@ GitRemoteResolver.prototype._checkout = function () {
     var that = this;
     var resolution = this._resolution;
 
-    this._logger.action('checkout', resolution.tag || resolution.branch || resolution.commit, {
-        resolution: resolution,
-        to: this._workingDir
-    });
-
     if (this._config.options.directUpdate && this._canDtUpdate) {
         this._updatedDirectly = true;
+
+        this._logger.action('direct-update', resolution.tag || resolution.branch || resolution.commit, {
+            resolution: resolution,
+            to: this._workingDir
+        });
+
         return cmd('git', ['status', '--untracked-files=no', '--porcelain'], {cwd: this._workingDir})
                 .then(function (res) {
-                    if (!res[0]) {
+                    function update () {
                         return cmd('git', ['fetch', 'origin'], {cwd: that._workingDir})
                                 .then(function () {
                                     return cmd('git', ['reset', '--hard', 'origin/' + resolution.branch], {cwd: that._workingDir})
@@ -67,8 +69,34 @@ GitRemoteResolver.prototype._checkout = function () {
                                             });
                                 });
                     }
+
+                    if (res[0]) {
+                        // If there are uncommitted changes, alert.
+                        return Q.nfcall(that._logger.prompt.bind(that._logger), {
+                            type: 'input',
+                            message: 'There are uncommitted changes on ' + this._workingDir + ' that will be deleted. Do you want continue? [yes/no]',
+                            validate: function (choice) {
+                                choice = Number(mout.string.trim(choice.trim(), '!'));
+
+                                if (choice.toLowerCase() !== "yes" || choice.toLowerCase() !== "no") {
+                                    return 'Invalid choice';
+                                }
+
+                                return true;
+                            }
+                        }).then(function (choice) {
+                            return choice.toLowerCase() === "yes" && update() || process.exit();
+                        }.bind(this));
+                    } else {
+                        return update();
+                    }
                 });
     } else {
+        this._logger.action('checkout', resolution.tag || resolution.branch || resolution.commit, {
+            resolution: resolution,
+            to: this._workingDir
+        });
+
         return this._createTempDir().then(function () {
             // If resolution is a commit, we need to clone the entire repo and check it out
             // Because a commit is not a named ref, there's no better solution

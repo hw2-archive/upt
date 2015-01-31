@@ -546,7 +546,7 @@ Manager.prototype._onFetchSuccess = function (decEndpoint, canonicalDir, pkgMeta
         if (this._nrFetching <= 0) {
             // remove specials
             for (var key in this._resolved) {
-                if (key[0] === "%" || key[0] === ":")
+                if (Utils.isDynName(key))
                     delete this._resolved[key];
             }
 
@@ -606,7 +606,7 @@ Manager.prototype._failFast = function () {
  * @returns {undefined}
  */
 Manager.prototype._checkDyn = function (pkgMeta, jsonKey, name, source, decEndpoint, parentEndpoint) {
-    if (name[0] === "%" || name[0] === ":") {
+    if (Utils.isDynName(name)) {
         // search for a compatible dynamic dependance
         // resolved before otherwise continue to fetch process
         for (var dynKey in this._dynamicDep) {

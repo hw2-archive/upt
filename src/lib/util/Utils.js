@@ -20,5 +20,9 @@ Utils.findDyn = function (jsonKey, name, source, jsonPath) {
     return res;
 };
 
+Utils.isDynName = function(name) {
+    return name[0] === "%" || name[0] === ":";
+};
+
 module.exports = Utils;
 
