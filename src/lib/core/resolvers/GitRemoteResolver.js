@@ -54,7 +54,7 @@ GitRemoteResolver.prototype._checkout = function () {
         to: this._workingDir
     });
 
-    if (this._config.options.directUpdate && this.canDtUpdate) {
+    if (this._config.options.directUpdate && this._canDtUpdate) {
         this._updatedDirectly = true;
         return cmd('git', ['status', '--untracked-files=no', '--porcelain'], {cwd: this._workingDir})
                 .then(function (res) {
