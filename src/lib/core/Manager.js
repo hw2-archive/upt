@@ -126,12 +126,7 @@ Manager.prototype.resolve = function () {
         // Otherwise, fetch each target from the repository
         // and let the process roll out
     } else {
-        var fetches = [];
-        this._targets.forEach(function (decEndpoint) {
-            fetches.push(that._fetch.bind(that, decEndpoint));
-        });
-
-        fetches.slice(1).reduce(Q.when, fetches[0]());
+        this._targets.forEach(this._fetch.bind(this));
     }
 
     // Unset working flag when done
