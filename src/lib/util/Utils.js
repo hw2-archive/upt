@@ -97,11 +97,11 @@ Utils.uniqueId = function (decEndpoint, name) {
     var isDyn = decEndpoint._dynSrc || Utils.isDynName(name);
 
     // add a custom prefix to avoid collisions
-    return md5((isDyn ? 'dyn-' : 'st-' + name + ':') + (decEndpoint._originalSource || decEndpoint.source) + '#' + decEndpoint.target);
+    return md5((isDyn ? 'dyn-' : 'st-' + name + ':') + Utils.fetchingId(decEndpoint));
 };
 
 Utils.fetchingId = function (decEndpoint) {
-    return decEndpoint._originalSource || decEndpoint.source;
+    return (decEndpoint._originalSource || decEndpoint.source) + '#' + decEndpoint.target;
 };
 
 Utils.resolvedId = function (decEndpoint) {
