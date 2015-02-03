@@ -8,8 +8,9 @@ var createError = require('../util/createError');
 function createInstance (decEndpoint, config, logger, registryClient) {
     return getConstructor(decEndpoint.source, config, registryClient)
             .spread(function (ConcreteResolver, source, fromRegistry) {
-                var decEndpointCopy = mout.object.pick(decEndpoint, ['name', 'target']);
+                var decEndpointCopy = mout.object.pick(decEndpoint, ['name', 'target', 'source']);
 
+                decEndpointCopy._originalSource = decEndpointCopy.source;
                 decEndpointCopy.source = source;
 
                 // Signal if it was fetched from the registry

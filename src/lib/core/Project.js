@@ -560,6 +560,8 @@ Project.prototype._bootstrap = function (targets, resolved, incompatibles) {
             })
             .resolve()
             .then(function () {
+                this._logger.info("end-resolve", "Terminated resolving process");
+
                 // If the resolutions is empty, delete key
                 if (!mout.object.size(this._json.resolutions)) {
                     delete this._json.resolutions;

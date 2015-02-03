@@ -35,7 +35,7 @@ Manager.prototype.configure = function (setup) {
 
     // Resolved & installed
     this._dynamicDep = [];  // dynamic dependencies found
-    this._pendingDyn = [];
+    //this._pendingDyn = [];
     this._resolved = {};
     this._installed = {};
 
@@ -44,8 +44,8 @@ Manager.prototype.configure = function (setup) {
     this._targets = setup.targets || [];
     this._targets.forEach(function (decEndpoint) {
         if (decEndpoint.dependants) {
-            for (var id in decEndpoint.dependants) {
-                var dep = decEndpoint.dependants[id];
+            for (var key in decEndpoint.dependants) {
+                var dep = decEndpoint.dependants[key];
                 // [TODO]: maybe split the checkDyn in 2 parts since it could be redudant in this case
                 that._checkDyn(dep.pkgMeta, dep.jsonKey, decEndpoint.name, decEndpoint.source, decEndpoint, dep);
             }
@@ -55,16 +55,18 @@ Manager.prototype.configure = function (setup) {
 
         decEndpoint.initialName = decEndpoint.name;
         decEndpoint.dependants = mout.object.values(decEndpoint.dependants);
-        targetsHash[decEndpoint.name] = true;
+
+        var guid = decEndpoint._guid = Utils.getGuid(decEndpoint);
+        targetsHash[guid.id] = true;
 
         // If the endpoint is marked as newly, make it unresolvable
         decEndpoint.unresolvable = !!decEndpoint.newly;
     });
 
-    mout.object.forOwn(setup.resolved, function (decEndpoint, name) {
+    mout.object.forOwn(setup.resolved, function (decEndpoint, rId) {
         decEndpoint.dependants = mout.object.values(decEndpoint.dependants);
-        this._resolved[name] = [decEndpoint];
-        this._installed[name] = decEndpoint.pkgMeta;
+        this._resolved[rId] = [decEndpoint];
+        this._installed[rId] = decEndpoint.pkgMeta;
     }, this);
 
     // Installed
@@ -74,17 +76,17 @@ Manager.prototype.configure = function (setup) {
     this._incompatibles = {};
     setup.incompatibles = this._uniquify(setup.incompatibles || []);
     setup.incompatibles.forEach(function (decEndpoint) {
-        var name = decEndpoint.name;
+        var guid = decEndpoint._guid = Utils.getGuid(decEndpoint);
 
-        this._incompatibles[name] = this._incompatibles[name] || [];
-        this._incompatibles[name].push(decEndpoint);
+        this._incompatibles[guid.rId] = this._incompatibles[guid.rId] || [];
+        this._incompatibles[guid.rId].push(decEndpoint);
         decEndpoint.dependants = mout.object.values(decEndpoint.dependants);
 
         // Mark as conflicted so that the resolution is not removed
-        this._conflicted[name] = true;
+        this._conflicted[guid.rId] = true;
 
         // If not a target/resolved, add as target
-        if (!targetsHash[name] && !this._resolved[name]) {
+        if (!targetsHash[guid.id] && !this._resolved[guid.rId]) {
             this._targets.push(decEndpoint);
         }
     }, this);
@@ -102,6 +104,8 @@ Manager.prototype.configure = function (setup) {
 };
 
 Manager.prototype.resolve = function () {
+    var that = this;
+
     // If already resolving, error out
     if (this._working) {
         return Q.reject(createError('Already working', 'EWORKING'));
@@ -120,18 +124,23 @@ Manager.prototype.resolve = function () {
         // Otherwise, fetch each target from the repository
         // and let the process roll out
     } else {
-        this._targets.forEach(this._fetch.bind(this));
+        var fetches = [];
+        this._targets.forEach(function (decEndpoint) {
+            fetches.push(that._fetch.bind(that, decEndpoint));
+        });
+
+        fetches.slice(1).reduce(Q.when, fetches[0]());
     }
 
     // Unset working flag when done
     return this._deferred.promise
             .fin(function () {
                 // write pending dynamic dep
-                for (var dynDep in this._pendingDyn) {
-                    info = this._pendingDyn[dynDep];
-                    if (info.dynInfo["realName"])
-                        this._changeDep(info, info.jsonKey);
-                }
+                /*for (var dynDep in this._pendingDyn) {
+                 info = this._pendingDyn[dynDep];
+                 if (info.realName)
+                 this._changeDep(info, info.jsonKey);
+                 }*/
 
                 this._working = false;
             }.bind(this));
@@ -162,12 +171,12 @@ Manager.prototype.install = function (json) {
                     depFilters.push(depDir);
                 }
 
-                mout.object.forOwn(that._dissected, function (decEndpoint, name) {
+                mout.object.forOwn(that._dissected, function (decEndpoint, rId) {
                     var promise;
                     var dst;
                     var release = decEndpoint.pkgMeta._release;
 
-                    dst = path.join(that.componentsDir, name);
+                    dst = path.join(that.componentsDir, rId);
                     var metaFile = path.join(dst, '.upt.json');
 
                     // if updated directly, just move new .upt.json and store extra info
@@ -181,7 +190,7 @@ Manager.prototype.install = function (json) {
                         return true;
                     }
 
-                    that._logger.action('install', name + (release ? '#' + release : ''), that.toData(decEndpoint));
+                    that._logger.action('install', decEndpoint.name + (release ? '#' + release : ''), that.toData(decEndpoint));
 
                     var tmpMetaFile = path.join(decEndpoint.canonicalDir, 'upt.json');
 
@@ -208,8 +217,8 @@ Manager.prototype.install = function (json) {
                     // filter ( keep) also dependencies installed in other dependencies subdirs
                     for (var df in depFilters) {
                         df = depFilters[df];
-                        if (df.indexOf(name) === 0) {
-                            var str = df.replace(new RegExp("^" + (name + '').replace(/([.?*+^$[\]\\(){}|-])/g, "\\$1") + "/", "g"), '');
+                        if (df.indexOf(rId) === 0) {
+                            var str = df.replace(new RegExp("^" + (rId + '').replace(/([.?*+^$[\]\\(){}|-])/g, "\\$1") + "/", "g"), '');
                             if (str != df) {
                                 filters.push(str);
                             }
@@ -333,15 +342,15 @@ Manager.prototype.install = function (json) {
 
 
                     // Sync dependencies
-                    mout.object.forOwn(pkg.dependencies, function (dependency, name) {
-                        var dissected = this._dissected[name] || (this._resolved[name] ? this._resolved[name][0] : dependency);
-                        pkg.dependencies[name] = dissected;
+                    mout.object.forOwn(pkg.dependencies, function (dependency, rId) {
+                        var dissected = this._dissected[rId] || (this._resolved[rId] ? this._resolved[rId][0] : dependency);
+                        pkg.dependencies[rId] = dissected;
                     }, this);
 
                     // Sync dependants
                     pkg.dependants = pkg.dependants.map(function (dependant) {
-                        var name = dependant.name;
-                        var dissected = this._dissected[name] || (this._resolved[name] ? this._resolved[name][0] : dependant);
+                        var rId = Utils.resolvedId(dependant);
+                        var dissected = this._dissected[rId] || (this._resolved[rId] ? this._resolved[rId][0] : dependant);
 
                         return dissected;
                     }, this);
@@ -366,6 +375,8 @@ Manager.prototype.toData = function (decEndpoint, extraKeys, upperDeps) {
     upperDeps = upperDeps || [];
     data.endpoint = mout.object.pick(decEndpoint, ['name', 'source', 'target']);
 
+    var id = Utils.uniqueId(decEndpoint);
+
     if (decEndpoint.canonicalDir) {
         data.canonicalDir = decEndpoint.canonicalDir;
         data.pkgMeta = decEndpoint.pkgMeta;
@@ -386,13 +397,14 @@ Manager.prototype.toData = function (decEndpoint, extraKeys, upperDeps) {
         // by dependency names
         names = Object.keys(decEndpoint.dependencies).sort();
         names.forEach(function (name) {
-
+            var depDecEndpoint = decEndpoint.dependencies[name];
+            var childId = Utils.uniqueId(depDecEndpoint);
             // Prevent from infinite recursion when installing cyclic
             // dependencies
-            if (!mout.array.contains(upperDeps, name)) {
-                data.dependencies[name] = this.toData(decEndpoint.dependencies[name],
+            if (!mout.array.contains(upperDeps, childId)) {
+                data.dependencies[name] = this.toData(depDecEndpoint,
                         extraKeys,
-                        upperDeps.concat(decEndpoint.name));
+                        upperDeps.concat(id));
             }
         }, this);
     }
@@ -409,18 +421,20 @@ Manager.prototype.getPackageRepository = function () {
 // -----------------
 
 Manager.prototype._fetch = function (decEndpoint) {
-    var name = decEndpoint.name;
-
     // Check if the whole process started to fail fast
     if (this._hasFailed) {
         return;
     }
 
-    this._logger.action('fetching', name, this.toData(decEndpoint));
+    var guid = decEndpoint._guid = Utils.getGuid(decEndpoint);
+
+    this._logger.info('fetching', decEndpoint.source + '#' + decEndpoint.target, {
+        name: guid.fId
+    });
 
     // Mark as being fetched
-    this._fetching[name] = this._fetching[name] || [];
-    this._fetching[name].push(decEndpoint);
+    this._fetching[guid.fId] = this._fetching[guid.fId] || [];
+    this._fetching[guid.fId].push(decEndpoint);
     this._nrFetching++;
 
     // Fetch it from the repository
@@ -439,16 +453,18 @@ Manager.prototype._onFetchSuccess = function (decEndpoint, canonicalDir, pkgMeta
     var index;
     var incompatibles;
     var initialName = decEndpoint.initialName != null ? decEndpoint.initialName : decEndpoint.name;
-    var fetching = this._fetching[initialName];
+
+    decEndpoint.name = name = (!Utils.isDynName(decEndpoint.name) && decEndpoint.name) || pkgMeta.name;
+    decEndpoint.canonicalDir = canonicalDir;
+    decEndpoint.pkgMeta = pkgMeta;
+    delete decEndpoint.promise;
+
+    var guid = decEndpoint._guid = Utils.getGuid(decEndpoint, initialName);
+    var fetching = this._fetching[guid.fId];
 
     // Remove from being fetched list
     mout.array.remove(fetching, decEndpoint);
     this._nrFetching--;
-
-    decEndpoint.name = name = decEndpoint.name || pkgMeta.name;
-    decEndpoint.canonicalDir = canonicalDir;
-    decEndpoint.pkgMeta = pkgMeta;
-    delete decEndpoint.promise;
 
     var pkgPath = path.join(this.componentsDir, pkgMeta.name);
 
@@ -457,7 +473,9 @@ Manager.prototype._onFetchSuccess = function (decEndpoint, canonicalDir, pkgMeta
         var oldPath = path.join(this.componentsDir, decEndpoint.name);
 
         decEndpoint._oldName = decEndpoint.name;
-        decEndpoint.name = name = pkgMeta.name;
+        decEndpoint.name = pkgMeta.name;
+
+        this._logger.info('moving', oldPath + " to " + pkgPath);
 
         mv(oldPath, pkgPath, {mkdirp: true}, function (err) {
             if (!err) {
@@ -482,22 +500,28 @@ Manager.prototype._onFetchSuccess = function (decEndpoint, canonicalDir, pkgMeta
         // we store it and change the parent json info
         if (decEndpoint._parent && decEndpoint._dynSrc) {
             this._dynamicDep[decEndpoint._dynSrc].realName = decEndpoint.name;
+            this._dynamicDep[decEndpoint._dynSrc].canonicalDir = decEndpoint.canonicalDir;
 
-            var newMeta = decEndpoint._parent;
-            newMeta.dynInfo = {};
-            newMeta.dynInfo.dynName = decEndpoint._dynName;
-            newMeta.dynInfo.realName = decEndpoint.name;
+            var info = {};
+            info.decEndpoint = decEndpoint._parent;
+            info.dynName = decEndpoint._dynName;
+            info.realName = decEndpoint.name;
 
-            this._changeDep(newMeta, "dependencies")
-                    || this._changeDep(newMeta, "devDependencies");
+            this._changeDep(info, "dependencies")
+                    || this._changeDep(info, "devDependencies");
+        }
+
+        if (this._resolved[guid.rId] === "%") {
+            console.log("this cannot happen");
+            process.exit();
         }
 
         // Add to the resolved list
+        resolved = this._resolved[guid.rId] = this._resolved[guid.rId] || [];
         // If there's an exact equal endpoint, replace instead of adding
         // This can happen because the name might not be known from the start
-        resolved = this._resolved[name] = this._resolved[name] || [];
         index = mout.array.findIndex(resolved, function (resolved) {
-            return resolved.target === decEndpoint.target;
+            return resolved.target === decEndpoint.target && resolved.source === decEndpoint.source;
         });
         if (index !== -1) {
             // Merge dependants
@@ -515,7 +539,7 @@ Manager.prototype._onFetchSuccess = function (decEndpoint, canonicalDir, pkgMeta
 
         // Check if there are incompatibilities for this package name
         // If there are, we need to fetch them
-        incompatibles = this._incompatibles[name];
+        incompatibles = this._incompatibles[guid.rId];
         if (incompatibles) {
             // Filter already resolved
             incompatibles = incompatibles.filter(function (incompatible) {
@@ -531,7 +555,7 @@ Manager.prototype._onFetchSuccess = function (decEndpoint, canonicalDir, pkgMeta
             }, this);
 
             incompatibles.forEach(this._fetch.bind(this));
-            delete this._incompatibles[name];
+            delete this._incompatibles[guid.rId];
         }
 
         // If the package is not targetable, flag it
@@ -545,10 +569,11 @@ Manager.prototype._onFetchSuccess = function (decEndpoint, canonicalDir, pkgMeta
         // finish the resolve process by dissecting all resolved packages
         if (this._nrFetching <= 0) {
             // remove specials
-            for (var key in this._resolved) {
-                if (Utils.isDynName(key))
-                    delete this._resolved[key];
-            }
+            //for (var key in this._resolved) {
+            //    if (Utils.isDynName(key))
+            //        delete this._resolved[key];
+            //}
+            //delete this._resolved["%"];
 
             process.nextTick(this._dissect.bind(this));
         }
@@ -556,18 +581,18 @@ Manager.prototype._onFetchSuccess = function (decEndpoint, canonicalDir, pkgMeta
 };
 
 Manager.prototype._onFetchError = function (decEndpoint, err) {
-    var name = decEndpoint.name;
+    var guid = decEndpoint._guid = Utils.getGuid(decEndpoint);
 
     err.data = err.data || {};
     err.data.endpoint = mout.object.pick(decEndpoint, ['name', 'source', 'target']);
 
     // Remove from being fetched list
-    mout.array.remove(this._fetching[name], decEndpoint);
+    mout.array.remove(this._fetching[guid.fId], decEndpoint);
     this._nrFetching--;
 
     // Add to the failed list
-    this._failed[name] = this._failed[name] || [];
-    this._failed[name].push(err);
+    this._failed[guid.rId] = this._failed[guid.rId] || [];
+    this._failed[guid.rId].push(err);
     delete decEndpoint.promise;
 
     // Make the whole process to fail fast
@@ -595,54 +620,6 @@ Manager.prototype._failFast = function () {
     }.bind(this), 20000);
 };
 
-/*
- * 
- * @param {Object} pkgMeta : package meta of parent package
- * @param {String} jsonKey : the json key where the dependency is stored
- * @param {String} name : name of dependency
- * @param {String} source : source of dependency
- * @param {Object} decEndpoint : endpoint of dependency
- * @param {Object} parentEndpoint :  parent endpoint
- * @returns {undefined}
- */
-Manager.prototype._checkDyn = function (pkgMeta, jsonKey, name, source, decEndpoint, parentEndpoint) {
-    if (Utils.isDynName(name)) {
-        // search for a compatible dynamic dependance
-        // resolved before otherwise continue to fetch process
-        for (var dynKey in this._dynamicDep) {
-            var dynDep = this._dynamicDep[dynKey];
-            if (dynKey === source) {
-                var info = {};
-                // add additional info for write
-                info.pkgMeta = pkgMeta;
-                info.jsonKey = jsonKey;
-                info.canonicalDir = decEndpoint.canonicalDir;
-                info.dynInfo = dynDep;
-                if (dynDep.realName) {
-                    // if real name has been already found
-                    // by fetching, then write directly
-                    this._changeDep(info, jsonKey);
-                } else {
-                    // or pending the operation
-                    this._pendingDyn.push(info);
-                }
-
-                return;
-            }
-        }
-
-        // create dynamicDep 
-        this._dynamicDep[source] = {"source": source, "dynName": name};
-        // search for an already resolved name
-        // if empty result, try to find it by fetching later
-        decEndpoint.name = Utils.findDyn(jsonKey, name, source, path.join(this.componentsDir, parentEndpoint.name));
-
-        decEndpoint._parent = parentEndpoint;
-        decEndpoint._dynName = name;
-        decEndpoint._dynSrc = source;
-    }
-};
-
 Manager.prototype._parseDependencies = function (decEndpoint, pkgMeta, jsonKey) {
     var pending = [];
 
@@ -657,9 +634,11 @@ Manager.prototype._parseDependencies = function (decEndpoint, pkgMeta, jsonKey) 
 
         this._checkDyn(pkgMeta, jsonKey, key, value, childDecEndpoint, decEndpoint);
 
+        var guid = childDecEndpoint._guid = Utils.getGuid(childDecEndpoint);
+
         // Check if a compatible one is already resolved
         // If there's one, we don't need to resolve it twice
-        resolved = this._resolved[key] || this._resolved[childDecEndpoint.name];
+        resolved = guid.rId === "%" ? false : this._resolved[guid.rId];
         if (resolved) {
             // Find if there's one with the exact same target
             compatible = mout.array.find(resolved, function (resolved) {
@@ -687,7 +666,7 @@ Manager.prototype._parseDependencies = function (decEndpoint, pkgMeta, jsonKey) 
                 childDecEndpoint.pkgMeta = compatible.pkgMeta;
                 childDecEndpoint.dependencies = compatible.dependencies;
                 childDecEndpoint.dependants = [decEndpoint];
-                this._resolved[key].push(childDecEndpoint);
+                this._resolved[guid.rId].push(childDecEndpoint);
 
                 return;
             }
@@ -695,7 +674,7 @@ Manager.prototype._parseDependencies = function (decEndpoint, pkgMeta, jsonKey) 
 
         // Check if a compatible one is being fetched
         // If there's one, we wait and reuse it to avoid resolving it twice
-        fetching = this._fetching[key];
+        fetching = this._fetching[guid.fId];
         if (fetching) {
             compatible = mout.array.find(fetching, function (fetching) {
                 return this._areCompatible(childDecEndpoint, fetching);
@@ -741,7 +720,7 @@ Manager.prototype._dissect = function () {
     }
 
     // Find a suitable version for each package name
-    mout.object.forOwn(this._resolved, function (decEndpoints, name) {
+    mout.object.forOwn(this._resolved, function (decEndpoints, rId) {
         var semvers;
         var nonSemvers;
 
@@ -784,9 +763,9 @@ Manager.prototype._dissect = function () {
         });
 
         promise = promise.then(function () {
-            return that._electSuitable(name, semvers, nonSemvers)
+            return that._electSuitable(rId, semvers, nonSemvers)
                     .then(function (suitable) {
-                        suitables[name] = suitable;
+                        suitables[rId] = suitable;
                     });
         });
     }, this);
@@ -795,23 +774,23 @@ Manager.prototype._dissect = function () {
     promise
             .then(function () {
                 // Look for extraneous resolutions
-                mout.object.forOwn(this._resolutions, function (resolution, name) {
-                    if (this._conflicted[name]) {
+                mout.object.forOwn(this._resolutions, function (resolution, rId) {
+                    if (this._conflicted[rId]) {
                         return;
                     }
 
-                    this._logger.info('resolution', 'Removed unnecessary ' + name + '#' + resolution + ' resolution', {
-                        name: name,
+                    this._logger.info('resolution', 'Removed unnecessary ' + rId + '#' + resolution + ' resolution', {
+                        name: rId,
                         resolution: resolution,
                         action: 'delete'
                     });
 
-                    delete this._resolutions[name];
+                    delete this._resolutions[rId];
                 }, this);
 
                 // Filter only packages that need to be installed
-                this._dissected = mout.object.filter(suitables, function (decEndpoint, name) {
-                    var installedMeta = this._installed[name];
+                this._dissected = mout.object.filter(suitables, function (decEndpoint, rId) {
+                    var installedMeta = this._installed[rId];
                     var dst;
 
                     // Skip linked dependencies
@@ -821,7 +800,7 @@ Manager.prototype._dissect = function () {
 
                     // Skip if source is the same as dest
                     // and hasn't been updated directly
-                    dst = path.join(this.componentsDir, name);
+                    dst = path.join(this.componentsDir, rId);
                     if (dst === decEndpoint.canonicalDir && !this._isDtUpdated(dst)) {
                         return false;
                     }
@@ -841,7 +820,7 @@ Manager.prototype._dissect = function () {
             .then(this._deferred.resolve, this._deferred.reject);
 };
 
-Manager.prototype._electSuitable = function (name, semvers, nonSemvers) {
+Manager.prototype._electSuitable = function (rId, semvers, nonSemvers) {
     var suitable;
     var resolution;
     var unresolvable;
@@ -881,7 +860,7 @@ Manager.prototype._electSuitable = function (name, semvers, nonSemvers) {
     }
 
     // At this point, there's a conflict
-    this._conflicted[name] = true;
+    this._conflicted[rId] = true;
 
     // Prepare data to be sent bellow
     // 1 - Sort picks by version/release
@@ -930,7 +909,7 @@ Manager.prototype._electSuitable = function (name, semvers, nonSemvers) {
     // Check if there's a resolution that resolves the conflict
     // Note that if one of them is marked as unresolvable,
     // the resolution has no effect
-    resolution = this._resolutions[name];
+    resolution = this._resolutions[rId];
     unresolvable = mout.object.find(picks, function (pick) {
         return pick.unresolvable;
     });
@@ -955,14 +934,14 @@ Manager.prototype._electSuitable = function (name, semvers, nonSemvers) {
         }
 
         if (suitable === -1) {
-            this._logger.warn('resolution', 'Unsuitable resolution declared for ' + name + ': ' + resolution, {
-                name: name,
+            this._logger.warn('resolution', 'Unsuitable resolution declared for ' + rId + ': ' + resolution, {
+                name: rId,
                 picks: dataPicks,
                 resolution: resolution
             });
         } else {
-            this._logger.conflict('solved', 'Unable to find suitable version for ' + name, {
-                name: name,
+            this._logger.conflict('solved', 'Unable to find suitable version for ' + rId, {
+                name: rId,
                 picks: dataPicks,
                 resolution: resolution,
                 suitable: dataPicks[suitable]
@@ -976,8 +955,8 @@ Manager.prototype._electSuitable = function (name, semvers, nonSemvers) {
     if (this._forceLatest) {
         suitable = picks.length - 1;
 
-        this._logger.conflict('solved', 'Unable to find suitable version for ' + name, {
-            name: name,
+        this._logger.conflict('solved', 'Unable to find suitable version for ' + rId, {
+            name: rId,
             picks: dataPicks,
             suitable: dataPicks[suitable],
             forced: true
@@ -991,15 +970,15 @@ Manager.prototype._electSuitable = function (name, semvers, nonSemvers) {
 
     // If interactive is disabled, error out
     if (!this._config.interactive) {
-        throw createError('Unable to find suitable version for ' + name, 'ECONFLICT', {
-            name: name,
+        throw createError('Unable to find suitable version for ' + rId, 'ECONFLICT', {
+            name: rId,
             picks: dataPicks
         });
     }
 
     // At this point the user needs to make a decision
-    this._logger.conflict('incompatible', 'Unable to find suitable version for ' + name, {
-        name: name,
+    this._logger.conflict('incompatible', 'Unable to find suitable version for ' + rId, {
+        name: rId,
         picks: dataPicks
     });
 
@@ -1039,7 +1018,7 @@ Manager.prototype._electSuitable = function (name, semvers, nonSemvers) {
 
 Manager.prototype._storeResolution = function (pick) {
     var resolution;
-    var name = pick.name;
+    var guid = pick._guid || Utils.getGuid(pick);
 
     if (pick.target === '*') {
         resolution = pick.pkgMeta._release || '*';
@@ -1047,12 +1026,12 @@ Manager.prototype._storeResolution = function (pick) {
         resolution = pick.target;
     }
 
-    this._logger.info('resolution', 'Saved ' + name + '#' + resolution + ' as resolution', {
-        name: name,
+    this._logger.info('resolution', 'Saved ' + guid.rId + '#' + resolution + ' as resolution', {
+        name: guid.rId,
         resolution: resolution,
-        action: this._resolutions[name] ? 'edit' : 'add'
+        action: this._resolutions[guid.rId] ? 'edit' : 'add'
     });
-    this._resolutions[name] = resolution;
+    this._resolutions[guid.rId] = resolution;
 };
 
 /**
@@ -1260,6 +1239,54 @@ Manager.prototype._storeUptExtra = function (decEndpoint, canonicalDir) {
             });
 };
 
+/*
+ * 
+ * @param {Object} pkgMeta : package meta of parent package
+ * @param {String} jsonKey : the json key where the dependency is stored
+ * @param {String} name : name of dependency
+ * @param {String} source : source of dependency
+ * @param {Object} decEndpoint : endpoint of dependency
+ * @param {Object} parentEndpoint :  parent endpoint
+ * @returns {undefined}
+ */
+Manager.prototype._checkDyn = function (pkgMeta, jsonKey, name, source, decEndpoint, parentEndpoint) {
+    if (Utils.isDynName(name)) {
+        // search for a compatible dynamic dependance
+        // resolved before otherwise continue to fetch process
+        if (this._dynamicDep[source]) {
+            var info = this._dynamicDep[source];
+            // add additional info for write
+            info.jsonKey = jsonKey; // needed for pending
+            info.decEndpoint = parentEndpoint;
+            if (info.realName && info.canonicalDir) {
+                // if real name has been already found
+                // by fetching, then write directly
+                decEndpoint.name = info.realName;
+                // now we are able to know the path of canonical dir
+                // related to this dynamic dependency
+                decEndpoint.canonicalDir = info.canonicalDir;
+                this._changeDep(info, jsonKey);
+            }/* else {
+             // or pending the operation
+             this._pendingDyn.push(info);
+             }*/
+
+            return;
+        }
+
+        // if not dynamic dep already resolved found
+        // then create dynamicDep 
+        this._dynamicDep[source] = {"source": source, "dynName": name};
+        // search for an already resolved name
+        // if empty result, try to find it by fetching later
+        decEndpoint.name = Utils.findDyn(jsonKey, name, source, path.join(this.componentsDir, parentEndpoint.name));
+
+        decEndpoint._parent = parentEndpoint;
+        decEndpoint._dynName = name;
+        decEndpoint._dynSrc = source;
+    }
+};
+
 /**
  * This method is ( and must be ) invoked  after Resolver _savePkgMeta
  * @param {type} info
@@ -1267,30 +1294,37 @@ Manager.prototype._storeUptExtra = function (decEndpoint, canonicalDir) {
  * @returns {Boolean}
  */
 Manager.prototype._changeDep = function (info, jsonKey) {
-    if (!info.canonicalDir) {
+    var decEndpoint = info.decEndpoint;
+    var pkgMeta = decEndpoint.pkgMeta;
+
+    // it shouldn't happen
+    // the canonical dir of parent package
+    // should always exists
+    if (!decEndpoint.canonicalDir) {
+        this._logger.warn('DIRNOTFOUND', "Parent dir about info.realName package doesn't exists!", this.toData(decEndpoint));
         return;
     }
 
     // get dependencies object inside json
-    var meta = info.pkgMeta[jsonKey];
+    var meta = pkgMeta[jsonKey];
 
-    if (!meta || !meta[info.dynInfo.dynName])
+    if (!meta || !meta[info.dynName])
         return false;
 
     // change dynamic name with resolved
-    var tmp = meta[info.dynInfo.dynName];
-    delete meta[info.dynInfo.dynName];
-    meta[info.dynInfo.realName] = tmp;
+    var tmp = meta[info.dynName];
+    delete meta[info.dynName];
+    meta[info.realName] = tmp;
 
     // store dynamic name inside a private object to compare next time
-    if (typeof info.pkgMeta["_dyn_" + jsonKey] === 'undefined') {
-        info.pkgMeta["_dyn_" + jsonKey] = {};
+    if (typeof pkgMeta["_dyn_" + jsonKey] === 'undefined') {
+        pkgMeta["_dyn_" + jsonKey] = {};
     }
 
-    info.pkgMeta["_dyn_" + jsonKey][info.dynInfo.dynName] = {"source": tmp, "name": info.dynInfo.realName};
+    pkgMeta["_dyn_" + jsonKey][info.dynName] = {"source": tmp, "name": info.realName};
 
-    var json = JSON.stringify(info.pkgMeta, null, '  ');
-    fs.writeFileSync(path.join(info.canonicalDir, ".upt.json"), json);
+    var json = JSON.stringify(pkgMeta, null, '  ');
+    fs.writeFileSync(path.join(decEndpoint.canonicalDir, ".upt.json"), json);
 
     return true;
 };

@@ -112,18 +112,16 @@ Resolver.prototype.resolve = function () {
                                         // calling postresolved script
                                         .then(scripts.postresolved(that._config, that._name, that._workingDir, meta));
                             });
-                })
-                .then(function () {
-                    // Resolve with the folder
-                    return that._workingDir;
-                }, function (err) {
-                    // If something went wrong, unset the temporary dir
-                    that._workingDir = null;
-                    throw err;
-                })
-                .fin(function () {
-                    that._working = false;
                 });
+    }).then(function () {
+        // Resolve with the folder
+        return that._workingDir;
+    }, function (err) {
+        // If something went wrong, unset the temporary dir
+        that._workingDir = null;
+        throw err;
+    }).fin(function () {
+        that._working = false;
     });
 };
 
@@ -177,6 +175,7 @@ Resolver.prototype._createTempDir = function () {
     return Q.nfcall(mkdirp, this._config.tmp)
             .then(function () {
                 var name = this._name.replace(/\//g, "-"); // avoid subdirectories not supported by tmp.dir
+                name = name.replace(/^(%|:)/g, ""); // remove special characters not supported with some OS
                 return Q.nfcall(tmp.dir, {
                     template: path.join(this._config.tmp, name + '-' + process.pid + '-XXXXXX'),
                     mode: 0777 & ~process.umask(),
