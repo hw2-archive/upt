@@ -1,25 +1,85 @@
 var fs = require('fs');
 var path = require('path');
 var md5 = require('./md5');
+var Shared = require('./Shared');
+var mout = require('mout');
 
 function Utils () {
 }
 
-Utils.findDyn = function (jsonKey, name, source, jsonPath) {
-    var res = "";
-    var jsonPath = path.join(jsonPath, ".upt.json");
-    if (fs.existsSync(jsonPath)) {
-        var localMeta = require(jsonPath);
-        if (localMeta["_dyn_" + jsonKey] !== undefined
-                && localMeta["_dyn_" + jsonKey][name] !== undefined
-                && localMeta["_dyn_" + jsonKey][name]["source"] === source
-                ) {
-            res = localMeta["_dyn_" + jsonKey][name]["name"] || "";
-        }
+Utils._retrieveDynInfo = function (meta, dynlist, replace) {
+    if (!meta)
+        return;
+
+    function find (jsonKey) {
+        if (!meta["_dyn_" + jsonKey])
+            return;
+
+        mout.object.forOwn(meta["_dyn_" + jsonKey], function (info, name) {
+            if (dynlist[info.source] || !Utils.isDynName(name))
+                return;
+
+            dynlist[info.source] = {
+                "source": info.source,
+                "realName": info.name,
+                // maybe should be saved in parent json file with other info
+                "canonicalDir": path.join(Shared.componentsDir, info.name)
+            };
+
+            // replace dependencies list with resolved values
+            if (replace) {
+                meta[jsonKey][info.name] = info.source;
+                delete meta[jsonKey][name];
+            }
+        }, this);
     }
 
-    return res;
+    find("dependencies");
+    find("devDependencies");
 };
+
+/**
+ * This method is ( and must be ) invoked  after Resolver _savePkgMeta
+ * @param {type} info
+ * @param {type} jsonKey
+ * @returns {Boolean}
+ */
+Utils._changeDep = function (info, dynName, jsonKey, logger) {
+    var decEndpoint = info.decEndpoint;
+    var pkgMeta = decEndpoint.pkgMeta;
+
+    // it shouldn't happen
+    // the canonical dir of parent package
+    // should always exists
+    if (!decEndpoint.canonicalDir) {
+        logger.warn('DIRNOTFOUND', "Parent dir about "+info.realName+" package doesn't exists!");
+        return;
+    }
+
+    // get dependencies object inside json
+    var meta = pkgMeta[jsonKey];
+
+    if (!meta || !meta[dynName])
+        return false;
+
+    // change dynamic name with resolved
+    var tmp = meta[dynName];
+    delete meta[dynName];
+    meta[info.realName] = tmp;
+
+    // store dynamic name inside a private object to compare next time
+    if (typeof pkgMeta["_dyn_" + jsonKey] === 'undefined') {
+        pkgMeta["_dyn_" + jsonKey] = {};
+    }
+
+    pkgMeta["_dyn_" + jsonKey][dynName] = {"source": tmp, "name": info.realName};
+
+    var json = JSON.stringify(pkgMeta, null, '  ');
+    fs.writeFileSync(path.join(decEndpoint.canonicalDir, ".upt.json"), json);
+
+    return true;
+};
+
 
 Utils.isDynName = function (name) {
     return name && (name[0] === "%" || name[0] === ":");

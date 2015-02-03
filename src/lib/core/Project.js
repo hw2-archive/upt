@@ -29,6 +29,7 @@ function Project (config, logger) {
     this._logger = logger || new Logger();
     this._manager = new Manager(this._config, this._logger);
     this._options = {};
+    this._dynamicDep = [];
 }
 
 // -----------------
@@ -484,19 +485,7 @@ Project.prototype._analyse = function () {
         jsonCopy.dependencies = jsonCopy.dependencies || {};
         jsonCopy.devDependencies = jsonCopy.devDependencies || {};
 
-        function replaceDyn (jsonKey) {
-            var deps = jsonCopy[jsonKey];
-            for (var dep in deps) {
-                var key = Utils.findDyn(jsonKey, dep, deps[dep], root.source)
-                if (key !== "") {
-                    deps[key] = deps[dep];
-                    delete deps[dep];
-                }
-            }
-        }
-
-        replaceDyn("dependencies");
-        replaceDyn("devDependencies");
+        Utils._retrieveDynInfo(jsonCopy, this._dynamicDep, true);
 
         mout.object.forOwn(installed, function (decEndpoint, key) {
             var pkgMeta = decEndpoint.pkgMeta;
@@ -551,6 +540,7 @@ Project.prototype._bootstrap = function (targets, resolved, incompatibles) {
     // Configure the manager and kick in the resolve process
     return this._manager
             .configure({
+                dynamicDep: this._dynamicDep,
                 targets: targets,
                 resolved: resolved,
                 incompatibles: incompatibles,
