@@ -10,6 +10,7 @@ var semver = require('../util/semver');
 var readJson = require('../util/readJson');
 var copy = require('../util/copy');
 var md5 = require('../util/md5');
+var Utils = require('../util/Utils');
 
 function ResolveCache (config) {
     // TODO: Make some config entries, such as:
@@ -81,7 +82,7 @@ ResolveCache.prototype.retrieve = function (source, target) {
 
                 // Resolve with canonical dir and package meta
                 canonicalDir = path.join(dir, encodeURIComponent(version));
-                return that._readPkgMeta(canonicalDir)
+                return Utils.readPkgMeta(canonicalDir)
                         .then(function (pkgMeta) {
                             return [canonicalDir, pkgMeta];
                         }, function () {
@@ -105,7 +106,7 @@ ResolveCache.prototype.store = function (canonicalDir, pkgMeta) {
     var promise;
     var that = this;
 
-    promise = pkgMeta ? Q.resolve(pkgMeta) : this._readPkgMeta(canonicalDir);
+    promise = pkgMeta ? Q.resolve(pkgMeta) : Utils.readPkgMeta(canonicalDir);
 
     return promise
             .then(function (pkgMeta) {
@@ -253,7 +254,7 @@ ResolveCache.prototype.list = function () {
             // Read every package meta
             .then(function () {
                 promises = dirs.map(function (dir) {
-                    return that._readPkgMeta(dir)
+                    return Utils.readPkgMeta(dir)
                             .then(function (pkgMeta) {
                                 return {
                                     canonicalDir: dir,
@@ -331,15 +332,6 @@ ResolveCache.prototype._getPkgRelease = function (pkgMeta) {
     release = encodeURIComponent(release);
 
     return release;
-};
-
-ResolveCache.prototype._readPkgMeta = function (dir) {
-    var filename = path.join(dir, '.upt.json');
-
-    return readJson(filename)
-            .spread(function (json) {
-                return json;
-            });
 };
 
 ResolveCache.prototype._getVersions = function (sourceId) {

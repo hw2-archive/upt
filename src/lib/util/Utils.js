@@ -3,6 +3,7 @@ var path = require('path');
 var md5 = require('./md5');
 var Shared = require('./Shared');
 var mout = require('mout');
+var readJson = require('./readJson');
 
 function Utils () {
 }
@@ -126,6 +127,15 @@ Utils.getGuid = function (decEndpoint, name) {
         fId: Utils.fetchingId(decEndpoint),
         rId: Utils.resolvedId(decEndpoint)
     };
+};
+
+Utils.readPkgMeta = function (dir) {
+    var filename = path.join(dir, '.upt.json');
+
+    return readJson(filename)
+            .spread(function (json) {
+                return json;
+            });
 };
 
 module.exports = Utils;

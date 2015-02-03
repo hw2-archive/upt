@@ -4,6 +4,7 @@ var RegistryClient = require('upt-registry-client');
 var ResolveCache = require('./ResolveCache');
 var resolverFactory = require('./resolverFactory');
 var createError = require('../util/createError');
+var Utils = require('../util/Utils');
 
 function PackageRepository (config, logger) {
     var registryOptions;
@@ -57,7 +58,15 @@ PackageRepository.prototype.fetch = function (decEndpoint) {
                         .spread(function (canonicalDir, pkgMeta) {
                             // If there's no package in the cache
                             if (!canonicalDir) {
-                                // And the offline flag is passed, error out
+                                // But decEndpoint has a canonical dir
+                                if (decEndpoint.canonicalDir) {
+                                    return Utils.readPkgMeta(decEndpoint.canonicalDir)
+                                            .then(function (meta) {
+                                                return validate(meta);
+                                            });
+                                }
+
+                                // Else if the offline flag is passed, error out
                                 if (that._config.offline) {
                                     throw createError('No cached version for ' + resolver.getSource() + '#' + resolver.getTarget(), 'ENOCACHE', {
                                         resolver: resolver
@@ -78,24 +87,29 @@ PackageRepository.prototype.fetch = function (decEndpoint) {
                                 return [canonicalDir, pkgMeta, isTargetable];
                             }
 
-                            // Otherwise check for new contents
-                            logger.action('validate', (pkgMeta._release ? pkgMeta._release + ' against ' : '') +
-                                    resolver.getSource() + (resolver.getTarget() ? '#' + resolver.getTarget() : ''));
+                            return validate(pkgMeta);
 
-                            return resolver.hasNew(canonicalDir, pkgMeta)
-                                    .then(function (hasNew) {
-                                        // If there are no new contents, resolve to
-                                        // the cached one
-                                        if (!hasNew) {
-                                            return [canonicalDir, pkgMeta, isTargetable];
-                                        }
+                            function validate (pkgMeta) {
+                                // Otherwise check for new contents
+                                logger.action('validate', (pkgMeta._release ? pkgMeta._release + ' against ' : '') +
+                                        resolver.getSource() + (resolver.getTarget() ? '#' + resolver.getTarget() : ''));
 
-                                        // Otherwise resolve to the newest one
-                                        logger.info('new', 'version for ' + resolver.getSource() + '#' + resolver.getTarget());
-                                        logger.action('resolve', resolver.getSource() + '#' + resolver.getTarget());
+                                return resolver
+                                        .hasNew(canonicalDir, pkgMeta)
+                                        .then(function (hasNew) {
+                                            // If there are no new contents, resolve to
+                                            // the cached one
+                                            if (!hasNew) {
+                                                return [canonicalDir, pkgMeta, isTargetable];
+                                            }
 
-                                        return that._resolve(resolver, logger);
-                                    });
+                                            // Otherwise resolve to the newest one
+                                            logger.info('new', 'version for ' + resolver.getSource() + '#' + resolver.getTarget());
+                                            logger.action('resolve', resolver.getSource() + '#' + resolver.getTarget());
+
+                                            return that._resolve(resolver, logger);
+                                        });
+                            }
                         });
             })
             // If something went wrong, also extend the error

@@ -65,7 +65,15 @@ Manager.prototype.configure = function (setup) {
         decEndpoint.initialName = decEndpoint.name;
         decEndpoint.dependants = mout.object.values(decEndpoint.dependants);
 
-        Utils._retrieveDynInfo(decEndpoint.pkgMeta, that._dynamicDep, true);
+        // restore dynamic info from targets and change parent json if possible
+        if (decEndpoint.dependants) {
+            for (var id in decEndpoint.dependants) {
+                var dep = decEndpoint.dependants[id];
+                that._checkDyn(decEndpoint.name, decEndpoint.source, decEndpoint, dep, dep.jsonKey);
+            }
+        } else {
+            that._checkDyn(decEndpoint.name, decEndpoint.source, decEndpoint);
+        }
 
         var guid = decEndpoint._guid = Utils.getGuid(decEndpoint);
         targetsHash[guid.id] = true;
@@ -425,6 +433,10 @@ Manager.prototype._fetch = function (decEndpoint) {
 
     var guid = decEndpoint._guid = Utils.getGuid(decEndpoint);
 
+    if (this._dynamicDep[guid.fId]) {
+        decEndpoint.canonicalDir = this._dynamicDep[guid.fId].canonicalDir;
+    }
+
     this._logger.info('fetching', decEndpoint.source + '#' + decEndpoint.target, {
         name: guid.fId
     });
@@ -623,7 +635,7 @@ Manager.prototype._parseDependencies = function (decEndpoint, pkgMeta, jsonKey) 
         var compatible;
         var childDecEndpoint = endpointParser.json2decomposed(key, value);
 
-        this._checkDyn(jsonKey, key, value, childDecEndpoint, decEndpoint);
+        this._checkDyn(key, value, childDecEndpoint, decEndpoint, jsonKey);
 
         var guid = childDecEndpoint._guid = Utils.getGuid(childDecEndpoint);
 
@@ -1240,7 +1252,7 @@ Manager.prototype._storeUptExtra = function (decEndpoint, canonicalDir) {
  * @param {Object} parentEndpoint :  parent endpoint
  * @returns {undefined}
  */
-Manager.prototype._checkDyn = function (jsonKey, name, source, decEndpoint, parentEndpoint) {
+Manager.prototype._checkDyn = function (name, source, decEndpoint, parentEndpoint, jsonKey) {
     if (Utils.isDynName(name)) {
         // search for a compatible dynamic dependance
         // resolved before otherwise continue to fetch process
