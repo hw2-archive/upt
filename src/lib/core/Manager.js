@@ -36,10 +36,12 @@ Manager.prototype.configure = function (setup) {
     this._pendingDyn = [];
     this._resolved = {};
     this._installed = {};
+    this._renamed = {};
 
     var that = this;
 
-    this._dynamicDep = setup.dynamicDep || [];  // dynamic dependencies found
+    this._dynamicDep = setup.dynamicDep || {};  // dynamic dependencies found
+    this._dynamicLinks = {};
 
     function _check (decEndpoint) {
         // restore dynamic info from endpoint and change parent json if possible
@@ -144,11 +146,12 @@ Manager.prototype.resolve = function () {
     return this._deferred.promise
             .fin(function () {
                 // write pending dynamic dep
-                for (var dynDep in this._pendingDyn) {
-                    var data = this._pendingDyn[dynDep];
+                for (var dynDep in that._pendingDyn) {
+                    var data = that._pendingDyn[dynDep];
                     var info = data.info;
-                    if (info.realName)
+                    if (info.realName) {
                         Utils._changeDep(info, data.name, data.jsonKey, this._logger);
+                    }
                 }
 
                 this._working = false;
@@ -307,48 +310,46 @@ Manager.prototype.install = function (json) {
                 return scripts.postinstall(that._config, that._logger, that._dissected, that._installed, json);
             })
             .then(function () {
+                // Create symlinks
+                mout.object.forOwn(that._dynamicLinks, function (info, name) {
+                    /* [TODO] remove link with old name
+                     if (oldPath) {
+                     fs.unlinkSync(??);
+                     }*/
+
+                    var linkPath = name.substring(1);
+                    var linkAbsPath = path.join(info._parent.canonicalDir, linkPath);
+
+                    function createLink (p) {
+                        // use a relative path to symlink instead absolute
+                        // allowing root folder moving without break links
+                        var relSource = path.relative(path.dirname(p), info.canonicalDir);
+                        Q.nfcall(fs.lstat, p)
+                                .then(function (lstat) {
+                                    if (lstat.isSymbolicLink()) {
+                                        fs.unlinkSync(p);
+                                    }
+                                })
+                                .fin(fs.symlinkSync.bind(null, relSource, p, 'dir'));
+                    }
+
+                    // if the path for the link is under subdir
+                    // first make sure that the path exists
+                    // trying to create it
+                    var dirname = path.dirname(linkPath);
+                    if (dirname && dirname !== ".") {
+                        Q.nfcall(mkdirp, path.join(info._parent.canonicalDir, dirname))
+                                .fin(function () {
+                                    createLink(linkAbsPath);
+                                });
+                    } else {
+                        createLink(linkAbsPath);
+                    }
+                });
+
                 // Sync up dissected dependencies and dependants
                 // See: https://github.com/bower/bower/issues/879
                 mout.object.forOwn(that._dissected, function (pkg) {
-                    if (pkg._parent && pkg._dynSrc && pkg._dynName[0] === ":") {
-                        console.log("LIIIINKKKKKKKKKKKKKKKKKKKKKKKKKK");
-                        /* [TODO] remove link with old name
-                         if (oldPath) {
-                         fs.unlinkSync(??);
-                         }*/
-
-                        var linkPath = pkg._dynName.substring(1);
-                        var linkAbsPath = path.join(pkg._parent.canonicalDir, linkPath);
-
-                        function createLink (p) {
-                            // use a relative path to symlink instead absolute
-                            // allowing root folder moving without break links
-                            var relSource = path.relative(path.dirname(p), pkg.canonicalDir);
-                            Q.nfcall(fs.lstat, p)
-                                    .then(function (lstat) {
-                                        if (lstat.isSymbolicLink()) {
-                                            fs.unlinkSync(p);
-                                        }
-                                    })
-                                    .fin(fs.symlinkSync.bind(null, relSource, p, 'dir'));
-                        }
-
-                        // if the path for the link is under subdir
-                        // first make sure that the path exists
-                        // trying to create it
-                        var dirname = path.dirname(linkPath);
-                        if (dirname && dirname !== ".") {
-                            Q.nfcall(mkdirp, path.join(pkg._parent.canonicalDir, dirname))
-                                    .fin(function () {
-                                        createLink(linkAbsPath);
-                                    });
-                        } else {
-                            createLink(linkAbsPath);
-                        }
-                    }
-
-
-
                     // Sync dependencies
                     mout.object.forOwn(pkg.dependencies, function (dependency, rId) {
                         var dissected = this._dissected[rId] || (this._resolved[rId] ? this._resolved[rId][0] : dependency);
@@ -481,11 +482,14 @@ Manager.prototype._onFetchSuccess = function (decEndpoint, canonicalDir, pkgMeta
     var pkgPath = path.join(this.componentsDir, pkgMeta.name);
 
     // if package name has been changed, then move to new location
-    if (decEndpoint.name !== pkgMeta.name) {
+    if (decEndpoint.name !== pkgMeta.name && this._renamed[pkgMeta.name] !== decEndpoint.name) {
         var oldPath = path.join(this.componentsDir, decEndpoint.name);
 
         decEndpoint._oldName = decEndpoint.name;
         decEndpoint.name = pkgMeta.name;
+
+        // keep trace of renamed for other packages with same name
+        this._renamed[decEndpoint._oldName] = decEndpoint.name;
 
         this._logger.info('moving', oldPath + " to " + pkgPath);
 
@@ -639,6 +643,12 @@ Manager.prototype._parseDependencies = function (decEndpoint, pkgMeta, jsonKey) 
         var childDecEndpoint = endpointParser.json2decomposed(key, value);
 
         this._checkDyn(childDecEndpoint, decEndpoint, jsonKey);
+
+        // rename if needed
+        if (this._renamed[childDecEndpoint.name]) {
+            childDecEndpoint._oldName = childDecEndpoint.name;
+            childDecEndpoint.name = this._renamed[childDecEndpoint.name];
+        }
 
         var guid = childDecEndpoint._guid = Utils.getGuid(childDecEndpoint);
 
@@ -1263,7 +1273,7 @@ Manager.prototype._checkDyn = function (decEndpoint, parentEndpoint, jsonKey) {
         decEndpoint._dynName = name;
         decEndpoint._dynSrc = source;
 
-        Utils._retrieveDynInfo(decEndpoint.pkgMeta, this._dynamicDep, false);
+        Utils._retrieveDynInfo(decEndpoint.pkgMeta, this._dynamicDep, true);
 
         if (parentEndpoint) {
             decEndpoint._parent = parentEndpoint;
@@ -1271,10 +1281,18 @@ Manager.prototype._checkDyn = function (decEndpoint, parentEndpoint, jsonKey) {
             if (parentEndpoint.pkgMeta)
                 Utils._retrieveDynInfo(parentEndpoint.pkgMeta, this._dynamicDep, true);
 
+            // symbolic link case
+            if (name[0] === ":") {
+                // before installation process
+                // it will be  filled with missing info
+                this._dynamicLinks[name] = decEndpoint;
+            }
+
             // find compatible dynamic dependance
             // resolved before otherwise continue to fetch process
             if (this._dynamicDep[source]) {
                 var info = this._dynamicDep[source];
+
                 // add additional info for write
                 info.decEndpoint = parentEndpoint;
                 if (info.realName && info.canonicalDir) {
@@ -1284,6 +1302,7 @@ Manager.prototype._checkDyn = function (decEndpoint, parentEndpoint, jsonKey) {
                     // now we are able to know the path of canonical dir
                     // related to this dynamic dependency
                     decEndpoint.canonicalDir = info.canonicalDir;
+
                     Utils._changeDep(info, name, jsonKey, this._logger);
                 } else {
                     // or pending the operation
@@ -1311,7 +1330,29 @@ Manager.prototype._checkDyn = function (decEndpoint, parentEndpoint, jsonKey) {
 
         // if not found in list, keep empty to fetching later
         decEndpoint.name = realName || "";
+    } else if (parentEndpoint && parentEndpoint.pkgMeta && jsonKey) {
+        // also when a package has been resolved, we've to remember the "dynamic origins"
+        mout.object.forOwn(parentEndpoint.pkgMeta["_dyn_" + jsonKey], function (info, dynName) {
+            if (info.source === decEndpoint.source && info.name === decEndpoint.name) {
+                decEndpoint._dynName = dynName;
+                decEndpoint._dynSrc = info.source;
+                decEndpoint._parent = parentEndpoint;
+
+                this._dynamicDep[info.source] = {
+                    "source": source,
+                    "realName": decEndpoint.name,
+                    "canonicalDir": decEndpoint.canonicalDir
+                };
+
+                // symbolic link case
+                if (dynName[0] === ":") {
+                    console.log("LINKKK1", dynName);
+                    this._dynamicLinks[dynName] = decEndpoint;
+                }
+            }
+        }, this);
     }
+
 };
 
 Manager.prototype._isDtUpdated = function (canonicalDir) {
