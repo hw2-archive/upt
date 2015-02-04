@@ -4,6 +4,7 @@ var md5 = require('./md5');
 var Shared = require('./Shared');
 var mout = require('mout');
 var readJson = require('./readJson');
+var createError = require('../util/createError');
 
 function Utils () {
 }
@@ -53,8 +54,7 @@ Utils._changeDep = function (info, dynName, jsonKey, logger) {
     // the canonical dir of parent package
     // should always exists
     if (!decEndpoint.canonicalDir) {
-        logger.warn('DIRNOTFOUND', "Parent dir about "+info.realName+" package doesn't exists!");
-        return;
+        throw createError("Parent dir related to "+info.realName+" package doesn't exists!", 'DIRNOTFOUND');
     }
 
     // get dependencies object inside json

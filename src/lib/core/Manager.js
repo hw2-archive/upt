@@ -41,11 +41,22 @@ Manager.prototype.configure = function (setup) {
 
     this._dynamicDep = setup.dynamicDep || [];  // dynamic dependencies found
 
+    function _check (decEndpoint) {
+        // restore dynamic info from endpoint and change parent json if possible
+        if (decEndpoint.dependants) {
+            for (var id in decEndpoint.dependants) {
+                var dep = decEndpoint.dependants[id];
+                this._checkDyn(decEndpoint, dep, dep.jsonKey);
+            }
+        } else {
+            this._checkDyn(decEndpoint);
+        }
+    }
+
     mout.object.forOwn(setup.resolved, function (decEndpoint, rId) {
         decEndpoint.dependants = mout.object.values(decEndpoint.dependants);
 
-        // restore dynamic info from resolved packages
-        Utils._retrieveDynInfo(decEndpoint.pkgMeta, this._dynamicDep, true);
+        _check.call(this, decEndpoint);
 
         this._resolved[rId] = [decEndpoint];
         this._installed[rId] = decEndpoint.pkgMeta;
@@ -65,22 +76,14 @@ Manager.prototype.configure = function (setup) {
         decEndpoint.initialName = decEndpoint.name;
         decEndpoint.dependants = mout.object.values(decEndpoint.dependants);
 
-        // restore dynamic info from targets and change parent json if possible
-        if (decEndpoint.dependants) {
-            for (var id in decEndpoint.dependants) {
-                var dep = decEndpoint.dependants[id];
-                that._checkDyn(decEndpoint.name, decEndpoint.source, decEndpoint, dep, dep.jsonKey);
-            }
-        } else {
-            that._checkDyn(decEndpoint.name, decEndpoint.source, decEndpoint);
-        }
+        _check.call(this, decEndpoint);
 
         var guid = decEndpoint._guid = Utils.getGuid(decEndpoint);
         targetsHash[guid.id] = true;
 
         // If the endpoint is marked as newly, make it unresolvable
         decEndpoint.unresolvable = !!decEndpoint.newly;
-    });
+    }.bind(this));
 
     // Incompatibles
     this._incompatibles = {};
@@ -307,8 +310,8 @@ Manager.prototype.install = function (json) {
                 // Sync up dissected dependencies and dependants
                 // See: https://github.com/bower/bower/issues/879
                 mout.object.forOwn(that._dissected, function (pkg) {
-
                     if (pkg._parent && pkg._dynSrc && pkg._dynName[0] === ":") {
+                        console.log("LIIIINKKKKKKKKKKKKKKKKKKKKKKKKKK");
                         /* [TODO] remove link with old name
                          if (oldPath) {
                          fs.unlinkSync(??);
@@ -635,7 +638,7 @@ Manager.prototype._parseDependencies = function (decEndpoint, pkgMeta, jsonKey) 
         var compatible;
         var childDecEndpoint = endpointParser.json2decomposed(key, value);
 
-        this._checkDyn(key, value, childDecEndpoint, decEndpoint, jsonKey);
+        this._checkDyn(childDecEndpoint, decEndpoint, jsonKey);
 
         var guid = childDecEndpoint._guid = Utils.getGuid(childDecEndpoint);
 
@@ -1252,45 +1255,62 @@ Manager.prototype._storeUptExtra = function (decEndpoint, canonicalDir) {
  * @param {Object} parentEndpoint :  parent endpoint
  * @returns {undefined}
  */
-Manager.prototype._checkDyn = function (name, source, decEndpoint, parentEndpoint, jsonKey) {
+Manager.prototype._checkDyn = function (decEndpoint, parentEndpoint, jsonKey) {
+    var name = decEndpoint.name;
+    var source = Utils.fetchingId(decEndpoint);
+
     if (Utils.isDynName(name)) {
-        // search for a compatible dynamic dependance
-        // resolved before otherwise continue to fetch process
-        if (this._dynamicDep[source]) {
-            var info = this._dynamicDep[source];
-            // add additional info for write
-            info.decEndpoint = parentEndpoint;
-            if (info.realName && info.canonicalDir) {
-                // if real name has been already found
-                // by fetching, then write directly
-                decEndpoint.name = info.realName;
-                // now we are able to know the path of canonical dir
-                // related to this dynamic dependency
-                decEndpoint.canonicalDir = info.canonicalDir;
-                Utils._changeDep(info, name, jsonKey, this._logger);
-            } else {
-                // or pending the operation
-                // [TODO] it should be useless , remove next
-                this._pendingDyn.push({"dynName": name, "info": info, "jsonKey": jsonKey});
-            }
-
-            return;
-        }
-
-        Utils._retrieveDynInfo(parentEndpoint.pkgMeta, this._dynamicDep, true);
-        // search for an already resolved name
-        // if not found in list, try to find it by fetching later
-        decEndpoint.name = this._dynamicDep[source] || "";
-        decEndpoint._parent = parentEndpoint;
         decEndpoint._dynName = name;
         decEndpoint._dynSrc = source;
 
+        Utils._retrieveDynInfo(decEndpoint.pkgMeta, this._dynamicDep, false);
+
+        if (parentEndpoint) {
+            decEndpoint._parent = parentEndpoint;
+
+            if (parentEndpoint.pkgMeta)
+                Utils._retrieveDynInfo(parentEndpoint.pkgMeta, this._dynamicDep, true);
+
+            // find compatible dynamic dependance
+            // resolved before otherwise continue to fetch process
+            if (this._dynamicDep[source]) {
+                var info = this._dynamicDep[source];
+                // add additional info for write
+                info.decEndpoint = parentEndpoint;
+                if (info.realName && info.canonicalDir) {
+                    // if real name has been already found
+                    // by fetching, then write directly
+                    decEndpoint.name = info.realName;
+                    // now we are able to know the path of canonical dir
+                    // related to this dynamic dependency
+                    decEndpoint.canonicalDir = info.canonicalDir;
+                    Utils._changeDep(info, name, jsonKey, this._logger);
+                } else {
+                    // or pending the operation
+                    // [TODO] it should be useless , remove next
+                    this._pendingDyn.push({"dynName": name, "info": info, "jsonKey": jsonKey});
+                }
+
+                return;
+            }
+        }
+
+        var realName = null;
+
         // if not dynamic dep already resolved found
         // then create dynamicDep 
-        this._dynamicDep[source] = {
-            "source": source,
-            "realName": (decEndpoint.name !== "" && decEndpoint.name) || null
-        };
+        if (!this._dynamicDep[source]) {
+            this._dynamicDep[source] = {
+                "source": source,
+                "realName": null,
+                "canonicalDir": null
+            };
+        } else {
+            realName = this._dynamicDep[source].realName;
+        }
+
+        // if not found in list, keep empty to fetching later
+        decEndpoint.name = realName || "";
     }
 };
 
