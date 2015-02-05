@@ -50,7 +50,7 @@ GitRemoteResolver.prototype._checkout = function () {
     var that = this;
     var resolution = this._resolution;
 
-    if (this._config.options.directUpdate && this._canDtUpdate) {
+    if (this._config.options.directUpdate && this._canDtUpdate && resolution.type !== "version") {
         this._updatedDirectly = true;
 
         this._logger.action('direct-update', resolution.tag || resolution.branch || resolution.commit, {
@@ -63,7 +63,7 @@ GitRemoteResolver.prototype._checkout = function () {
                     function update () {
                         return cmd('git', ['fetch', 'origin'], {cwd: that._workingDir})
                                 .then(function () {
-                                    return cmd('git', ['reset', '--hard', 'origin/' + resolution.branch], {cwd: that._workingDir})
+                                    return cmd('git', ['reset', '--hard', resolution.commit || 'origin/' + resolution.branch], {cwd: that._workingDir})
                                             .then(function () {
                                                 that._logger.action('updated', that._workingDir);
                                             });

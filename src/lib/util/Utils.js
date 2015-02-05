@@ -50,32 +50,49 @@ Utils._changeDep = function (info, dynName, jsonKey, logger) {
     var decEndpoint = info.decEndpoint;
     var pkgMeta = decEndpoint.pkgMeta;
 
+    var installedPath = decEndpoint.root && decEndpoint.canonicalDir || path.join(Shared.componentsDir, decEndpoint.name);
+
     // it shouldn't happen
     // the canonical dir of parent package
     // should always exists
-    if (!decEndpoint.canonicalDir) {
-        throw createError("Parent dir related to "+info.realName+" package doesn't exists!", 'DIRNOTFOUND');
+    if (!decEndpoint.canonicalDir || !installedPath) {
+        throw createError("Parent dir related to " + info.realName + " package doesn't exists!", 'DIRNOTFOUND');
     }
 
-    // get dependencies object inside json
-    var meta = pkgMeta[jsonKey];
-
-    if (!meta || !meta[dynName])
+    if (!pkgMeta[jsonKey])
         return false;
 
-    // change dynamic name with resolved
-    var tmp = meta[dynName];
-    delete meta[dynName];
-    meta[info.realName] = tmp;
+    function replaceDep (name) {
+        var tmp = pkgMeta[jsonKey][name];
+        delete pkgMeta[jsonKey][name];
+        pkgMeta[jsonKey][info.realName] = tmp;
 
-    // store dynamic name inside a private object to compare next time
-    if (typeof pkgMeta["_dyn_" + jsonKey] === 'undefined') {
-        pkgMeta["_dyn_" + jsonKey] = {};
+        return tmp;
     }
 
-    pkgMeta["_dyn_" + jsonKey][dynName] = {"source": tmp, "name": info.realName};
+    if (pkgMeta[jsonKey][dynName]) {
+        var source = replaceDep(dynName);
+
+        // store dynamic name inside a private object to compare next time
+        pkgMeta["_dyn_" + jsonKey] = pkgMeta["_dyn_" + jsonKey] || {};
+
+        pkgMeta["_dyn_" + jsonKey][dynName] = {"source": source, "name": info.realName};
+        // if it was already resolved but 
+        // data has been changed, then replace
+    } else if (pkgMeta["_dyn_" + jsonKey][dynName]
+            && pkgMeta["_dyn_" + jsonKey][dynName].name !== info.realName) {
+        replaceDep(pkgMeta["_dyn_" + jsonKey][dynName].name);
+        pkgMeta["_dyn_" + jsonKey][dynName].name = info.realName;
+    } else {
+        return false;
+    }
 
     var json = JSON.stringify(pkgMeta, null, '  ');
+
+    // condition needed when cache is not available
+    if (installedPath !== decEndpoint.canonicalDir && fs.existsSync(installedPath))
+        fs.writeFileSync(path.join(installedPath, ".upt.json"), json);
+
     fs.writeFileSync(path.join(decEndpoint.canonicalDir, ".upt.json"), json);
 
     return true;
