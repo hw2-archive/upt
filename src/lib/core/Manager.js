@@ -265,11 +265,6 @@ Manager.prototype.install = function (json) {
                     var promise;
                     var dst;
 
-                    if (!decEndpoint.pkgMeta) {
-                        console.log(decEndpoint);
-                        return;
-                    }
-
                     var release = decEndpoint.pkgMeta._release;
 
                     dst = path.join(that.componentsDir, rId);
