@@ -520,14 +520,15 @@ Manager.prototype._onFetchSuccess = function (decEndpoint, canonicalDir, pkgMeta
     var incompatibles;
     var that = this;
 
+    var isDyn=Utils.isDynName(decEndpoint.name);
     var initialName = decEndpoint.initialName != null ? decEndpoint.initialName : decEndpoint.name;
     var deferred = Q.defer();
-    var name = (!Utils.isDynName(decEndpoint.name) && decEndpoint.name) || pkgMeta.name;
+    var name = (!isDyn && decEndpoint.name) || pkgMeta.name;
     var pkgPath = path.join(this.componentsDir, pkgMeta.name);
     var oldGuid = decEndpoint._guid = Utils.getGuid(decEndpoint, initialName);
 
     // if package name has been changed, then move to new location
-    if (name !== pkgMeta.name && this._renamed[pkgMeta.name] !== name) {
+    if (name !== pkgMeta.name && this._renamed[pkgMeta.name] !== name && isDyn) {
         (this._resolved[oldGuid.rId] && this._resolved[oldGuid.rId].push(decEndpoint)) || (this._resolved[oldGuid.rId] = [decEndpoint]);
 
         var oldPath = path.join(this.componentsDir, name);
