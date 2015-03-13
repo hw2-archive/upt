@@ -63,7 +63,7 @@
     "upt-endpoint-parser": "*",
     "upt-json": "*",
     "upt-registry-client": "*",
-    "hw2": "0.0."
+    "hw2": "0.0.8"
   },
   "devDependencies": {
     "coveralls": "~2.11.0",
