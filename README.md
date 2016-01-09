@@ -2,8 +2,8 @@
 
 [DISCONTINUED] This project has been started as a fork of bower to improve its functionalities and implementing features such as:
 
-- subfolder installing ( also nested in other projects )
-- possibility to allow installing path decided by the vendor not the final user
+- subfolder installation ( also nested in other projects )
+- possibility to allow installation path decided by the vendor not the final user
 - possibility to have custom symlinks to modules
 - possibility to keep the .git folder and make bulk pull/push ( to improve the development )
 - creating hook scripts to execute at specific conditions ( such as post-installation etc )
