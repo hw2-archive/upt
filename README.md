@@ -1,5 +1,22 @@
 # UPT - Universal Package Tool
 
+[DISCONTINUED] This project has been started as a fork of bower to improve its functionalities and implementing features such as:
+
+- subfolder installing ( also nested in other projects )
+- possibility to allow installing path decided by the vendor not the final user
+- possibility to have custom symlinks to modules
+- possibility to keep the .git folder and make bulk pull/push ( to improve the development )
+- creating hook scripts to execute at specific conditions ( such as post-installation etc )
+- and many other features listed below
+
+#### Everything in order to create an universal package manager ( to use in any situations and environments ) that respect  as much as possible the DRY / SSOT practices.
+
+##### However i hadn't the time and "money" to publicize it so much so the interest in this project has been very low and many of features above haven't been tested and fixed at 100% ( because of no tester available ). 
+
+However if you're interested in "revamp" this project and keep it alive, I'll be happy to lend a hand to make it possible. Just contact me!
+
+
+
 
 UPT is a **crossplatform** ( thanks to nodejs ) and general purpose package manager that 
 
